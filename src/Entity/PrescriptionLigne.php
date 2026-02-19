@@ -29,4 +29,61 @@ class PrescriptionLigne
 
     #[ORM\Column(nullable: true)]
     private ?int $duree = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getPrescription(): Prescription
+    {
+        return $this->prescription;
+    }
+
+    public function setPrescription(Prescription $prescription): self
+    {
+        $this->prescription = $prescription;
+
+        if (!$prescription->getLignes()->contains($this)) {
+            $prescription->addLigne($this);
+        }
+
+        return $this;
+    }
+
+    public function getQuantite(): int
+    {
+        return $this->quantite;
+    }
+
+    public function setQuantite(int $quantite): self
+    {
+        $this->quantite = $quantite;
+
+        return $this;
+    }
+
+    public function getPosologie(): string
+    {
+        return $this->posologie;
+    }
+
+    public function setPosologie(string $posologie): self
+    {
+        $this->posologie = $posologie;
+
+        return $this;
+    }
+
+    public function getDuree(): ?int
+    {
+        return $this->duree;
+    }
+
+    public function setDuree(?int $duree): self
+    {
+        $this->duree = $duree;
+
+        return $this;
+    }
 }

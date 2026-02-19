@@ -36,4 +36,85 @@ class RendezVous
 
     #[ORM\OneToOne(mappedBy: 'rendezVous', targetEntity: Consultation::class)]
     private ?Consultation $consultation = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getPatient(): Patient
+    {
+        return $this->patient;
+    }
+
+    public function setPatient(Patient $patient): self
+    {
+        $this->patient = $patient;
+
+        return $this;
+    }
+
+    public function getMedecin(): Utilisateur
+    {
+        return $this->medecin;
+    }
+
+    public function setMedecin(Utilisateur $medecin): self
+    {
+        $this->medecin = $medecin;
+
+        return $this;
+    }
+
+    public function getDateHeure(): \DateTimeImmutable
+    {
+        return $this->dateHeure;
+    }
+
+    public function setDateHeure(\DateTimeImmutable $dateHeure): self
+    {
+        $this->dateHeure = $dateHeure;
+
+        return $this;
+    }
+
+    public function getStatut(): StatutRendezVous
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(StatutRendezVous $statut): self
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getMotif(): ?string
+    {
+        return $this->motif;
+    }
+
+    public function setMotif(?string $motif): self
+    {
+        $this->motif = $motif;
+
+        return $this;
+    }
+
+    public function getConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    public function setConsultation(?Consultation $consultation): self
+    {
+        $this->consultation = $consultation;
+
+        if ($consultation !== null && $consultation->getRendezVous() !== $this) {
+            $consultation->setRendezVous($this);
+        }
+
+        return $this;
+    }
 }

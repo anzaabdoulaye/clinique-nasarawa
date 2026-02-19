@@ -5,6 +5,7 @@ namespace App\Entity;
 
 use App\Repository\UtilisateurRepository;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
 
@@ -57,6 +58,81 @@ class Utilisateur
         $this->hospitalisations = new ArrayCollection();
     }
     public function getId(): ?int { return $this->id; }
+
+    /** @return Collection<int, RendezVous> */
+    public function getRendezVous(): Collection
+    {
+        return $this->rendezVous;
+    }
+
+    public function addRendezVous(RendezVous $rendezVous): self
+    {
+        if (!$this->rendezVous->contains($rendezVous)) {
+            $this->rendezVous->add($rendezVous);
+            if (method_exists($rendezVous, 'setMedecin')) {
+                $rendezVous->setMedecin($this);
+            }
+        }
+
+        return $this;
+    }
+
+    public function removeRendezVous(RendezVous $rendezVous): self
+    {
+        $this->rendezVous->removeElement($rendezVous);
+
+        return $this;
+    }
+
+    /** @return Collection<int, Consultation> */
+    public function getConsultations(): Collection
+    {
+        return $this->consultations;
+    }
+
+    public function addConsultation(Consultation $consultation): self
+    {
+        if (!$this->consultations->contains($consultation)) {
+            $this->consultations->add($consultation);
+            if (method_exists($consultation, 'setMedecin')) {
+                $consultation->setMedecin($this);
+            }
+        }
+
+        return $this;
+    }
+
+    public function removeConsultation(Consultation $consultation): self
+    {
+        $this->consultations->removeElement($consultation);
+
+        return $this;
+    }
+
+    /** @return Collection<int, Hospitalisation> */
+    public function getHospitalisations(): Collection
+    {
+        return $this->hospitalisations;
+    }
+
+    public function addHospitalisation(Hospitalisation $hospitalisation): self
+    {
+        if (!$this->hospitalisations->contains($hospitalisation)) {
+            $this->hospitalisations->add($hospitalisation);
+            if (method_exists($hospitalisation, 'setMedecinReferent')) {
+                $hospitalisation->setMedecinReferent($this);
+            }
+        }
+
+        return $this;
+    }
+
+    public function removeHospitalisation(Hospitalisation $hospitalisation): self
+    {
+        $this->hospitalisations->removeElement($hospitalisation);
+
+        return $this;
+    }
 
     public function getNom(): string { return $this->nom; }
     public function setNom(string $nom): self { $this->nom = $nom; return $this; }

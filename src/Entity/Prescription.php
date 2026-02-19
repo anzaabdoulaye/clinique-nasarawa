@@ -36,4 +36,78 @@ class Prescription
     {
         $this->lignes = new ArrayCollection();
     }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getConsultation(): Consultation
+    {
+        return $this->consultation;
+    }
+
+    public function setConsultation(Consultation $consultation): self
+    {
+        $this->consultation = $consultation;
+
+        if (!$consultation->getPrescriptions()->contains($this)) {
+            $consultation->addPrescription($this);
+        }
+
+        return $this;
+    }
+
+    public function getTypePrescription(): string
+    {
+        return $this->typePrescription;
+    }
+
+    public function setTypePrescription(string $typePrescription): self
+    {
+        $this->typePrescription = $typePrescription;
+
+        return $this;
+    }
+
+    public function getInstructions(): ?string
+    {
+        return $this->instructions;
+    }
+
+    public function setInstructions(?string $instructions): self
+    {
+        $this->instructions = $instructions;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PrescriptionLigne>
+     */
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
+
+    public function addLigne(PrescriptionLigne $ligne): self
+    {
+        if (!$this->lignes->contains($ligne)) {
+            $this->lignes->add($ligne);
+            $ligne->setPrescription($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLigne(PrescriptionLigne $ligne): self
+    {
+        if ($this->lignes->removeElement($ligne)) {
+            if ($ligne->getPrescription() === $this) {
+                $ligne->setPrescription(null);
+            }
+        }
+
+        return $this;
+    }
 }

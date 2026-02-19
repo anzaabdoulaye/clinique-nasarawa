@@ -40,5 +40,104 @@ class DossierMedical
         $this->hospitalisations = new ArrayCollection();
     }
 
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getPatient(): ?Patient
+    {
+        return $this->patient;
+    }
+
+    public function setPatient(Patient $patient): self
+    {
+        $this->patient = $patient;
+
+        return $this;
+    }
+
+    public function getNumeroDossier(): string
+    {
+        return $this->numeroDossier;
+    }
+
+    public function setNumeroDossier(string $numeroDossier): self
+    {
+        $this->numeroDossier = $numeroDossier;
+
+        return $this;
+    }
+
+    public function getObservations(): ?string
+    {
+        return $this->observations;
+    }
+
+    public function setObservations(?string $observations): self
+    {
+        $this->observations = $observations;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Consultation>
+     */
+    public function getConsultations(): Collection
+    {
+        return $this->consultations;
+    }
+
+    public function addConsultation(Consultation $consultation): self
+    {
+        if (!$this->consultations->contains($consultation)) {
+            $this->consultations->add($consultation);
+            $consultation->setDossierMedical($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConsultation(Consultation $consultation): self
+    {
+        if ($this->consultations->removeElement($consultation)) {
+            if ($consultation->getDossierMedical() === $this) {
+                $consultation->setDossierMedical(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Hospitalisation>
+     */
+    public function getHospitalisations(): Collection
+    {
+        return $this->hospitalisations;
+    }
+
+    public function addHospitalisation(Hospitalisation $hospitalisation): self
+    {
+        if (!$this->hospitalisations->contains($hospitalisation)) {
+            $this->hospitalisations->add($hospitalisation);
+            $hospitalisation->setDossierMedical($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHospitalisation(Hospitalisation $hospitalisation): self
+    {
+        if ($this->hospitalisations->removeElement($hospitalisation)) {
+            if ($hospitalisation->getDossierMedical() === $this) {
+                $hospitalisation->setDossierMedical(null);
+            }
+        }
+
+        return $this;
+    }
+
     
 }

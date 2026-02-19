@@ -73,6 +73,8 @@ class Hospitalisation
         $this->dateAdmission = new \DateTimeImmutable();
         $this->statut = StatutHospitalisation::EN_COURS;
         $this->traitements = new ArrayCollection();
+        $this->examensComplementaires = new ArrayCollection();
+        $this->antecedents = new ArrayCollection();
     }
 
     // --------------------
@@ -156,6 +158,152 @@ class Hospitalisation
     public function setConclusion(?string $conclusion): self
     {
         $this->conclusion = $conclusion;
+        return $this;
+    }
+
+    public function setDossierMedical(DossierMedical $dossierMedical): self
+    {
+        $this->dossierMedical = $dossierMedical;
+
+        return $this;
+    }
+
+    public function setMedecinReferent(Utilisateur $medecinReferent): self
+    {
+        $this->medecinReferent = $medecinReferent;
+
+        return $this;
+    }
+
+    public function setDateSortie(?\DateTimeImmutable $dateSortie): self
+    {
+        $this->dateSortie = $dateSortie;
+
+        return $this;
+    }
+
+    public function setMotifAdmission(string $motifAdmission): self
+    {
+        $this->motifAdmission = $motifAdmission;
+
+        return $this;
+    }
+
+    public function setStatut(StatutHospitalisation $statut): self
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getExamenClinique(): ?ExamenClinique
+    {
+        return $this->examenClinique;
+    }
+
+    public function setExamenClinique(?ExamenClinique $examenClinique): self
+    {
+        $this->examenClinique = $examenClinique;
+
+        if ($examenClinique !== null && $examenClinique->getHospitalisation() !== $this) {
+            $examenClinique->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function getExamenNeurologique(): ?ExamenNeurologique
+    {
+        return $this->examenNeurologique;
+    }
+
+    public function setExamenNeurologique(?ExamenNeurologique $examenNeurologique): self
+    {
+        $this->examenNeurologique = $examenNeurologique;
+
+        if ($examenNeurologique !== null && $examenNeurologique->getHospitalisation() !== $this) {
+            $examenNeurologique->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ExamenComplementaire>
+     */
+    public function getExamensComplementaires(): Collection
+    {
+        return $this->examensComplementaires;
+    }
+
+    public function addExamenComplementaire(ExamenComplementaire $examen): self
+    {
+        if (!$this->examensComplementaires->contains($examen)) {
+            $this->examensComplementaires->add($examen);
+            $examen->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeExamenComplementaire(ExamenComplementaire $examen): self
+    {
+        if ($this->examensComplementaires->removeElement($examen)) {
+            if ($examen->getHospitalisation() === $this) {
+                $examen->setHospitalisation(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Antecedent>
+     */
+    public function getAntecedents(): Collection
+    {
+        return $this->antecedents;
+    }
+
+    public function addAntecedent(Antecedent $antecedent): self
+    {
+        if (!$this->antecedents->contains($antecedent)) {
+            $this->antecedents->add($antecedent);
+            $antecedent->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAntecedent(Antecedent $antecedent): self
+    {
+        if ($this->antecedents->removeElement($antecedent)) {
+            if ($antecedent->getHospitalisation() === $this) {
+                $antecedent->setHospitalisation(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function addTraitement(TraitementHospitalisation $traitement): self
+    {
+        if (!$this->traitements->contains($traitement)) {
+            $this->traitements->add($traitement);
+            $traitement->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTraitement(TraitementHospitalisation $traitement): self
+    {
+        if ($this->traitements->removeElement($traitement)) {
+            if ($traitement->getHospitalisation() === $this) {
+                $traitement->setHospitalisation(null);
+            }
+        }
+
         return $this;
     }
 }
