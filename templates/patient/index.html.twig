@@ -51,20 +51,24 @@
                 </td>
                 <td>{{ patient.createdAt ? patient.createdAt|date('Y-m-d H:i') : '-' }}</td>
 
-                <td>
-                  <div class="d-flex gap-2 justify-content-center">
-                    <a class="btn btn-sm btn-outline-secondary"
-                       href="{{ path('app_patient_show', {'id': patient.id}) }}">
-                      Voir
+               <td>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Actions patient">
+                    <a class="btn btn-outline-secondary"
+                    title="Voir"
+                    href="{{ path('app_patient_show', {'id': patient.id}) }}">
+                    <i class="fa fa-eye"></i>
+                    Voir
                     </a>
 
                     <button type="button"
-                            class="btn btn-sm btn-outline-primary js-edit-patient"
+                            class="btn btn-outline-secondary js-edit-patient"
+                            title="Modifier"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editPatientModal"
                             data-url="{{ path('app_patient_edit', {'id': patient.id}) }}">
-                      Modifier
+                    <i class="ri-pencil-fill"></i>
                     </button>
-                  </div>
-                </td>
+                </div>
               </tr>
             {% else %}
               <tr>
@@ -125,4 +129,102 @@
     </div>
   </div>
 </div>
+
+{# Modale édition patient (contenu chargé en AJAX) #}
+<div class="modal fade" id="editPatientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa fa-pen me-1"></i> Modifier Patient
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-center py-4" id="editPatientLoader">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted">Chargement...</div>
+        </div>
+
+        <div id="editPatientModalBody" class="d-none"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    (function () {
+      const editModalEl = document.getElementById('editPatientModal');
+      const loader = document.getElementById('editPatientLoader');
+      const body = document.getElementById('editPatientModalBody');
+
+      async function loadEditForm(url) {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await res.text();
+
+        body.innerHTML = html;
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+
+        const form = body.querySelector('form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+
+          const formData = new FormData(form);
+          const submitUrl = form.getAttribute('action') || url;
+          const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+          const submitRes = await fetch(submitUrl, {
+            method,
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+
+          const contentType = submitRes.headers.get('content-type') || '';
+
+          if (contentType.includes('application/json')) {
+            const json = await submitRes.json();
+            if (json.success) {
+              bootstrap.Modal.getInstance(editModalEl).hide();
+              window.location.reload();
+              return;
+            }
+          }
+
+          // sinon HTML (souvent avec erreurs)
+          const submitHtml = await submitRes.text();
+          body.innerHTML = submitHtml;
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-patient');
+        if (!btn) return;
+        const url = btn.getAttribute('data-url');
+        loadEditForm(url).catch(() => {
+          loader.classList.add('d-none');
+          body.classList.remove('d-none');
+          body.innerHTML = '<div class="alert alert-danger mb-0">Impossible de charger le formulaire.</div>';
+        });
+      });
+
+      editModalEl?.addEventListener('hidden.bs.modal', () => {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+      });
+    })();
+  </script>
 {% endblock %}

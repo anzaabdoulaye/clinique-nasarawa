@@ -37,7 +37,7 @@ final class PatientController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
-    
+
     #[Route('/new', name: 'app_patient_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -66,12 +66,33 @@ final class PatientController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_patient_edit', methods: ['GET', 'POST'])]
+   #[Route('/{id}/edit', name: 'app_patient_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Patient $patient, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(PatientType::class, $patient);
         $form->handleRequest($request);
 
+        // ---------- CAS AJAX (MODAL) ----------
+        if ($request->isXmlHttpRequest()) {
+
+            // POST AJAX validé => JSON (PAS de redirect)
+            if ($form->isSubmitted() && $form->isValid()) {
+                $entityManager->flush();
+
+                return $this->json([
+                    'success' => true,
+                    'message' => 'Patient mis à jour avec succès.'
+                ]);
+            }
+
+            // GET AJAX (ou POST avec erreurs) => renvoyer uniquement le form (sans layout)
+            return $this->render('patient/edit.html.twig', [
+                'form' => $form->createView(),
+                'patient' => $patient,
+            ]);
+        }
+
+        // ---------- CAS NORMAL (PAGE COMPLETE) ----------
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
@@ -80,7 +101,7 @@ final class PatientController extends AbstractController
 
         return $this->render('patient/edit.html.twig', [
             'patient' => $patient,
-            'form' => $form,
+            'form' => $form->createView(),
         ]);
     }
 

@@ -33,8 +33,9 @@ class RendezVous
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $motif = null;
-
-    #[ORM\OneToOne(mappedBy: 'rendezVous', targetEntity: Consultation::class)]
+    
+    #[ORM\ManyToOne(targetEntity: Consultation::class)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Consultation $consultation = null;
 
     public function getId(): ?int

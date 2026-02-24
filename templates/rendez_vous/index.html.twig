@@ -38,7 +38,7 @@
             {% for rv in rendezVous %}
               <tr>
                 <td>{{ rv.dateHeure ? rv.dateHeure|date('Y-m-d H:i') : '-' }}</td>
-                <td>{{ rv.statut ?? '-' }}</td>
+                <td>{{ rv.statut.name ?? '-' }}</td>
 
                 <td class="text-start">
                   {{ rv.motif ? rv.motif|u.truncate(60, '…', false) : '-' }}
@@ -72,18 +72,21 @@
                 <td>{{ rv.createdAt ? rv.createdAt|date('Y-m-d H:i') : '-' }}</td>
 
                 <td>
-                  <div class="d-flex gap-2 justify-content-center">
-                    <a class="btn btn-sm btn-outline-secondary"
-                       href="{{ path('app_rendez_vous_show', {'id': rv.id}) }}">
-                      Voir
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions patient">
+                    <a class="btn btn-outline-secondary"
+                    title="Voir"
+                    href="{{ path('app_rendez_vous_show', {'id': rv.id}) }}">
+                    <i class="fa fa-eye"></i>
+                    Voir
                     </a>
-
                     <button type="button"
-                            class="btn btn-sm btn-outline-primary js-edit-rendezvous"
-                            data-url="{{ path('app_rendez_vous_edit', {'id': rv.id}) }}">
-                      Modifier
-                    </button>
-                  </div>
+                        class="btn btn-sm btn-outline-secondary js-edit-rdv"
+                        data-url="{{ path('app_rendez_vous_edit', {id: rv.id}) }}"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editRdvModal">
+                            <i class="ri-pencil-fill"></i>
+                       </button>
+                </div>
                 </td>
               </tr>
             {% else %}
@@ -125,7 +128,6 @@
           <div class="col-md-6">{{ form_row(form.patient) }}</div>
           <div class="col-md-6">{{ form_row(form.medecin) }}</div>
 
-          <div class="col-md-12">{{ form_row(form.consultation) }}</div>
         </div>
 
         <div class="d-flex justify-content-end mt-4">
@@ -138,4 +140,122 @@
     </div>
   </div>
 </div>
+
+
+{# Modale édition rendez-vous (contenu chargé en AJAX) #}
+<div class="modal fade" id="editRdvModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa fa-pen me-1"></i> Modifier Rendez-vous
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-center py-4" id="editRdvLoader">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted">Chargement...</div>
+        </div>
+
+        <div id="editRdvModalBody" class="d-none"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block javascripts %}
+  {{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modalEl = document.getElementById('editRdvModal');
+  const loader = document.getElementById('editRdvLoader');
+  const body   = document.getElementById('editRdvModalBody');
+
+  // 1) Charger le formulaire edit dans la modale
+  document.querySelectorAll('.js-edit-rdv').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      const url = btn.getAttribute('data-url');
+
+      // reset UI
+      loader.classList.remove('d-none');
+      body.classList.add('d-none');
+      body.innerHTML = '';
+
+      try {
+        const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await resp.text();
+
+        body.innerHTML = html;
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+
+        // une fois le HTML injecté => attacher submit AJAX
+        attachRdvEditAjaxSubmit();
+      } catch (err) {
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+        body.innerHTML = '<div class="alert alert-danger">Erreur de chargement du formulaire.</div>';
+      }
+    });
+  });
+
+  // 2) Soumission AJAX : si erreurs => re-render formulaire dans la modale
+  function attachRdvEditAjaxSubmit() {
+  const form = document.getElementById('RdvEditForm');
+  if (!form) return;
+
+  if (form.dataset.bound === '1') return;
+  form.dataset.bound = '1';
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const action = form.getAttribute('action');
+    if (!action) {
+      body.innerHTML = '<div class="alert alert-danger">Action du formulaire manquante.</div>';
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    const resp = await fetch(action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    const contentType = resp.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const data = await resp.json();
+      if (data.success) {
+        // Fermer modal proprement + reload
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editRdvModal'));
+        modal?.hide();
+        window.location.reload();
+        return;
+      }
+    }
+
+    // Erreurs => HTML
+    body.innerHTML = await resp.text();
+    attachRdvEditAjaxSubmit();
+  });
+}
+
+  // Optionnel: nettoyer à la fermeture
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    loader.classList.remove('d-none');
+    body.classList.add('d-none');
+    body.innerHTML = '';
+  });
+});
+</script>
+
 {% endblock %}

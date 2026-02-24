@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\RendezVous;
+use App\Enum\StatutRendezVous;
 use App\Form\RendezVousType;
 use App\Repository\RendezVousRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,8 +32,24 @@ final class RendezVousController extends AbstractController
             return $this->redirectToRoute('app_rendez_vous_index');
         }
 
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            // 1) consultation non obligatoire à la création
+            $rv->setConsultation(null);
+
+            // 2) statut par défaut si vide (ex: "EN_ATTENTE")
+            if (!$rv->getStatut()) {
+                $rv->setStatut(StatutRendezVous::EN_ATTENTE);
+            }
+
+            $em->persist($rv);
+            $em->flush();
+
+            return $this->redirectToRoute('app_rendez_vous_index');
+        }
+
         return $this->render('rendez_vous/index.html.twig', [
-            'rendezVous' => $rendezVousRepository->findAll(),   // ✅ la variable manquante
+            'rendezVous' => $rendezVousRepository->findAll(),  
             'form' => $form->createView(),
         ]);
     }
@@ -46,22 +63,32 @@ final class RendezVousController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_rendez_vous_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, RendezVous $rendezVou, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(RendezVousType::class, $rendezVou);
-        $form->handleRequest($request);
+public function edit(Request $request, RendezVous $rendezVous, EntityManagerInterface $em): Response
+{
+    $form = $this->createForm(RendezVousType::class, $rendezVous);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
+    if ($form->isSubmitted() && $form->isValid()) {
+        $em->flush();
 
-            return $this->redirectToRoute('app_rendez_vous_index', [], Response::HTTP_SEE_OTHER);
+        if ($request->isXmlHttpRequest()) {
+            return $this->json(['success' => true]);
         }
+        return $this->redirectToRoute('app_rendez_vous_index');
+    }
 
+    // AJAX: renvoyer uniquement le contenu du form (pour la modale)
+    if ($request->isXmlHttpRequest()) {
         return $this->render('rendez_vous/edit.html.twig', [
-            'rendez_vou' => $rendezVou,
-            'form' => $form,
+            'form' => $form->createView(),
         ]);
     }
+
+    // Hors AJAX: page normale
+    return $this->render('rendez_vous/edit.html.twig', [
+        'form' => $form->createView(),
+    ]);
+}
 
     #[Route('/{id}', name: 'app_rendez_vous_delete', methods: ['POST'])]
     public function delete(Request $request, RendezVous $rendezVou, EntityManagerInterface $entityManager): Response

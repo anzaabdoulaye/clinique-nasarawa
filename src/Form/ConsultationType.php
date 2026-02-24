@@ -26,7 +26,7 @@ class ConsultationType extends AbstractType
             ->add('frequenceCardiaque')
             ->add('medecin', EntityType::class, [
                 'class' => Utilisateur::class,
-                'choice_label' => 'id',
+                'choice_label' => fn(Utilisateur $u) => $u->getNomComplet(),
             ])
             ->add('dossierMedical', EntityType::class, [
                 'class' => DossierMedical::class,

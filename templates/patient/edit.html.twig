@@ -1,13 +1,22 @@
-{% extends 'base.html.twig' %}
+{{ form_start(form, {'attr': {'id': 'PatientEditForm'}}) }}
 
-{% block title %}Edit Patient{% endblock %}
+<div class="row g-3">
+  <div class="col-md-6">{{ form_row(form.nom) }}</div>
+  <div class="col-md-6">{{ form_row(form.prenom) }}</div>
 
-{% block body %}
-    <h1>Edit Patient</h1>
+  <div class="col-md-6">{{ form_row(form.dateNaissance) }}</div>
+  <div class="col-md-6">{{ form_row(form.sexe) }}</div>
 
-    {{ include('patient/_form.html.twig', {'button_label': 'Update'}) }}
+  <div class="col-md-6">{{ form_row(form.telephone) }}</div>
+  <div class="col-md-6">{{ form_row(form.code) }}</div>
 
-    <a href="{{ path('app_patient_index') }}">back to list</a>
+  <div class="col-md-6">{{ form_row(form.groupeSanguin) }}</div>
+  <div class="col-md-6">{{ form_row(form.adresse) }}</div>
+</div>
 
-    {{ include('patient/_delete_form.html.twig') }}
-{% endblock %}
+<div class="d-flex justify-content-end mt-4 gap-2">
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+  <button class="btn btn-primary">Mettre à jour</button>
+</div>
+
+{{ form_end(form) }}

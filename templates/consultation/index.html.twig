@@ -1,51 +1,244 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Consultation index{% endblock %}
+{% block title %}Consultations{% endblock %}
 
 {% block body %}
-    <h1>Consultation index</h1>
+<div class="row">
+  <div class="col-12">
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
+    <div class="card card-primary">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">Liste des Consultations</h3>
+
+        <button type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#addConsultationModal">
+          <i class="fa fa-plus"></i> Nouvelle consultation
+        </button>
+      </div>
+
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered align-middle text-center mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Dossier</th>
+                <th>Médecin</th>
                 <th>Poids</th>
                 <th>Taille</th>
-                <th>Temperature</th>
-                <th>TensionArterielle</th>
+                <th>Temp.</th>
+                <th>TA</th>
+                <th>FC</th>
                 <th>Motifs</th>
                 <th>Diagnostic</th>
-                <th>FrequenceCardiaque</th>
-                <th>CreatedAt</th>
-                <th>ModifiedAt</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for consultation in consultations %}
-            <tr>
-                <td>{{ consultation.id }}</td>
-                <td>{{ consultation.poids }}</td>
-                <td>{{ consultation.taille }}</td>
-                <td>{{ consultation.temperature }}</td>
-                <td>{{ consultation.tensionArterielle }}</td>
-                <td>{{ consultation.motifs }}</td>
-                <td>{{ consultation.diagnostic }}</td>
-                <td>{{ consultation.frequenceCardiaque }}</td>
-                <td>{{ consultation.createdAt ? consultation.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_consultation_show', {'id': consultation.id}) }}">show</a>
-                    <a href="{{ path('app_consultation_edit', {'id': consultation.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="11">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+                <th style="width: 160px;">Actions</th>
+              </tr>
+            </thead>
 
-    <a href="{{ path('app_consultation_new') }}">Create new</a>
+            <tbody>
+            {% for c in consultations %}
+              <tr>
+                <td>{{ c.createdAt ? c.createdAt|date('Y-m-d H:i') : '-' }}</td>
+
+                <td>
+                  {% if c.dossierMedical %}
+                    {{ c.dossierMedical.numeroDossier ?? c.dossierMedical.id }}
+                  {% else %}-{% endif %}
+                </td>
+
+                <td>
+                    {{ c.medecin ? c.medecin.nomComplet : '-' }}
+                </td>
+
+                <td>{{ c.poids ?? '-' }}</td>
+                <td>{{ c.taille ?? '-' }}</td>
+                <td>{{ c.temperature ?? '-' }}</td>
+                <td>{{ c.tensionArterielle ?? '-' }}</td>
+                <td>{{ c.frequenceCardiaque ?? '-' }}</td>
+
+                <td class="text-start">
+                  {{ c.motifs ? c.motifs|u.truncate(50, '…', false) : '-' }}
+                </td>
+                <td class="text-start">
+                  {{ c.diagnostic ? c.diagnostic|u.truncate(50, '…', false) : '-' }}
+                </td>
+
+                <td>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions consultation">
+                    <a class="btn btn-outline-secondary"
+                       title="Voir"
+                       href="{{ path('app_consultation_show', {'id': c.id}) }}">
+                      <i class="fa fa-eye"></i> Voir
+                    </a>
+
+                    <button type="button"
+                            class="btn btn-outline-secondary js-edit-consultation"
+                            title="Modifier"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editConsultationModal"
+                            data-url="{{ path('app_consultation_edit', {'id': c.id}) }}">
+                      <i class="ri-pencil-fill"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="11" class="text-muted">Aucune consultation enregistrée.</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# =========================
+   MODAL AJOUT CONSULTATION
+========================= #}
+<div class="modal fade" id="addConsultationModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvelle Consultation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        {{ form_start(form, {'attr': {'id': 'ConsultationForm'}}) }}
+
+        <div class="row g-3">
+          <div class="col-md-3">{{ form_row(form.poids) }}</div>
+          <div class="col-md-3">{{ form_row(form.taille) }}</div>
+          <div class="col-md-3">{{ form_row(form.temperature) }}</div>
+          <div class="col-md-3">{{ form_row(form.tensionArterielle) }}</div>
+
+          <div class="col-md-3">{{ form_row(form.frequenceCardiaque) }}</div>
+
+          <div class="col-md-3">{{ form_row(form.medecin) }}</div>
+          <div class="col-md-3">{{ form_row(form.dossierMedical) }}</div>
+          <div class="col-md-3">{{ form_row(form.rendezVous) }}</div>
+
+          <div class="col-md-12">{{ form_row(form.motifs) }}</div>
+          <div class="col-md-12">{{ form_row(form.diagnostic) }}</div>
+
+          <div class="col-md-6">{{ form_row(form.facture) }}</div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <button class="btn btn-success">Enregistrer</button>
+        </div>
+
+        {{ form_end(form) }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# =========================
+   MODAL EDIT CONSULTATION (AJAX)
+========================= #}
+<div class="modal fade" id="editConsultationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa fa-pen me-1"></i> Modifier Consultation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-center py-4" id="editConsultationLoader">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted">Chargement...</div>
+        </div>
+
+        <div id="editConsultationModalBody" class="d-none"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    (function () {
+      const editModalEl = document.getElementById('editConsultationModal');
+      const loader = document.getElementById('editConsultationLoader');
+      const body = document.getElementById('editConsultationModalBody');
+
+      async function loadEditForm(url) {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await res.text();
+
+        body.innerHTML = html;
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+
+        const form = body.querySelector('form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+
+          const formData = new FormData(form);
+          const submitUrl = form.getAttribute('action') || url;
+          const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+          const submitRes = await fetch(submitUrl, {
+            method,
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+
+          const contentType = submitRes.headers.get('content-type') || '';
+
+          if (contentType.includes('application/json')) {
+            const json = await submitRes.json();
+            if (json.success) {
+              bootstrap.Modal.getInstance(editModalEl).hide();
+              window.location.reload();
+              return;
+            }
+          }
+
+          const submitHtml = await submitRes.text();
+          body.innerHTML = submitHtml;
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-consultation');
+        if (!btn) return;
+        const url = btn.getAttribute('data-url');
+
+        loadEditForm(url).catch(() => {
+          loader.classList.add('d-none');
+          body.classList.remove('d-none');
+          body.innerHTML = '<div class="alert alert-danger mb-0">Impossible de charger le formulaire.</div>';
+        });
+      });
+
+      editModalEl?.addEventListener('hidden.bs.modal', () => {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+      });
+    })();
+  </script>
 {% endblock %}

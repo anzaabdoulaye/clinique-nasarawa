@@ -192,4 +192,9 @@ private ?ServiceMedical $serviceMedical = null;
     {
         return (string) $this->username;
     }
+
+    public function getNomComplet(): string
+{
+    return trim(($this->nom ?? '') . ' ' . ($this->prenom ?? ''));
+}
 }

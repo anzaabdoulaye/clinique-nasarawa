@@ -1,13 +1,41 @@
-{% extends 'base.html.twig' %}
+{{ form_start(form, {
+  'action': path('app_rendez_vous_edit', {id: form.vars.value.id}),
+  'attr': {'id': 'RdvEditForm'}
+}) }}
 
-{% block title %}Edit RendezVous{% endblock %}
+<div class="row g-3">
+  <div class="col-md-6">
+    {{ form_row(form.patient) }}
+  </div>
 
-{% block body %}
-    <h1>Edit RendezVous</h1>
+  {% if form.medecin is defined %}
+  <div class="col-md-6">
+    {{ form_row(form.medecin) }}
+  </div>
+  {% endif %}
 
-    {{ include('rendez_vous/_form.html.twig', {'button_label': 'Update'}) }}
+  <div class="col-md-6">
+    {% if form.dateHeure is defined %}
+      {{ form_row(form.dateHeure) }}
+    {% else %}
+      {{ form_row(form.dateRendezVous) }}
+    {% endif %}
+  </div>
 
-    <a href="{{ path('app_rendez_vous_index') }}">back to list</a>
+  <div class="col-md-6">
+    {{ form_row(form.statut) }}
+  </div>
 
-    {{ include('rendez_vous/_delete_form.html.twig') }}
-{% endblock %}
+  {% if form.motif is defined %}
+  <div class="col-12">
+    {{ form_row(form.motif) }}
+  </div>
+  {% endif %}
+</div>
+
+<div class="d-flex justify-content-end mt-4 gap-2">
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+  <button class="btn btn-primary">Mettre à jour</button>
+</div>
+
+{{ form_end(form) }}
