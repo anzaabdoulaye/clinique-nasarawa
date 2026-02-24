@@ -71,7 +71,7 @@ final class UtilisateurController extends AbstractController
             return $this->redirectToRoute('app_utilisateur_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('utilisateur/param.html.twig', [
+        return $this->render('admin/param.html.twig', [
             //'utilisateur' => $utilisateur,
             //'form' => $form,
         ]);
