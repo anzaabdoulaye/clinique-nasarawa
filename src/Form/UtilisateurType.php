@@ -18,23 +18,73 @@ final class UtilisateurType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('nom', TextType::class)
-            ->add('prenom', TextType::class)
-            ->add('username', TextType::class)
+        $isNew = (bool) $options['is_new'];
 
-            // ✅ mot de passe saisi en clair (pas stocké directement)
+        $builder
+            ->add('nom', TextType::class, [
+                'label' => 'Nom',
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: Abdoulaye',
+                ],
+            ])
+            ->add('prenom', TextType::class, [
+                'label' => 'Prénom',
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: Anza',
+                ],
+            ])
+            ->add('username', TextType::class, [
+                'label' => "Nom d'utilisateur",
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: a.anza',
+                    'autocomplete' => 'username',
+                ],
+            ])
+
             ->add('plainPassword', PasswordType::class, [
                 'mapped' => false,
-                'required' => $options['is_new'], // obligatoire à la création
-                'attr' => ['autocomplete' => 'new-password'],
-                'label' => 'Mot de passe',
+                'required' => false,
+                'data' => '1234', // ✅ valeur par défaut
+                'label' => $isNew ? 'Mot de passe (optionnel)' : 'Nouveau mot de passe (optionnel)',
+                'help' => $isNew
+                    ? 'Laissez 1234 ou modifiez-le.'
+                    : 'Laissez vide pour conserver le mot de passe actuel.',
+                'attr' => [
+                    'class' => 'form-control',
+                    'autocomplete' => 'new-password',
+                ],
             ])
+
+            
+            // ->add('plainPassword', PasswordType::class, [
+            //     'mapped' => false,
+            //     'required' => false,
+            //     'label' => $isNew ? 'Mot de passe (optionnel)' : 'Nouveau mot de passe (optionnel)',
+            //     'help' => $isNew
+            //         ? 'Laissez vide pour générer un mot de passe temporaire.'
+            //         : 'Laissez vide pour conserver le mot de passe actuel.',
+            //     'attr' => [
+            //         'class' => 'form-control',
+            //         'placeholder' => $isNew ? 'Laisser vide pour générer' : 'Laisser vide pour ne pas changer',
+            //         'autocomplete' => $isNew ? 'new-password' : 'new-password',
+            //     ],
+            // ])
+
             ->add('statut', EnumType::class, [
                 'class' => StatutUtilisateur::class,
-                'choice_label' => fn(StatutUtilisateur $s) => $s->label(),
+                'label' => 'Statut',
+                'choice_label' => fn (StatutUtilisateur $s) => $s->label(),
+                'placeholder' => 'Choisir...',
+                'attr' => [
+                    'class' => 'form-select',
+                ],
             ])
+
             ->add('roles', ChoiceType::class, [
+                'label' => 'Rôles',
                 'choices' => [
                     'Admin' => 'ROLE_ADMIN',
                     'Médecin' => 'ROLE_MEDECIN',
@@ -43,13 +93,21 @@ final class UtilisateurType extends AbstractType
                     'RH' => 'ROLE_RH',
                 ],
                 'multiple' => true,
-                'expanded' => true, 
+                'expanded' => true,
+                'attr' => [
+                    'class' => 'mt-1',
+                ],
             ])
+
             ->add('serviceMedical', EntityType::class, [
                 'class' => ServiceMedical::class,
-                'choice_label' => 'libelle', // remplace par ton vrai champ: "nom", "libelle", etc.
+                'choice_label' => 'libelle', 
+                'label' => 'Service médical',
                 'placeholder' => 'Choisir...',
                 'required' => false,
+                'attr' => [
+                    'class' => 'form-select',
+                ],
             ])
         ;
     }
@@ -58,7 +116,7 @@ final class UtilisateurType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Utilisateur::class,
-            'is_new' => true, // option custom
+            'is_new' => true, 
         ]);
 
         $resolver->setAllowedTypes('is_new', 'bool');
