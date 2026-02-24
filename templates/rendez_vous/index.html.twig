@@ -65,7 +65,10 @@
                  {% set statut = rv.statut.name ?? '' %}
 
 {% if rv.consultation %}
-  ...
+  <a class="btn btn-sm btn-outline-secondary"
+     href="{{ path('app_consultation_show', {id: rv.consultation.id}) }}">
+    Ouvrir
+  </a>
 {% else %}
   {% if statut == 'CONFIRME' %}
     <form method="post" action="{{ path('app_rendez_vous_start_consultation', {id: rv.id}) }}" class="d-inline">

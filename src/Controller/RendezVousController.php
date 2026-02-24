@@ -7,6 +7,7 @@ use App\Entity\RendezVous;
 use App\Enum\StatutConsultation;
 use App\Enum\StatutRendezVous;
 use App\Form\RendezVousType;
+use App\Repository\ConsultationRepository;
 use App\Repository\RendezVousRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -97,68 +98,34 @@ final class RendezVousController extends AbstractController
     }
 
     #[Route('/{id}/start-consultation', name: 'app_rendez_vous_start_consultation', methods: ['POST'])]
-    public function startConsultation(
-        Request $request,
-        RendezVous $rendezVous,
-        EntityManagerInterface $em
-    ): Response {
-        // 1) CSRF
-        if (!$this->isCsrfTokenValid('start_consultation_' . $rendezVous->getId(), (string) $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('CSRF token invalide.');
-        }
-
-        // 2) Empêcher double création
-        if (null !== $rendezVous->getConsultation()) {
-            $this->addFlash('info', 'Une consultation existe déjà pour ce rendez-vous.');
-            return $this->redirectToRoute('app_consultation_show', ['id' => $rendezVous->getConsultation()->getId()]);
-        }
-
-        // 3) Statut RDV autorisé
-        $statut = $rendezVous->getStatut(); // enum
-        $allowed = [
-            StatutRendezVous::PLANIFIE,
-            StatutRendezVous::CONFIRME,
-
-        ];
-        if (!\in_array($statut, $allowed, true)) {
-            $this->addFlash('warning', 'Le rendez-vous doit être PLANIFIE ou CONFIRME pour démarrer la consultation.');
-            return $this->redirectToRoute('app_rendez_vous_index');
-        }
-
-        // 4) Données requises
-        if (null === $rendezVous->getMedecin()) {
-            $this->addFlash('danger', 'Aucun médecin n’est associé à ce rendez-vous.');
-            return $this->redirectToRoute('app_rendez_vous_index');
-        }
-        if (null === $rendezVous->getPatient()) {
-            $this->addFlash('danger', 'Aucun patient n’est associé à ce rendez-vous.');
-            return $this->redirectToRoute('app_rendez_vous_index');
-        }
-
-        // 5) Récupérer/Créer DossierMedical (selon ton choix métier)
-        // Option A (souvent recommandé): le dossier est créé à la création du patient (workflow déjà discuté)
-        $dossier = $rendezVous->getPatient()->getDossierMedical();
-        if (null === $dossier) {
-            $this->addFlash('danger', 'Le patient n’a pas de dossier médical. Créez-le avant de démarrer la consultation.');
-            return $this->redirectToRoute('app_rendez_vous_index');
-        }
-
-        // 6) Créer Consultation
-        $consultation = new Consultation();
-        $consultation->setRendezVous($rendezVous);
-        $consultation->setMedecin($rendezVous->getMedecin());
-        $consultation->setDossierMedical($dossier);
-        $consultation->setStatut(StatutConsultation::EN_COURS); // ou BROUILLON
-
-        // 7) Mettre à jour le RDV (optionnel mais cohérent)
-        //$rendezVous->setStatut(StatutRendezVous::EN_COURS);
-
-        $em->persist($consultation);
-        $em->flush();
-
-        $this->addFlash('success', 'Consultation démarrée.');
-
-        // 8) Rediriger vers la fiche consultation
-        return $this->redirectToRoute('app_consultation_index');
+public function startConsultation(
+    Request $request,
+    RendezVous $rendezVous,
+    ConsultationRepository $consultationRepo,
+    EntityManagerInterface $em
+): Response {
+    if (!$this->isCsrfTokenValid('start_consultation_' . $rendezVous->getId(), (string)$request->request->get('_token'))) {
+        throw $this->createAccessDeniedException('CSRF token invalide.');
     }
+
+    // ✅ check DB
+    $existing = $consultationRepo->findOneBy(['rendezVous' => $rendezVous]);
+    if ($existing) {
+        $this->addFlash('info', 'Consultation déjà créée.');
+        return $this->redirectToRoute('app_consultation_show', ['id' => $existing->getId()]);
+    }
+
+    // ... tes checks statut RDV, patient, médecin, dossier
+
+    $consultation = new Consultation();
+    $consultation->setRendezVous($rendezVous); // sync auto RDV->consultation
+    $consultation->setMedecin($rendezVous->getMedecin());
+    $consultation->setDossierMedical($rendezVous->getPatient()->getDossierMedical());
+    $consultation->setStatut(StatutConsultation::EN_COURS);
+
+    $em->persist($consultation);
+    $em->flush();
+
+    return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
+}
 }

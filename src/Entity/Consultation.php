@@ -27,9 +27,39 @@ class Consultation
     #[ORM\JoinColumn(nullable: false)]
     private DossierMedical $dossierMedical;
 
-    #[ORM\OneToOne(inversedBy: 'consultation')]
-    #[ORM\JoinColumn(nullable: true)]
+     #[ORM\OneToOne(inversedBy: 'consultation')]
+    #[ORM\JoinColumn(nullable: false, unique: true)]
     private ?RendezVous $rendezVous = null;
+
+    #[ORM\Column(enumType: StatutConsultation::class)]
+    private StatutConsultation $statut = StatutConsultation::BROUILLON;
+
+    public function getRendezVous(): ?RendezVous
+    {
+        return $this->rendezVous;
+    }
+
+    public function setRendezVous(RendezVous $rendezVous): self
+    {
+        $this->rendezVous = $rendezVous;
+
+        if ($rendezVous->getConsultation() !== $this) {
+            $rendezVous->setConsultation($this);
+        }
+
+        return $this;
+    }
+
+    public function getStatut(): StatutConsultation
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(StatutConsultation $statut): self
+    {
+        $this->statut = $statut;
+        return $this;
+    }
 
     #[ORM\Column(nullable: true)]
     private ?float $poids = null;
@@ -51,19 +81,6 @@ class Consultation
 
     #[ORM\Column(nullable: true)]
     private ?int $frequenceCardiaque = null;
-
-    #[ORM\Column(enumType: StatutConsultation::class)]
-    private StatutConsultation $statut = StatutConsultation::BROUILLON;
-     public function getStatut(): StatutConsultation
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(StatutConsultation $statut): self
-    {
-        $this->statut = $statut;
-        return $this;
-    }
 
     #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: Prescription::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $prescriptions;
@@ -101,18 +118,6 @@ class Consultation
     public function setDossierMedical(DossierMedical $dossierMedical): self
     {
         $this->dossierMedical = $dossierMedical;
-
-        return $this;
-    }
-
-    public function getRendezVous(): ?RendezVous
-    {
-        return $this->rendezVous;
-    }
-
-    public function setRendezVous(?RendezVous $rendezVous): self
-    {
-        $this->rendezVous = $rendezVous;
 
         return $this;
     }

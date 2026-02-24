@@ -34,9 +34,19 @@ class RendezVous
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $motif = null;
     
-    #[ORM\ManyToOne(targetEntity: Consultation::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\OneToOne(mappedBy: 'rendezVous', targetEntity: Consultation::class, cascade: ['persist', 'remove'])]
     private ?Consultation $consultation = null;
+
+    public function getConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    public function setConsultation(?Consultation $consultation): self
+    {
+        $this->consultation = $consultation;
+        return $this;
+    }
 
     public function getId(): ?int
     {
@@ -103,19 +113,4 @@ class RendezVous
         return $this;
     }
 
-    public function getConsultation(): ?Consultation
-    {
-        return $this->consultation;
-    }
-
-    public function setConsultation(?Consultation $consultation): self
-    {
-        $this->consultation = $consultation;
-
-        if ($consultation !== null && $consultation->getRendezVous() !== $this) {
-            $consultation->setRendezVous($this);
-        }
-
-        return $this;
-    }
 }
