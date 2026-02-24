@@ -39,6 +39,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $forcePasswordChange = true;
+
     #[ORM\ManyToOne(inversedBy: 'utilisateurs')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
 private ?ServiceMedical $serviceMedical = null;  
@@ -57,6 +60,17 @@ private ?ServiceMedical $serviceMedical = null;
         $this->rendezVous = new ArrayCollection();
         $this->consultations = new ArrayCollection();
         $this->hospitalisations = new ArrayCollection();
+    }
+
+    public function isForcePasswordChange(): bool
+    {
+        return $this->forcePasswordChange;
+    }
+
+    public function setForcePasswordChange(bool $force): self
+    {
+        $this->forcePasswordChange = $force;
+        return $this;
     }
     public function getId(): ?int { return $this->id; }
 
