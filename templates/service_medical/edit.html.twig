@@ -1,13 +1,25 @@
-{% extends 'base.html.twig' %}
+{# templates/service_medical/edit.html.twig
+   ⚠️ Ce template est injecté dans le modal via fetch => PAS de extends base ici.
+#}
 
-{% block title %}Edit ServiceMedical{% endblock %}
+{{ form_start(form, {
+  'action': path('app_service_medical_edit', { id: service_medical.id }),
+  'attr': { 'id': 'ServiceMedicalEditForm' }
+}) }}
 
-{% block body %}
-    <h1>Edit ServiceMedical</h1>
+<div class="row g-3">
+  <div class="col-md-12">
+    {{ form_row(form.libelle) }}
+  </div>
+</div>
 
-    {{ include('service_medical/_form.html.twig', {'button_label': 'Update'}) }}
+<div class="d-flex justify-content-end mt-4 gap-2">
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+    Annuler
+  </button>
+  <button type="submit" class="btn btn-primary">
+    Mettre à jour
+  </button>
+</div>
 
-    <a href="{{ path('app_service_medical_index') }}">back to list</a>
-
-    {{ include('service_medical/_delete_form.html.twig') }}
-{% endblock %}
+{{ form_end(form) }}

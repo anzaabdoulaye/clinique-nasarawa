@@ -64,23 +64,23 @@
                 <td>
                  {% set statut = rv.statut.name ?? '' %}
 
-{% if rv.consultation %}
-  <a class="btn btn-sm btn-outline-secondary"
-     href="{{ path('app_consultation_show', {id: rv.consultation.id}) }}">
-    Ouvrir
-  </a>
-{% else %}
-  {% if statut == 'CONFIRME' %}
-    <form method="post" action="{{ path('app_rendez_vous_start_consultation', {id: rv.id}) }}" class="d-inline">
-      <input type="hidden" name="_token" value="{{ csrf_token('start_consultation_' ~ rv.id) }}">
-      <button class="btn btn-sm btn-primary">
-        <i class="fa fa-play me-1"></i> Démarrer
-      </button>
-    </form>
-  {% else %}
-    <span class="badge bg-secondary">Non démarrable ({{ statut ?: 'N/A' }})</span>
-  {% endif %}
-{% endif %}
+                {% if rv.consultation %}
+                  <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ path('app_consultation_show', {id: rv.consultation.id}) }}">
+                    Ouvrir
+                  </a>
+                {% else %}
+                  {% if statut == 'CONFIRME' %}
+                    <form method="post" action="{{ path('app_rendez_vous_start_consultation', {id: rv.id}) }}" class="d-inline">
+                      <input type="hidden" name="_token" value="{{ csrf_token('start_consultation_' ~ rv.id) }}">
+                      <button class="btn btn-sm btn-primary">
+                        <i class="fa fa-play me-1"></i> Démarrer
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="badge bg-secondary">Non démarrable ({{ statut ?: 'N/A' }})</span>
+                  {% endif %}
+                {% endif %}
 
                 </td>
                 <td>{{ rv.createdAt ? rv.createdAt|date('Y-m-d H:i') : '-' }}</td>

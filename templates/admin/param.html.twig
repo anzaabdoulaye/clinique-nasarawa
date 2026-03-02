@@ -54,33 +54,97 @@
   </div>
 </div>
 
-{# =========================
-   MODAL AJOUT SERVICE MEDICAL (rapide)
-   => nécessite une variable "serviceForm" envoyée par le controller
-========================= #}
+{# MODAL AJOUT SERVICE MEDICAL (AJAX) #}
 <div class="modal fade" id="addServiceMedicalModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
+
       <div class="modal-header">
         <h5 class="modal-title">Nouveau Service Médical</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="modal-body">
-        {% if serviceForm is defined %}
-          {{ form_start(serviceForm, {'attr': {'id': 'ServiceMedicalForm'}}) }}
-            {{ form_widget(serviceForm) }}
-            <div class="d-flex justify-content-end mt-3">
-              <button class="btn btn-success">Enregistrer</button>
+      <div class="modal-body" id="addServiceMedicalBody">
+        {# ✅ On rend directement le form (pas de fetch GET) #}
+        {{ form_start(serviceForm, {'attr': {'id': 'ServiceMedicalForm'}}) }}
+
+          <div class="row g-3">
+            <div class="col-md-12">
+              {{ form_row(serviceForm.libelle) }}
             </div>
-          {{ form_end(serviceForm) }}
-        {% else %}
-          <div class="alert alert-warning mb-0">
-            Le formulaire ServiceMedical n’est pas chargé. Ajoute <code>serviceForm</code> dans le controller.
           </div>
-        {% endif %}
+
+          <div class="d-flex justify-content-end mt-4 gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-success">Enregistrer</button>
+          </div>
+
+        {{ form_end(serviceForm) }}
       </div>
+
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    (function () {
+      const modalEl = document.getElementById('addServiceMedicalModal');
+      if (!modalEl) return;
+
+      const modalBody = document.getElementById('addServiceMedicalBody');
+
+      function bindAjaxSubmit() {
+        const form = modalBody.querySelector('form#ServiceMedicalForm');
+        if (!form) return;
+
+        // ✅ éviter double binding si tu réinjectes le HTML du form
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const url = form.getAttribute('action'); // ✅ action = app_service_medical_create_ajax (défini dans ton controller)
+          const formData = new FormData(form);
+
+          const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+
+          const json = await res.json();
+
+          if (json.success) {
+            bootstrap.Modal.getInstance(modalEl).hide();
+            window.location.reload();
+            return;
+          }
+
+          // ✅ erreurs => remplacer le contenu du modal par le HTML renvoyé
+          if (json.html) {
+            modalBody.innerHTML = json.html;
+            bindAjaxSubmit(); // re-bind sur le nouveau form
+          } else {
+            modalBody.insertAdjacentHTML(
+              'afterbegin',
+              '<div class="alert alert-danger mb-3">Formulaire invalide.</div>'
+            );
+          }
+        }, { once: true });
+      }
+
+      // bind dès le chargement
+      bindAjaxSubmit();
+
+      // optionnel : rebind à chaque ouverture (utile si tu réinjectes html)
+      modalEl.addEventListener('shown.bs.modal', () => {
+        bindAjaxSubmit();
+      });
+    })();
+  </script>
 {% endblock %}

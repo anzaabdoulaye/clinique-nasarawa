@@ -1,13 +1,18 @@
-{% extends 'base.html.twig' %}
+{# templates/service_medical/edit.html.twig #}
+{{ form_start(form, {
+  'action': path('app_service_medical_edit', {id: service_medical.id}),
+  'attr': {'id': 'ServiceMedicalEditForm'}
+}) }}
 
-{% block title %}Edit Utilisateur{% endblock %}
+<div class="row g-3">
+  <div class="col-md-12">
+    {{ form_row(form.libelle) }}
+  </div>
+</div>
 
-{% block body %}
-    <h1>Edit Utilisateur</h1>
+<div class="d-flex justify-content-end mt-4 gap-2">
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+  <button class="btn btn-primary">Mettre à jour</button>
+</div>
 
-    {{ include('utilisateur/_form.html.twig', {'button_label': 'Update'}) }}
-
-    <a href="{{ path('app_utilisateur_index') }}">back to list</a>
-
-    {{ include('utilisateur/_delete_form.html.twig') }}
-{% endblock %}
+{{ form_end(form) }}

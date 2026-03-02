@@ -1,0 +1,17 @@
+{{ form_start(serviceForm, {
+  'action': path('app_service_medical_create_ajax'),
+  'attr': {'id': 'ServiceMedicalForm'}
+}) }}
+
+<div class="row g-3">
+  <div class="col-md-12">
+    {{ form_row(serviceForm.libelle) }}
+  </div>
+</div>
+
+<div class="d-flex justify-content-end mt-4 gap-2">
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+  <button class="btn btn-success">Enregistrer</button>
+</div>
+
+{{ form_end(serviceForm) }}

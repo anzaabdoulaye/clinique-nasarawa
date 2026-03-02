@@ -26,17 +26,9 @@
                 <th>Date</th>
                 <th>Dossier</th>
                 <th>Médecin</th>
-                <th>Poids</th>
-                <th>Taille</th>
-                <th>Temp.</th>
-                <th>TA</th>
-                <th>FC</th>
-                <th>Motifs</th>
-                <th>Diagnostic</th>
                 <th style="width: 160px;">Actions</th>
               </tr>
             </thead>
-
             <tbody>
             {% for c in consultations %}
               <tr>
@@ -50,19 +42,6 @@
 
                 <td>
                     {{ c.medecin ? c.medecin.nomComplet : '-' }}
-                </td>
-
-                <td>{{ c.poids ?? '-' }}</td>
-                <td>{{ c.taille ?? '-' }}</td>
-                <td>{{ c.temperature ?? '-' }}</td>
-                <td>{{ c.tensionArterielle ?? '-' }}</td>
-                <td>{{ c.frequenceCardiaque ?? '-' }}</td>
-
-                <td class="text-start">
-                  {{ c.motifs ? c.motifs|u.truncate(50, '…', false) : '-' }}
-                </td>
-                <td class="text-start">
-                  {{ c.diagnostic ? c.diagnostic|u.truncate(50, '…', false) : '-' }}
                 </td>
 
                 <td>

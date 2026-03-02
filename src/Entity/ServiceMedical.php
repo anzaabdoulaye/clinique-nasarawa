@@ -19,7 +19,7 @@ class ServiceMedical
     #[ORM\Column]
     private ?int $id = null;
 
-     #[ORM\Column(length: 150)]
+    #[ORM\Column(length: 255, unique: true)]
     private string $libelle;
 
     #[ORM\OneToMany(mappedBy: 'serviceMedical', targetEntity: Utilisateur::class)]

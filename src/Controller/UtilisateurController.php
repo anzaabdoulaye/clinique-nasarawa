@@ -2,8 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceMedical;
 use App\Entity\Utilisateur;
+use App\Form\ServiceMedicalType;
 use App\Form\UtilisateurType;
+use App\Repository\ServiceMedicalRepository;
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -65,25 +68,39 @@ final class UtilisateurController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+#[Route('/param', name: 'app_utilisateur_param', methods: ['GET', 'POST'])]
+public function param(
+    Request $request,
+    ServiceMedicalRepository $serviceRepo,
+    EntityManagerInterface $em
+): Response {
+    $service = new ServiceMedical();
 
-    #[Route('/param', name: 'app_utilisateur_param', methods: ['GET', 'POST'])]
-    public function param(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $utilisateur = new Utilisateur();
-        $form = $this->createForm(UtilisateurType::class, $utilisateur);
-        $form->handleRequest($request);
+    $serviceForm = $this->createForm(ServiceMedicalType::class, $service, [
+        // ✅ ta route de création (celle que tu veux utiliser depuis le modal)
+        'action' => $this->generateUrl('app_service_medical_create_ajax'),
+        'method' => 'POST',
+    ]);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($utilisateur);
-            $entityManager->flush();
+    $serviceForm->handleRequest($request);
 
-            return $this->redirectToRoute('app_utilisateur_index', [], Response::HTTP_SEE_OTHER);
-        }
+    // ✅ si tu postes sur /utilisateur/param directement (sans AJAX),
+    // tu peux aussi traiter ici (sinon tu peux enlever ce bloc).
+    if ($serviceForm->isSubmitted() && $serviceForm->isValid()) {
+        $em->persist($service);
+        $em->flush();
 
-        return $this->render('admin/param.html.twig', [
-            // 'form' => $form->createView(),
-        ]);
+        $this->addFlash('success', 'Service médical ajouté.');
+        return $this->redirectToRoute('app_utilisateur_param');
     }
+
+    return $this->render('admin/param.html.twig', [
+        'servicesCount' => $serviceRepo->count([]),
+        'serviceForm'   => $serviceForm->createView(),
+        // Optionnel : si un jour tu veux lister sur la page param
+        // 'service_medicals' => $serviceRepo->findAll(),
+    ]);
+}
 
     #[Route('/new', name: 'app_utilisateur_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
@@ -172,21 +189,62 @@ final class UtilisateurController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\d+>}/edit', name: 'app_utilisateur_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Utilisateur $utilisateur, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
-    {
+   #[Route('/{id<\d+>}/edit', name: 'app_utilisateur_edit', methods: ['GET', 'POST'])]
+    public function edit(
+        Request $request,
+        Utilisateur $utilisateur,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response {
         $form = $this->createForm(UtilisateurType::class, $utilisateur, ['is_new' => false]);
         $form->handleRequest($request);
 
+        // ---------- CAS AJAX (MODAL) ----------
+        if ($request->isXmlHttpRequest()) {
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $plainPassword = (string) $form->get('plainPassword')->getData();
+
+                if ($plainPassword !== '') {
+                    $utilisateur->setPassword($passwordHasher->hashPassword($utilisateur, $plainPassword));
+                    if (method_exists($utilisateur, 'setForcePasswordChange')) {
+                        $utilisateur->setForcePasswordChange(false);
+                    }
+                }
+
+                // ensure ROLE_USER
+                $roles = $utilisateur->getRoles();
+                if (!in_array('ROLE_USER', $roles, true)) {
+                    $roles[] = 'ROLE_USER';
+                    $utilisateur->setRoles($roles);
+                }
+
+                $entityManager->flush();
+
+                return $this->json([
+                    'success' => true,
+                    'message' => 'Utilisateur modifié.'
+                ]);
+            }
+
+            // GET AJAX (ou POST avec erreurs) => renvoyer le form (sans layout)
+            return $this->render('utilisateur/edit.html.twig', [
+                'utilisateur' => $utilisateur,
+                'form' => $form->createView(),
+            ]);
+        }
+
+        // ---------- CAS NORMAL ----------
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = (string) $form->get('plainPassword')->getData();
 
             if ($plainPassword !== '') {
                 $utilisateur->setPassword($passwordHasher->hashPassword($utilisateur, $plainPassword));
-                $utilisateur->setForcePasswordChange(false);
+                if (method_exists($utilisateur, 'setForcePasswordChange')) {
+                    $utilisateur->setForcePasswordChange(false);
+                }
             }
 
-            // ensure ROLE_USER
             $roles = $utilisateur->getRoles();
             if (!in_array('ROLE_USER', $roles, true)) {
                 $roles[] = 'ROLE_USER';
@@ -195,7 +253,6 @@ final class UtilisateurController extends AbstractController
 
             $entityManager->flush();
 
-            $this->addFlash('success', 'Utilisateur modifié.');
             return $this->redirectToRoute('app_utilisateur_index', [], Response::HTTP_SEE_OTHER);
         }
 
