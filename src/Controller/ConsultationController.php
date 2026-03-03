@@ -134,7 +134,9 @@ final class ConsultationController extends AbstractController
         }
 
         // IMPORTANT : Form dédié Phase C (à créer)
-        $form = $this->createForm(ConsultationType::class, $consultation);
+        $form = $this->createForm(ConsultationType::class, $consultation, [
+            'context' => 'medical',
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

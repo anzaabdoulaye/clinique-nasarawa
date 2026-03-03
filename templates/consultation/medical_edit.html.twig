@@ -32,69 +32,93 @@
     {{ form_start(form, { attr: { id: 'medicalForm' } }) }}
 
     <div class="row g-3">
-        {# ===================== CONSTANCES ===================== #}
-        <div class="col-12 col-lg-4">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Constantes vitales</div>
-                <div class="card-body">
-                    <div class="row g-2">
-                        <div class="col-12">
-                            {{ form_row(form.poids) }}
-                        </div>
-                        <div class="col-12">
-                            {{ form_row(form.taille) }}
-                        </div>
-                        <div class="col-12">
-                            {{ form_row(form.temperature) }}
-                        </div>
-                        <div class="col-12">
-                            {{ form_row(form.tensionArterielle) }}
-                        </div>
-                        <div class="col-12">
-                            {{ form_row(form.frequenceCardiaque) }}
-                        </div>
-                    </div>
+<div class="col-12">
 
-                    <div class="mt-3 text-muted small">
-                        Astuce : “Tension artérielle” au format <span class="fw-semibold">120/80</span>.
+        <div class="accordion" id="accordionMedical">
+
+            {# ====== CONSTANCES ====== #}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingConstantes">
+                    <button class="accordion-button" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseConstantes"
+                            aria-expanded="true" aria-controls="collapseConstantes">
+                        Constantes vitales
+                    </button>
+                </h2>
+
+                <div id="collapseConstantes" class="accordion-collapse collapse show"
+                     aria-labelledby="headingConstantes" data-bs-parent="#accordionMedical">
+                    <div class="accordion-body">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6 col-xl-4">
+                                {{ form_row(form.poids) }}
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                {{ form_row(form.taille) }}
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                {{ form_row(form.temperature) }}
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-6">
+                                {{ form_row(form.tensionArterielle) }}
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-6">
+                                {{ form_row(form.frequenceCardiaque) }}
+                            </div>
+                        </div>
+
+                        <div class="mt-2 text-muted small">
+                            Astuce : “Tension artérielle” au format <span class="fw-semibold">120/80</span>.
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {# ===================== CLINIQUE ===================== #}
-        <div class="col-12 col-lg-8">
-            <div class="card">
-                <div class="card-header fw-semibold">Clinique</div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        {{ form_row(form.motifs) }}
-                    </div>
-                    <div class="mb-3">
-                       {% if form.histoire is defined %}
-    {{ form_row(form.histoire) }}
-{% endif %}
-                    </div>
-                    <div class="mb-3">
-                       {% if form.examenClinique is defined %}{{ form_row(form.examenClinique) }}{% endif %}
-                    </div>
-                    <div class="mb-3">
-                       {% if form.diagnostic is defined %}{{ form_row(form.diagnostic) }}{% endif %}
-                    </div>
+            {# ====== CLINIQUE ====== #}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingClinique">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseClinique"
+                            aria-expanded="false" aria-controls="collapseClinique">
+                        Clinique
+                    </button>
+                </h2>
 
-                    {# CIM10 optionnel : affiché seulement si le champ existe dans le form #}
-                    {% if form.cim10 is defined %}
+                <div id="collapseClinique" class="accordion-collapse collapse"
+                     aria-labelledby="headingClinique" data-bs-parent="#accordionMedical">
+                    <div class="accordion-body">
+
                         <div class="mb-3">
-                           {% if form.cim10 is defined %}{{ form_row(form.cim10) }}{% endif %}
+                            {{ form_row(form.motifs) }}
                         </div>
-                    {% endif %}
 
-                    <div class="mb-0">
-                        {% if form.conduiteATenir is defined %}{{ form_row(form.conduiteATenir) }}{% endif %}
+                        {% if form.histoire is defined %}
+                            <div class="mb-3">{{ form_row(form.histoire) }}</div>
+                        {% endif %}
+
+                        {% if form.examenClinique is defined %}
+                            <div class="mb-3">{{ form_row(form.examenClinique) }}</div>
+                        {% endif %}
+
+                        {% if form.diagnostic is defined %}
+                            <div class="mb-3">{{ form_row(form.diagnostic) }}</div>
+                        {% endif %}
+
+                        {% if form.cim10 is defined %}
+                            <div class="mb-3">{{ form_row(form.cim10) }}</div>
+                        {% endif %}
+
+                        {% if form.conduiteATenir is defined %}
+                            <div class="mb-0">{{ form_row(form.conduiteATenir) }}</div>
+                        {% endif %}
+
                     </div>
                 </div>
             </div>
+
         </div>
+
+    </div>
 
         {# ===================== FOOTER ===================== #}
         <div class="col-12">
@@ -115,7 +139,6 @@
             </div>
         </div>
     </div>
-
-    {{ form_end(form) }}
+    {{ form_end(form, { render_rest: false }) }}
 </div>
 {% endblock %}

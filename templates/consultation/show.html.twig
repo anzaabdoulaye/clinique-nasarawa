@@ -35,15 +35,20 @@
                 {% endif %}
 
                 {# Médecin #}
-                {% if consultation.medecin is defined and consultation.medecin %}
+{#                 {% if consultation.medecin is defined and consultation.medecin %}
                     <span class="badge bg-light text-dark border">
                         Médecin :
-                        {{ consultation.medecin.nomComplet
-                            ?? (consultation.medecin.nom ~ ' ' ~ consultation.medecin.prenom)
-                            ?? consultation.medecin.id
-                        }}
+                        {% if consultation.medecin %}
+                        <span class="badge bg-light text-dark border">
+                            Médecin :
+                            {{ consultation.medecin.nomComplet
+                                ?? (consultation.medecin.nom ~ ' ' ~ consultation.medecin.prenom)
+                                ?? consultation.medecin.id
+                            }}
+                        </span>
+                    {% endif %}
                     </span>
-                {% endif %}
+                {% endif %} #}
 
                 {# Patient #}
                 {% if consultation.rendezVous is defined and consultation.rendezVous and consultation.rendezVous.patient is defined and consultation.rendezVous.patient %}
