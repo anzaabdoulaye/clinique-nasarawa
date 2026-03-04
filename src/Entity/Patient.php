@@ -105,6 +105,47 @@ class Patient
     #[Assert\Choice(choices: ['A+','A-','B+','B-','AB+','AB-','O+','O-'])]
     private ?string $groupeSanguin = null;
 
+    // --- informations de contact d'urgence ---
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $emergencyContactName = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $emergencyContactRelation = null;
+
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $emergencyContactPhone = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $emergencyContactAddress = null;
+
+    // --- données médicales générales ---
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $taille = null;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $poids = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $allergies = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $antecedentsMedicaux = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $antecedentsChirurgicaux = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $maladiesChroniques = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $traitementEnCours = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $handicap = null;
+
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $grossesse = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -196,6 +237,151 @@ class Patient
     {
         $this->groupeSanguin = $groupeSanguin;
 
+        return $this;
+    }
+
+    // emergency contact getters/setters
+    public function getEmergencyContactName(): ?string
+    {
+        return $this->emergencyContactName;
+    }
+
+    public function setEmergencyContactName(?string $name): self
+    {
+        $this->emergencyContactName = $name;
+        return $this;
+    }
+
+    public function getEmergencyContactRelation(): ?string
+    {
+        return $this->emergencyContactRelation;
+    }
+
+    public function setEmergencyContactRelation(?string $relation): self
+    {
+        $this->emergencyContactRelation = $relation;
+        return $this;
+    }
+
+    public function getEmergencyContactPhone(): ?string
+    {
+        return $this->emergencyContactPhone;
+    }
+
+    public function setEmergencyContactPhone(?string $phone): self
+    {
+        $this->emergencyContactPhone = $phone;
+        return $this;
+    }
+
+    public function getEmergencyContactAddress(): ?string
+    {
+        return $this->emergencyContactAddress;
+    }
+
+    public function setEmergencyContactAddress(?string $address): self
+    {
+        $this->emergencyContactAddress = $address;
+        return $this;
+    }
+
+    // medical info getters/setters
+    public function getTaille(): ?float
+    {
+        return $this->taille;
+    }
+
+    public function setTaille(?float $taille): self
+    {
+        $this->taille = $taille;
+        return $this;
+    }
+
+    public function getPoids(): ?float
+    {
+        return $this->poids;
+    }
+
+    public function setPoids(?float $poids): self
+    {
+        $this->poids = $poids;
+        return $this;
+    }
+
+    public function getAllergies(): ?string
+    {
+        return $this->allergies;
+    }
+
+    public function setAllergies(?string $allergies): self
+    {
+        $this->allergies = $allergies;
+        return $this;
+    }
+
+    public function getAntecedentsMedicaux(): ?string
+    {
+        return $this->antecedentsMedicaux;
+    }
+
+    public function setAntecedentsMedicaux(?string $antecedents): self
+    {
+        $this->antecedentsMedicaux = $antecedents;
+        return $this;
+    }
+
+    public function getAntecedentsChirurgicaux(): ?string
+    {
+        return $this->antecedentsChirurgicaux;
+    }
+
+    public function setAntecedentsChirurgicaux(?string $antecedents): self
+    {
+        $this->antecedentsChirurgicaux = $antecedents;
+        return $this;
+    }
+
+    public function getMaladiesChroniques(): ?string
+    {
+        return $this->maladiesChroniques;
+    }
+
+    public function setMaladiesChroniques(?string $maladies): self
+    {
+        $this->maladiesChroniques = $maladies;
+        return $this;
+    }
+
+    public function getTraitementEnCours(): ?string
+    {
+        return $this->traitementEnCours;
+    }
+
+    public function setTraitementEnCours(?string $traitement): self
+    {
+        $this->traitementEnCours = $traitement;
+        return $this;
+    }
+
+    public function getHandicap(): ?string
+    {
+        return $this->handicap;
+    }
+
+    public function setHandicap(?string $handicap): self
+    {
+        $this->handicap = $handicap;
+        return $this;
+    }
+
+    public function isGrossesse(): ?bool
+    {
+        return $this->grossesse;
+    }
+
+    public function setGrossesse(?bool $grossesse): self
+    {
+        $this->grossesse = $grossesse;
         return $this;
     }
 }

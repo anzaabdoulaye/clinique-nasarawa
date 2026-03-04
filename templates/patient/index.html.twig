@@ -6,73 +6,130 @@
 <div class="row">
   <div class="col-12">
 
-    <div class="card card-primary">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title mb-0">Liste des Patients</h3>
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h5 class="mb-0 fw-semibold">
+              <i class="fa fa-users me-2 text-primary"></i> Patients
+            </h5>
+            <div class="text-muted small">Liste des patients enregistrés</div>
+          </div>
 
-        <button type="button"
-                class="btn btn-success"
-                data-bs-toggle="modal"
-                data-bs-target="#addPatientModal">
-          <i class="fa fa-plus"></i> Nouveau patient
-        </button>
+          <button type="button"
+                  class="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addPatientModal">
+            <i class="fa fa-plus me-1"></i> Nouveau patient
+          </button>
+        </div>
       </div>
 
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-striped table-bordered align-middle text-center mb-0">
+          <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
-              <tr>
-                <th>Code</th>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Date naissance</th>
-                <th>Sexe</th>
-                <th>Téléphone</th>
-                <th>Groupe sanguin</th>
-                <th>Adresse</th>
-                <th>Créé le</th>
-                <th>Actions</th>
+              <tr class="text-nowrap">
+                <th class="text-uppercase small text-muted">Code</th>
+                <th class="text-uppercase small text-muted">Nom</th>
+                <th class="text-uppercase small text-muted">Prénom</th>
+                <th class="text-uppercase small text-muted">Naissance</th>
+                <th class="text-uppercase small text-muted">Sexe</th>
+                <th class="text-uppercase small text-muted">Téléphone</th>
+                <th class="text-uppercase small text-muted">Groupe</th>
+                <th class="text-uppercase small text-muted">Adresse</th>
+                <th class="text-uppercase small text-muted">Créé le</th>
+                <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
               </tr>
             </thead>
 
             <tbody>
             {% for patient in patients %}
               <tr>
-                <td>{{ patient.code }}</td>
-                <td>{{ patient.nom }}</td>
-                <td>{{ patient.prenom }}</td>
-                <td>{{ patient.dateNaissance ? patient.dateNaissance|date('Y-m-d') : '-' }}</td>
-                <td>{{ patient.sexe }}</td>
-                <td>{{ patient.telephone }}</td>
-                <td>{{ patient.groupeSanguin }}</td>
-                <td class="text-start">
-                    {{ patient.adresse|u.truncate(40, '…', false) }}
+                <td class="text-nowrap">
+                  <span class="badge bg-light text-dark border">
+                    <i class="fa fa-id-badge me-1 text-muted"></i> {{ patient.code }}
+                  </span>
                 </td>
-                <td>{{ patient.createdAt ? patient.createdAt|date('Y-m-d H:i') : '-' }}</td>
 
-               <td>
-                <div class="btn-group btn-group-sm" role="group" aria-label="Actions patient">
+                <td class="text-nowrap fw-semibold">{{ patient.nom }}</td>
+                <td class="text-nowrap">{{ patient.prenom }}</td>
+
+                <td class="text-nowrap">
+                  {{ patient.dateNaissance ? patient.dateNaissance|date('d/m/Y') : '—' }}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if patient.sexe %}
+                    <span class="badge bg-light text-dark border">{{ patient.sexe }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if patient.telephone %}
+                    <span class="badge bg-primary-subtle text-primary border">
+                      <i class="fa fa-phone me-1"></i> {{ patient.telephone }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if patient.groupeSanguin %}
+                    <span class="badge bg-danger-subtle text-danger border">
+                      <i class="fa fa-tint me-1"></i> {{ patient.groupeSanguin }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-start" style="min-width: 220px;">
+                  {{ patient.adresse ? patient.adresse|u.truncate(60, '…', false) : '—' }}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if patient.createdAt %}
+                    <div class="fw-semibold">{{ patient.createdAt|date('d/m/Y') }}</div>
+                    <div class="small text-muted">{{ patient.createdAt|date('H:i') }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions patient">
                     <a class="btn btn-outline-secondary"
-                    title="Voir"
-                    href="{{ path('app_patient_show', {'id': patient.id}) }}">
-                    <i class="fa fa-eye"></i>
-                    Voir
+                       title="Voir"
+                       href="{{ path('app_patient_show', {'id': patient.id}) }}">
+                      <i class="fa fa-eye me-1"></i> Voir
                     </a>
 
                     <button type="button"
-                            class="btn btn-outline-secondary js-edit-patient"
+                            class="btn btn-outline-primary js-edit-patient"
                             title="Modifier"
                             data-bs-toggle="modal"
                             data-bs-target="#editPatientModal"
                             data-url="{{ path('app_patient_edit', {'id': patient.id}) }}">
-                    <i class="ri-pencil-fill"></i>x
+                      <i class="ri-pencil-fill"></i>
                     </button>
-                </div>
+                  </div>
+                </td>
               </tr>
             {% else %}
               <tr>
-                <td colspan="10" class="text-muted">Aucun patient enregistré.</td>
+                <td colspan="10">
+                  <div class="py-5 text-center">
+                    <div class="mb-2">
+                      <i class="fa fa-info-circle text-muted" style="font-size: 28px;"></i>
+                    </div>
+                    <div class="fw-semibold">Aucun patient enregistré</div>
+                    <div class="text-muted small">Clique sur “Nouveau patient” pour ajouter un patient.</div>
+                  </div>
+                </td>
               </tr>
             {% endfor %}
             </tbody>
@@ -85,21 +142,18 @@
   </div>
 </div>
 
-{# 
-    Modale de création d'un patient
-    --------------------------------
-    - Utilise le même formulaire que pour l'édition, mais sans données pré-remplies.
-    - Le formulaire est soumis via AJAX pour éviter un rechargement complet de la page.
+{# =========================
+   MODAL AJOUT PATIENT
+========================= #}
+<div class="modal fade" id="addPatientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
 
-#}
-
-<div class="modal fade" id="addPatientModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">Nouveau Patient</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-plus me-2 text-primary"></i> Nouveau patient
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
 
       <div class="modal-body">
@@ -119,8 +173,11 @@
           <div class="col-md-6">{{ form_row(form.adresse) }}</div>
         </div>
 
-        <div class="d-flex justify-content-end mt-4">
-          <button class="btn btn-success">Enregistrer</button>
+        <div class="d-flex justify-content-end mt-4 gap-2">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save me-1"></i> Enregistrer
+          </button>
         </div>
 
         {{ form_end(form) }}
@@ -130,25 +187,31 @@
   </div>
 </div>
 
-{# Modale édition patient (contenu chargé en AJAX) #}
+{# =========================
+   MODAL EDIT PATIENT (AJAX)
+========================= #}
 <div class="modal fade" id="editPatientModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
 
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fa fa-pen me-1"></i> Modifier Patient
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-pen me-2 text-primary"></i> Modifier patient
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
 
       <div class="modal-body">
-        <div class="text-center py-4" id="editPatientLoader">
+        <div id="editPatientLoader" class="py-5 text-center">
           <div class="spinner-border" role="status" aria-hidden="true"></div>
-          <div class="mt-2 text-muted">Chargement...</div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
         </div>
 
         <div id="editPatientModalBody" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Fermer</button>
       </div>
 
     </div>
@@ -164,66 +227,121 @@
       const loader = document.getElementById('editPatientLoader');
       const body = document.getElementById('editPatientModalBody');
 
-      async function loadEditForm(url) {
+      let currentUrl = null;
+
+      function setLoading() {
         loader.classList.remove('d-none');
         body.classList.add('d-none');
         body.innerHTML = '';
+      }
+
+      function showError(message) {
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+        body.innerHTML = `
+          <div class="alert alert-danger d-flex align-items-start gap-2 mb-0" role="alert">
+            <i class="fa fa-exclamation-triangle mt-1"></i>
+            <div>
+              <div class="fw-semibold">Erreur</div>
+              <div class="small">${message || 'Impossible de charger le formulaire.'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function focusFirstField() {
+        const first = body.querySelector('input, select, textarea');
+        if (first) first.focus();
+      }
+
+      async function loadEditForm(url) {
+        currentUrl = url;
+        setLoading();
 
         const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        const html = await res.text();
+        if (!res.ok) throw new Error('HTTP ' + res.status);
 
+        const html = await res.text();
         body.innerHTML = html;
+
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
+        focusFirstField();
+        bindSubmit();
+      }
+
+      function bindSubmit() {
         const form = body.querySelector('form');
         if (!form) return;
+
+        if (form.dataset.bound === '1') return;
+        form.dataset.bound = '1';
 
         form.addEventListener('submit', async (ev) => {
           ev.preventDefault();
 
-          const formData = new FormData(form);
-          const submitUrl = form.getAttribute('action') || url;
-          const method = (form.getAttribute('method') || 'POST').toUpperCase();
+          const submitBtn = form.querySelector('[type="submit"]');
+          const oldHtml = submitBtn ? submitBtn.innerHTML : null;
 
-          const submitRes = await fetch(submitUrl, {
-            method,
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-          });
-
-          const contentType = submitRes.headers.get('content-type') || '';
-
-          if (contentType.includes('application/json')) {
-            const json = await submitRes.json();
-            if (json.success) {
-              bootstrap.Modal.getInstance(editModalEl).hide();
-              window.location.reload();
-              return;
-            }
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
           }
 
-          // sinon HTML (souvent avec erreurs)
-          const submitHtml = await submitRes.text();
-          body.innerHTML = submitHtml;
+          try {
+            const formData = new FormData(form);
+            const submitUrl = form.getAttribute('action') || currentUrl;
+            const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+            const submitRes = await fetch(submitUrl, {
+              method,
+              body: formData,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const contentType = submitRes.headers.get('content-type') || '';
+
+            if (contentType.includes('application/json')) {
+              const json = await submitRes.json();
+              if (json.success) {
+                bootstrap.Modal.getInstance(editModalEl)?.hide();
+                window.location.reload();
+                return;
+              }
+            }
+
+            // HTML (souvent erreurs)
+            body.innerHTML = await submitRes.text();
+            focusFirstField();
+            bindSubmit();
+          } catch (err) {
+            showError("Une erreur est survenue lors de l'enregistrement.");
+          } finally {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = oldHtml;
+            }
+          }
         });
       }
 
+      // ✅ Délégation (plus fiable)
       document.addEventListener('click', (e) => {
         const btn = e.target.closest('.js-edit-patient');
         if (!btn) return;
+
         const url = btn.getAttribute('data-url');
+        if (!url) return;
+
         loadEditForm(url).catch(() => {
-          loader.classList.add('d-none');
-          body.classList.remove('d-none');
-          body.innerHTML = '<div class="alert alert-danger mb-0">Impossible de charger le formulaire.</div>';
+          showError("Impossible de charger le formulaire. Vérifie la route et la réponse AJAX.");
         });
       });
 
       editModalEl?.addEventListener('hidden.bs.modal', () => {
-        loader.classList.remove('d-none');
-        body.classList.add('d-none');
-        body.innerHTML = '';
+        currentUrl = null;
+        setLoading();
       });
     })();
   </script>

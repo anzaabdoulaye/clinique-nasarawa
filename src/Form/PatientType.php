@@ -35,6 +35,22 @@ class PatientType extends AbstractType
             ->add('adresse', TextType::class, [
                 'required' => false,
             ])
+            ->add('emergencyContactName', TextType::class, [
+                'required' => false,
+                'label' => 'Contact d\'urgence - Nom'
+            ])
+            ->add('emergencyContactRelation', TextType::class, [
+                'required' => false,
+                'label' => 'Relation'
+            ])
+            ->add('emergencyContactPhone', TextType::class, [
+                'required' => false,
+                'label' => 'Téléphone du proche'
+            ])
+            ->add('emergencyContactAddress', TextType::class, [
+                'required' => false,
+                'label' => 'Adresse du proche'
+            ])
             ->add('groupeSanguin', ChoiceType::class, [
                 'choices' => [
                     'A+' => 'A+',
@@ -47,6 +63,40 @@ class PatientType extends AbstractType
                     'O-' => 'O-',
                 ],
                 'placeholder' => 'Choisir...',
+                'required' => false,
+            ])
+            ->add('taille', TextType::class, [
+                'required' => false,
+                'attr' => ['placeholder' => 'en m'],
+            ])
+            ->add('poids', TextType::class, [
+                'required' => false,
+                'attr' => ['placeholder' => 'en kg'],
+            ])
+            ->add('allergies', TextType::class, [
+                'required' => false,
+            ])
+            ->add('antecedentsMedicaux', TextType::class, [
+                'required' => false,
+            ])
+            ->add('antecedentsChirurgicaux', TextType::class, [
+                'required' => false,
+            ])
+            ->add('maladiesChroniques', TextType::class, [
+                'required' => false,
+            ])
+            ->add('traitementEnCours', TextType::class, [
+                'required' => false,
+            ])
+            ->add('handicap', TextType::class, [
+                'required' => false,
+            ])
+            ->add('grossesse', ChoiceType::class, [
+                'choices' => [
+                    'Oui' => true,
+                    'Non' => false,
+                ],
+                'placeholder' => 'Indifférent',
                 'required' => false,
             ])
             // Code affiché mais non éditable (généré côté serveur)

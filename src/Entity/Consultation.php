@@ -21,11 +21,11 @@ class Consultation
 
     #[ORM\ManyToOne(inversedBy: 'consultations')]
     #[ORM\JoinColumn(nullable: false)]
-    private Utilisateur $medecin;
+    private ?Utilisateur $medecin = null;
 
     #[ORM\ManyToOne(inversedBy: 'consultations')]
     #[ORM\JoinColumn(nullable: false)]
-    private DossierMedical $dossierMedical;
+    private ?DossierMedical $dossierMedical = null;
 
      #[ORM\OneToOne(inversedBy: 'consultation')]
     #[ORM\JoinColumn(nullable: false, unique: true)]
@@ -139,6 +139,8 @@ class Consultation
     public function __construct()
     {
         $this->prescriptions = new ArrayCollection();
+        $this->examensDemandes = new ArrayCollection();
+        $this->actesRealises = new ArrayCollection();
     }
 
     public function getId(): ?int

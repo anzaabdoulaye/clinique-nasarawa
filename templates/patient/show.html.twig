@@ -1,5 +1,266 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Fiche Patient — {{ patient.nom }} {{ patient.prenom }}{% endblock %}
+
+{% block body %}
+<style>
+  .patient-cover{
+    background: linear-gradient(135deg, rgba(13,110,253,.12), rgba(25,135,84,.10));
+    border: 1px solid rgba(13,110,253,.15);
+  }
+  .section-title{
+    letter-spacing: .4px;
+  }
+  .kv{
+    display:flex; gap:.75rem; align-items:flex-start;
+  }
+  .kv .k{ min-width: 170px; color: #6c757d; }
+  .kv .v{ font-weight: 600; }
+  @media print{
+    .no-print{ display:none !important; }
+    .card{ box-shadow:none !important; }
+    .container{ max-width: 100% !important; }
+    body{ background:#fff !important; }
+  }
+</style>
+
+<div class="container py-4">
+
+  {# ====== En-tête dossier ====== #}
+  <div class="card patient-cover rounded-4 shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar-md">
+            <div class="avatar-title rounded-3 bg-primary-subtle text-primary fs-2">
+              <i class="ri-user-heart-line"></i>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="mb-1">
+              {{ patient.nom }} {{ patient.prenom }}
+              {% if patient.sexe == 'M' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">Homme</span>
+              {% elseif patient.sexe == 'F' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-2">Femme</span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-2">N/A</span>
+              {% endif %}
+            </h4>
+
+            <div class="text-muted">
+              <span class="me-2"><i class="ri-folder-2-line me-1"></i> Dossier : <strong>{{ patient.code }}</strong></span>
+              <span class="me-2"><i class="ri-cake-2-line me-1"></i>
+                Né(e) : {{ patient.dateNaissance ? patient.dateNaissance|date('d/m/Y') : '-' }}
+              </span>
+              <span><i class="ri-phone-line me-1"></i> {{ patient.telephone ?? '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-print d-flex flex-wrap gap-2">
+          <a href="{{ path('app_patient_edit', {'id': patient.id}) }}" class="btn btn-primary btn-sm">
+            <i class="ri-edit-2-line me-1"></i> Modifier
+          </a>
+          <a href="{{ path('app_patient_index') }}" class="btn btn-soft-secondary btn-sm">
+            <i class="ri-arrow-left-line me-1"></i> Retour
+          </a>
+          <button type="button" class="btn btn-soft-dark btn-sm" onclick="window.print()">
+            <i class="ri-printer-line me-1"></i> Imprimer
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    {# ====== Colonne gauche : Résumé ====== #}
+    <div class="col-12 col-xl-4">
+
+      <div class="card rounded-4 shadow-sm h-100">
+        <div class="card-header bg-white border-0 pb-0">
+          <h6 class="mb-0 section-title text-uppercase text-muted">
+            <i class="ri-shield-cross-line me-1"></i> Résumé clinique
+          </h6>
+        </div>
+        <div class="card-body pt-3">
+
+          <div class="kv mb-2">
+            <div class="k">Groupe sanguin</div>
+            <div class="v">
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                {{ patient.groupeSanguin ?? '-' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="kv mb-2">
+            <div class="k">Taille / Poids</div>
+            <div class="v">
+              {{ patient.taille ?? '-' }} m — {{ patient.poids ?? '-' }} kg
+            </div>
+          </div>
+
+          <div class="kv mb-2">
+            <div class="k">Grossesse</div>
+            <div class="v">
+              {% if patient.isGrossesse() %}
+                <span class="badge bg-warning text-dark">Oui</span>
+              {% else %}
+                <span class="badge bg-secondary">Non</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="mb-3">
+            <div class="text-muted mb-1"><i class="ri-alert-line me-1"></i> Allergies</div>
+            <div class="p-2 bg-light rounded-3">
+              {{ patient.allergies ?? 'Aucune' }}
+            </div>
+          </div>
+
+          <div class="mb-0">
+            <div class="text-muted mb-1"><i class="ri-medicine-bottle-line me-1"></i> Traitement en cours</div>
+            <div class="p-2 bg-light rounded-3">
+              {{ patient.traitementEnCours ?? '-' }}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    {# ====== Colonne droite : Sections détaillées ====== #}
+    <div class="col-12 col-xl-8">
+
+      {# --- Informations personnelles --- #}
+      <div class="card rounded-4 shadow-sm mb-3">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 section-title text-uppercase text-primary">
+            <i class="ri-id-card-line me-1"></i> Informations personnelles
+          </h6>
+        </div>
+        <div class="card-body">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">Téléphone</div>
+              <div class="fw-semibold">{{ patient.telephone ?? '-' }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted small">Adresse</div>
+              <div class="fw-semibold">{{ patient.adresse ?? '-' }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {# --- Contact d'urgence --- #}
+      <div class="card rounded-4 shadow-sm mb-3">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 section-title text-uppercase text-primary">
+            <i class="ri-phone-find-line me-1"></i> Contact d’urgence
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="text-muted small">Nom</div>
+              <div class="fw-semibold">{{ patient.emergencyContactName ?? '-' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted small">Relation</div>
+              <div class="fw-semibold">{{ patient.emergencyContactRelation ?? '-' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted small">Téléphone</div>
+              <div class="fw-semibold">{{ patient.emergencyContactPhone ?? '-' }}</div>
+            </div>
+            <div class="col-12">
+              <div class="text-muted small">Adresse</div>
+              <div class="fw-semibold">{{ patient.emergencyContactAddress ?? '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# --- Données médicales --- #}
+      <div class="card rounded-4 shadow-sm mb-3">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 section-title text-uppercase text-primary">
+            <i class="ri-heart-pulse-line me-1"></i> Données médicales
+          </h6>
+        </div>
+        <div class="card-body">
+
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="text-muted small">Antécédents médicaux</div>
+              <div class="p-2 bg-light rounded-3">{{ patient.antecedentsMedicaux ?? '-' }}</div>
+            </div>
+
+            <div class="col-12">
+              <div class="text-muted small">Antécédents chirurgicaux</div>
+              <div class="p-2 bg-light rounded-3">{{ patient.antecedentsChirurgicaux ?? '-' }}</div>
+            </div>
+
+            <div class="col-12">
+              <div class="text-muted small">Maladies chroniques</div>
+              <div class="p-2 bg-light rounded-3">{{ patient.maladiesChroniques ?? '-' }}</div>
+            </div>
+
+            <div class="col-12">
+              <div class="text-muted small">Handicap</div>
+              <div class="p-2 bg-light rounded-3">{{ patient.handicap ?? '-' }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {# --- Infos système --- #}
+      <div class="card rounded-4 shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 section-title text-uppercase text-muted">
+            <i class="ri-settings-3-line me-1"></i> Informations système
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">Créé le</div>
+              <div class="fw-semibold">{{ patient.createdAt ? patient.createdAt|date('d/m/Y H:i') : '-' }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted small">Modifié le</div>
+              <div class="fw-semibold">{{ patient.modifiedAt ? patient.modifiedAt|date('d/m/Y H:i') : '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {# Delete button séparé #}
+  <div class="mt-3 no-print">
+    {{ include('patient/_delete_form.html.twig') }}
+  </div>
+
+</div>
+{% endblock %}
+
+
+{# {% extends 'base.html.twig' %}
+
 {% block title %}Patient{% endblock %}
 
 {% block body %}
@@ -44,6 +305,58 @@
                 <td>{{ patient.groupeSanguin }}</td>
             </tr>
             <tr>
+                <th>Contact urgence - Nom</th>
+                <td>{{ patient.emergencyContactName }}</td>
+            </tr>
+            <tr>
+                <th>Relation</th>
+                <td>{{ patient.emergencyContactRelation }}</td>
+            </tr>
+            <tr>
+                <th>Téléphone du proche</th>
+                <td>{{ patient.emergencyContactPhone }}</td>
+            </tr>
+            <tr>
+                <th>Adresse du proche</th>
+                <td>{{ patient.emergencyContactAddress }}</td>
+            </tr>
+            <tr>
+                <th>Taille (m)</th>
+                <td>{{ patient.taille }}</td>
+            </tr>
+            <tr>
+                <th>Poids (kg)</th>
+                <td>{{ patient.poids }}</td>
+            </tr>
+            <tr>
+                <th>Allergies</th>
+                <td>{{ patient.allergies }}</td>
+            </tr>
+            <tr>
+                <th>Antécédents médicaux</th>
+                <td>{{ patient.antecedentsMedicaux }}</td>
+            </tr>
+            <tr>
+                <th>Antécédents chirurgicaux</th>
+                <td>{{ patient.antecedentsChirurgicaux }}</td>
+            </tr>
+            <tr>
+                <th>Maladies chroniques</th>
+                <td>{{ patient.maladiesChroniques }}</td>
+            </tr>
+            <tr>
+                <th>Traitement en cours</th>
+                <td>{{ patient.traitementEnCours }}</td>
+            </tr>
+            <tr>
+                <th>Handicap</th>
+                <td>{{ patient.handicap }}</td>
+            </tr>
+            <tr>
+                <th>Grossesse</th>
+                <td>{% if patient.isGrossesse() %}Oui{% elseif patient.isGrossesse() is same as(false) %}Non{% endif %}</td>
+            </tr>
+            <tr>
                 <th>CreatedAt</th>
                 <td>{{ patient.createdAt ? patient.createdAt|date('Y-m-d H:i:s') : '' }}</td>
             </tr>
@@ -59,4 +372,4 @@
     <a href="{{ path('app_patient_edit', {'id': patient.id}) }}">edit</a>
 
     {{ include('patient/_delete_form.html.twig') }}
-{% endblock %}
+{% endblock %} #}

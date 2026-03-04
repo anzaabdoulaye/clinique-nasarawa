@@ -1,0 +1,94 @@
+
+
+{% block title %}Impression rendez-vous{% endblock %}
+
+{% block body %}
+<style>
+  @media print {
+    body { -webkit-print-color-adjust: exact; }
+    .no-print { display: none !important; }
+  }
+  .rv-print { max-width: 800px; margin: 0 auto; padding: 24px; font-family: Inter, Arial, sans-serif; }
+  .rv-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .rv-details { border:1px solid #ddd; padding:16px; border-radius:6px; }
+  .rv-row { display:flex; gap:12px; margin-bottom:8px; }
+  .rv-label { width:180px; color:#555; font-weight:600; }
+</style>
+
+<div class="rv-print">
+  <div class="rv-header">
+    <div>
+      <h2 class="mb-0">Rendez-vous</h2>
+      <div class="text-muted">Détails imprimables</div>
+    </div>
+    <div class="no-print">
+      <a href="{{ path('app_rendez_vous_show', {'id': rendez_vous.id}) }}" class="btn btn-light border me-2">Retour</a>
+      <button onclick="window.print()" class="btn btn-primary">Imprimer</button>
+    </div>
+  </div>
+
+  <div class="rv-details">
+    <div class="rv-row">
+      <div class="rv-label">ID</div>
+      <div>{{ rendez_vous.id }}</div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Patient</div>
+      <div>
+        {% if rendez_vous.patient %}
+          {{ rendez_vous.patient.nom }} {{ rendez_vous.patient.prenom ?? '' }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Médecin</div>
+      <div>
+        {% if rendez_vous.medecin %}
+          {{ rendez_vous.medecin.nomComplet }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Date / Heure</div>
+      <div>
+        {% if rendez_vous.dateheure %}
+          {{ rendez_vous.dateheure|date('d/m/Y H:i') }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Statut</div>
+      <div>{{ rendez_vous.statut ? rendez_vous.statut.value : '—' }}</div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Motif</div>
+      <div>{{ rendez_vous.motif ?: '—' }}</div>
+    </div>
+
+    <div class="rv-row">
+      <div class="rv-label">Dossier médical</div>
+      <div>
+        {% if rendez_vous.patient and rendez_vous.patient.dossierMedical %}
+          {{ rendez_vous.patient.dossierMedical.numeroDossier ?? ('#' ~ rendez_vous.patient.dossierMedical.id) }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="text-muted small mt-3">Généré le {{ "now"|date('d/m/Y H:i') }}</div>
+</div>
+{% endblock %}

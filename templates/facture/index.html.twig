@@ -1,47 +1,356 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Facture index{% endblock %}
+{% block title %}Factures{% endblock %}
 
 {% block body %}
-    <h1>Facture index</h1>
+<div class="row">
+  <div class="col-12">
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Montant</th>
-                <th>DateEmission</th>
-                <th>DatePaiement</th>
-                <th>StatutPaiement</th>
-                <th>ModePaiement</th>
-                <th>CreatedAt</th>
-                <th>ModifiedAt</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for facture in factures %}
-            <tr>
-                <td>{{ facture.id }}</td>
-                <td>{{ facture.montant }}</td>
-                <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ facture.datePaiement ? facture.datePaiement|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ facture.statutPaiement }}</td>
-                <td>{{ facture.modePaiement }}</td>
-                <td>{{ facture.createdAt ? facture.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ facture.modifiedAt ? facture.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_facture_show', {'id': facture.id}) }}">show</a>
-                    <a href="{{ path('app_facture_edit', {'id': facture.id}) }}">edit</a>
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h5 class="mb-0 fw-semibold">
+              <i class="fa fa-file-invoice-dollar me-2 text-primary"></i> Factures
+            </h5>
+            <div class="text-muted small">Suivi des factures et des paiements</div>
+          </div>
+
+          <button type="button"
+                  class="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addFactureModal">
+            <i class="fa fa-plus me-1"></i> Nouvelle facture
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr class="text-nowrap">
+                <th class="text-uppercase small text-muted">#</th>
+                <th class="text-uppercase small text-muted">Montant</th>
+                <th class="text-uppercase small text-muted">Émission</th>
+                <th class="text-uppercase small text-muted">Paiement</th>
+                <th class="text-uppercase small text-muted">Statut</th>
+                <th class="text-uppercase small text-muted">Mode</th>
+                <th class="text-uppercase small text-muted">Créé</th>
+                <th class="text-uppercase small text-muted text-end" style="width: 190px;">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+            {% for facture in factures %}
+              {% set statut = facture.statutPaiement is iterable ? (facture.statutPaiement.name ?? '') : (facture.statutPaiement.name ?? facture.statutPaiement ?? '') %}
+              {% set mode = facture.modePaiement is iterable ? (facture.modePaiement.name ?? '') : (facture.modePaiement.name ?? facture.modePaiement ?? '') %}
+
+              <tr>
+                <td class="text-nowrap">
+                  <span class="badge bg-light text-dark border">#{{ facture.id }}</span>
                 </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="9">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
 
-    <a href="{{ path('app_facture_new') }}">Create new</a>
+                <td class="text-nowrap fw-semibold">
+                  {{ facture.montant ?? '—' }}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if facture.dateEmission %}
+                    <div class="fw-semibold">{{ facture.dateEmission|date('d/m/Y') }}</div>
+                    <div class="small text-muted">{{ facture.dateEmission|date('H:i') }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if facture.datePaiement %}
+                    <div class="fw-semibold">{{ facture.datePaiement|date('d/m/Y') }}</div>
+                    <div class="small text-muted">{{ facture.datePaiement|date('H:i') }}</div>
+                  {% else %}
+                    <span class="badge bg-light text-muted border">Non payé</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if statut %}
+                    {% set badgeStatut =
+                      statut in ['PAYE','PAYEE','PAID'] ? 'bg-success-subtle text-success border' :
+                      (statut in ['EN_ATTENTE','EN_ATTENTE_PAIEMENT','PENDING'] ? 'bg-warning-subtle text-warning border' :
+                      (statut in ['ANNULE','ANNULEE','CANCELED'] ? 'bg-danger-subtle text-danger border' :
+                      'bg-light text-muted border'))
+                    %}
+                    <span class="badge {{ badgeStatut }}">{{ statut }}</span>
+                  {% else %}
+                    <span class="badge bg-light text-muted border">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if mode %}
+                    <span class="badge bg-primary-subtle text-primary border">
+                      <i class="fa fa-credit-card me-1"></i> {{ mode }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if facture.createdAt %}
+                    <div class="fw-semibold">{{ facture.createdAt|date('d/m/Y') }}</div>
+                    <div class="small text-muted">{{ facture.createdAt|date('H:i') }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions facture">
+                    <a class="btn btn-outline-secondary"
+                       title="Voir"
+                       href="{{ path('app_facture_show', {'id': facture.id}) }}">
+                      <i class="fa fa-eye me-1"></i> Voir
+                    </a>
+
+                    <button type="button"
+                            class="btn btn-outline-primary js-edit-facture"
+                            title="Modifier"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editFactureModal"
+                            data-url="{{ path('app_facture_edit', {'id': facture.id}) }}">
+                      <i class="ri-pencil-fill"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8">
+                  <div class="py-5 text-center">
+                    <div class="mb-2">
+                      <i class="fa fa-info-circle text-muted" style="font-size:28px;"></i>
+                    </div>
+                    <div class="fw-semibold">Aucune facture</div>
+                    <div class="text-muted small">Clique sur “Nouvelle facture” pour créer une facture.</div>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# =========================
+   MODAL AJOUT FACTURE
+========================= #}
+<div class="modal fade" id="addFactureModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-plus me-2 text-primary"></i> Nouvelle facture
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body">
+        {# ✅ Option A (recommandée): charger le form "new" en AJAX dans la modal #}
+        <div class="text-center py-4" id="addFactureLoader">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
+        </div>
+        <div id="addFactureModalBody" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{# =========================
+   MODAL EDIT FACTURE (AJAX)
+========================= #}
+<div class="modal fade" id="editFactureModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-pen me-2 text-primary"></i> Modifier facture
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-center py-4" id="editFactureLoader">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
+        </div>
+
+        <div id="editFactureModalBody" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    (function () {
+      const addModalEl  = document.getElementById('addFactureModal');
+      const addLoader   = document.getElementById('addFactureLoader');
+      const addBody     = document.getElementById('addFactureModalBody');
+
+      const editModalEl = document.getElementById('editFactureModal');
+      const editLoader  = document.getElementById('editFactureLoader');
+      const editBody    = document.getElementById('editFactureModalBody');
+
+      const NEW_URL = "{{ path('app_facture_new') }}";
+      let currentEditUrl = null;
+
+      function setLoading(loaderEl, bodyEl) {
+        loaderEl.classList.remove('d-none');
+        bodyEl.classList.add('d-none');
+        bodyEl.innerHTML = '';
+      }
+
+      function showError(loaderEl, bodyEl, message) {
+        loaderEl.classList.add('d-none');
+        bodyEl.classList.remove('d-none');
+        bodyEl.innerHTML = `
+          <div class="alert alert-danger d-flex align-items-start gap-2 mb-0">
+            <i class="fa fa-exclamation-triangle mt-1"></i>
+            <div>
+              <div class="fw-semibold">Erreur</div>
+              <div class="small">${message || 'Impossible de charger le formulaire.'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function focusFirstField(container) {
+        const first = container.querySelector('input, select, textarea');
+        if (first) first.focus();
+      }
+
+      async function loadFormInto(url, loaderEl, bodyEl) {
+        setLoading(loaderEl, bodyEl);
+
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        const html = await res.text();
+        bodyEl.innerHTML = html;
+
+        loaderEl.classList.add('d-none');
+        bodyEl.classList.remove('d-none');
+
+        focusFirstField(bodyEl);
+
+        const form = bodyEl.querySelector('form');
+        if (!form) return;
+
+        if (form.dataset.bound === '1') return;
+        form.dataset.bound = '1';
+
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+
+          const submitBtn = form.querySelector('[type="submit"]');
+          const oldHtml = submitBtn ? submitBtn.innerHTML : null;
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
+          }
+
+          try {
+            const formData = new FormData(form);
+            const submitUrl = form.getAttribute('action') || url;
+            const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+            const submitRes = await fetch(submitUrl, {
+              method,
+              body: formData,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const contentType = submitRes.headers.get('content-type') || '';
+
+            if (contentType.includes('application/json')) {
+              const json = await submitRes.json();
+              if (json.success) {
+                // fermer la modal correspondante
+                const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
+                modal?.hide();
+                window.location.reload();
+                return;
+              }
+            }
+
+            // HTML erreurs
+            bodyEl.innerHTML = await submitRes.text();
+            focusFirstField(bodyEl);
+            // rebind
+            bodyEl.querySelector('form')?.removeAttribute('data-bound');
+            loadFormInto(submitUrl, loaderEl, bodyEl);
+          } catch (err) {
+            showError(loaderEl, bodyEl, "Une erreur est survenue lors de l'enregistrement.");
+          } finally {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = oldHtml;
+            }
+          }
+        });
+      }
+
+      // Charger la modal AJOUT à l'ouverture
+      addModalEl?.addEventListener('show.bs.modal', () => {
+        loadFormInto(NEW_URL, addLoader, addBody).catch(() => {
+          showError(addLoader, addBody, "Impossible de charger le formulaire d'ajout.");
+        });
+      });
+
+      // Bouton edit (délégation)
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-facture');
+        if (!btn) return;
+
+        currentEditUrl = btn.getAttribute('data-url');
+        if (!currentEditUrl) return;
+
+        loadFormInto(currentEditUrl, editLoader, editBody).catch(() => {
+          showError(editLoader, editBody, "Impossible de charger le formulaire de modification.");
+        });
+      });
+
+      // Cleanup à la fermeture
+      addModalEl?.addEventListener('hidden.bs.modal', () => {
+        setLoading(addLoader, addBody);
+      });
+      editModalEl?.addEventListener('hidden.bs.modal', () => {
+        currentEditUrl = null;
+        setLoading(editLoader, editBody);
+      });
+    })();
+  </script>
 {% endblock %}

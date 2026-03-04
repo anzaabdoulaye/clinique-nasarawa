@@ -3,10 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Consultation;
+use App\Entity\Utilisateur;
 use App\Enum\StatutConsultation;
 use App\Form\ConsultationType;
 use App\Repository\ConsultationRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/consultation')]
 final class ConsultationController extends AbstractController
 {
-    /* #[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
+     #[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
         ConsultationRepository $consultationRepository,
@@ -26,10 +28,18 @@ final class ConsultationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($consultation);
-            $em->flush();
+            if (null === $consultation->getDossierMedical()) {
+                $form->addError(new FormError('Le dossier médical est requis.'));
+            } else {
+                if (null === $consultation->getMedecin() && $this->getUser() instanceof Utilisateur) {
+                    $consultation->setMedecin($this->getUser());
+                }
 
-            return $this->redirectToRoute('app_consultation_index');
+                $em->persist($consultation);
+                $em->flush();
+
+                return $this->redirectToRoute('app_consultation_index');
+            }
         }
 
         return $this->render('consultation/index.html.twig', [
@@ -93,73 +103,81 @@ final class ConsultationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($consultation);
-            $entityManager->flush();
+            if (null === $consultation->getDossierMedical()) {
+                $form->addError(new FormError('Le dossier médical est requis.'));
+            } else {
+                if (null === $consultation->getMedecin() && $this->getUser() instanceof Utilisateur) {
+                    $consultation->setMedecin($this->getUser());
+                }
 
-            return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
+                $entityManager->persist($consultation);
+                $entityManager->flush();
+
+                return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
+            }
         }
 
         return $this->render('consultation/new.html.twig', [
             'consultation' => $consultation,
             'form' => $form,
         ]);
-    } */
+    } 
 
-        #[Route('', name: 'app_consultation_index', methods: ['GET'])]
-    public function index(ConsultationRepository $repo): Response
-    {
-        return $this->render('consultation/index.html.twig', [
-            'consultations' => $repo->findAll(),
-        ]);
-    }
+    //     #[Route('', name: 'app_consultation_index', methods: ['GET'])]
+    // public function index(ConsultationRepository $repo): Response
+    // {
+    //     return $this->render('consultation/index.html.twig', [
+    //         'consultations' => $repo->findAll(),
+    //     ]);
+    // }
 
-    #[Route('/{id}', name: 'app_consultation_show', methods: ['GET'])]
-    public function show(Consultation $consultation): Response
-    {
-        return $this->render('consultation/show.html.twig', [
-            'consultation' => $consultation,
-        ]);
-    }
+    // #[Route('/{id}', name: 'app_consultation_show', methods: ['GET'])]
+    // public function show(Consultation $consultation): Response
+    // {
+    //     return $this->render('consultation/show.html.twig', [
+    //         'consultation' => $consultation,
+    //     ]);
+    // }
 
-    #[Route('/{id}/medical', name: 'app_consultation_medical_edit', methods: ['GET', 'POST'])]
-    public function editMedical(
-        Request $request,
-        Consultation $consultation,
-        EntityManagerInterface $em
-    ): Response {
-        // Guard statut : pas modifiable si clôturée/annulée
-        if (\in_array($consultation->getStatut(), [StatutConsultation::CLOTURE, StatutConsultation::ANNULE], true)) {
-            $this->addFlash('warning', 'Consultation clôturée/annulée : modification interdite.');
-            return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
-        }
+    // #[Route('/{id}/medical', name: 'app_consultation_medical_edit', methods: ['GET', 'POST'])]
+    // public function editMedical(
+    //     Request $request,
+    //     Consultation $consultation,
+    //     EntityManagerInterface $em
+    // ): Response {
+    //     // Guard statut : pas modifiable si clôturée/annulée
+    //     if (\in_array($consultation->getStatut(), [StatutConsultation::CLOTURE, StatutConsultation::ANNULE], true)) {
+    //         $this->addFlash('warning', 'Consultation clôturée/annulée : modification interdite.');
+    //         return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
+    //     }
 
-        // IMPORTANT : Form dédié Phase C (à créer)
-        $form = $this->createForm(ConsultationType::class, $consultation, [
-            'context' => 'medical',
-        ]);
-        $form->handleRequest($request);
+    //     // IMPORTANT : Form dédié Phase C (à créer)
+    //     $form = $this->createForm(ConsultationType::class, $consultation, [
+    //         'context' => 'medical',
+    //     ]);
+    //     $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $em->flush();
-            $this->addFlash('success', 'Données médicales enregistrées.');
-            return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
-        }
+    //     if ($form->isSubmitted() && $form->isValid()) {
+    //         $em->flush();
+    //         $this->addFlash('success', 'Données médicales enregistrées.');
+    //         return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
+    //     }
 
-        return $this->render('consultation/medical_edit.html.twig', [
-            'consultation' => $consultation,
-            'form' => $form->createView(),
-        ]);
-    }
+    //     return $this->render('consultation/medical_edit.html.twig', [
+    //         'consultation' => $consultation,
+    //         'form' => $form->createView(),
+    //     ]);
+    // }
 
 
-    #[Route('/{id}', name: 'app_consultation_delete', methods: ['POST'])]
-    public function delete(Request $request, Consultation $consultation, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete'.$consultation->getId(), $request->getPayload()->getString('_token'))) {
-            $entityManager->remove($consultation);
-            $entityManager->flush();
-        }
+    // #[Route('/{id}', name: 'app_consultation_delete', methods: ['POST'])]
+    // public function delete(Request $request, Consultation $consultation, EntityManagerInterface $entityManager): Response
+    // {
+    //     if ($this->isCsrfTokenValid('delete'.$consultation->getId(), $request->getPayload()->getString('_token'))) {
+    //         $entityManager->remove($consultation);
+    //         $entityManager->flush();
+    //     }
 
-        return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
-    }
+    //     return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
+    // }
 }

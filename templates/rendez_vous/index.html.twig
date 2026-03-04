@@ -6,106 +6,164 @@
 <div class="row">
   <div class="col-12">
 
-    <div class="card card-primary">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title mb-0">Liste des Rendez-vous</h3>
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-0 py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h5 class="mb-0 fw-semibold">
+              <i class="fa fa-calendar-check me-2 text-primary"></i> Rendez-vous
+            </h5>
+            <div class="text-muted small">Gestion des rendez-vous et démarrage des consultations</div>
+          </div>
 
-        <button type="button"
-                class="btn btn-success"
-                data-bs-toggle="modal"
-                data-bs-target="#addRendezVousModal">
-          <i class="fa fa-plus"></i> Nouveau rendez-vous
-        </button>
+          <button type="button"
+                  class="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addRendezVousModal">
+            <i class="fa fa-plus me-1"></i> Nouveau rendez-vous
+          </button>
+        </div>
       </div>
 
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-striped table-bordered align-middle text-center mb-0">
+          <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
-              <tr>
-                <th>Date / Heure</th>
-                <th>Statut</th>
-                <th>Motif</th>
-                <th>Patient</th>
-                <th>Médecin</th>
-                <th>Consultation</th>
-                <th>Créé le</th>
-                <th style="width: 160px;">Actions</th>
+              <tr class="text-nowrap">
+                <th class="text-uppercase small text-muted">Date / Heure</th>
+                <th class="text-uppercase small text-muted">Statut</th>
+                <th class="text-uppercase small text-muted">Motif</th>
+                <th class="text-uppercase small text-muted">Patient</th>
+                <th class="text-uppercase small text-muted">Médecin</th>
+                <th class="text-uppercase small text-muted">Consultation</th>
+                <th class="text-uppercase small text-muted">Créé le</th>
+                <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
               </tr>
             </thead>
 
             <tbody>
             {% for rv in rendezVous %}
+              {% set statut = rv.statut.name ?? '' %}
+
               <tr>
-                <td>{{ rv.dateHeure ? rv.dateHeure|date('Y-m-d H:i') : '-' }}</td>
-                <td>{{ rv.statut.name ?? '-' }}</td>
-
-                <td class="text-start">
-                  {{ rv.motif ? rv.motif|u.truncate(60, '…', false) : '-' }}
+                <td class="text-nowrap">
+                  {% if rv.dateHeure %}
+                    <div class="fw-semibold">{{ rv.dateHeure|date('d/m/Y') }}</div>
+                    <div class="small text-muted">{{ rv.dateHeure|date('H:i') }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
                 </td>
 
-                {# ⚠️ Affichage patient / médecin: si tu n'as pas nom/prenom, fallback sur id #}
-                <td>
+                <td class="text-nowrap">
+                  {% if statut %}
+                    {% set badgeClass =
+                      statut == 'CONFIRME' ? 'bg-success-subtle text-success border' :
+                      (statut == 'ANNULE' ? 'bg-danger-subtle text-danger border' :
+                      (statut == 'EN_ATTENTE' ? 'bg-warning-subtle text-warning border' :
+                      'bg-light text-muted border'))
+                    %}
+                    <span class="badge {{ badgeClass }}">
+                      <i class="fa fa-circle me-1" style="font-size:8px;"></i> {{ statut }}
+                    </span>
+                  {% else %}
+                    <span class="badge bg-light text-muted border">N/A</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-start" style="min-width: 220px;">
+                  {{ rv.motif ? rv.motif|u.truncate(70, '…', false) : '—' }}
+                </td>
+
+                <td class="text-nowrap">
                   {% if rv.patient %}
-                    {{ rv.patient.nom }} {{ rv.patient.prenom ?? '' }} ({{ rv.patient.id }})
+                    <span class="badge bg-light text-dark border">
+                      <i class="fa fa-user me-1 text-muted"></i>
+                      {{ rv.patient.nom }} {{ rv.patient.prenom ?? '' }}
+                    </span>
                   {% else %}
-                    -
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
 
-                <td>
+                <td class="text-nowrap">
                   {% if rv.medecin %}
-                    {{ rv.medecin.nomComplet ?? rv.medecin.id }}
+                    <span class="badge bg-primary-subtle text-primary border">
+                      <i class="fa fa-user-md me-1"></i>
+                      {{ rv.medecin.nomComplet ?? rv.medecin.id }}
+                    </span>
                   {% else %}
-                    -
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
 
-                <td>
-                 {% set statut = rv.statut.name ?? '' %}
-
-                {% if rv.consultation %}
-                  <a class="btn btn-sm btn-outline-secondary"
-                    href="{{ path('app_consultation_show', {id: rv.consultation.id}) }}">
-                    Ouvrir
-                  </a>
-                {% else %}
-                  {% if statut == 'CONFIRME' %}
-                    <form method="post" action="{{ path('app_rendez_vous_start_consultation', {id: rv.id}) }}" class="d-inline">
-                      <input type="hidden" name="_token" value="{{ csrf_token('start_consultation_' ~ rv.id) }}">
-                      <button class="btn btn-sm btn-primary">
-                        <i class="fa fa-play me-1"></i> Démarrer
-                      </button>
-                    </form>
-                  {% else %}
-                    <span class="badge bg-secondary">Non démarrable ({{ statut ?: 'N/A' }})</span>
-                  {% endif %}
-                {% endif %}
-
-                </td>
-                <td>{{ rv.createdAt ? rv.createdAt|date('Y-m-d H:i') : '-' }}</td>
-
-                <td>
-                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions patient">
-                    <a class="btn btn-outline-secondary"
-                    title="Voir"
-                    href="{{ path('app_rendez_vous_show', {'id': rv.id}) }}">
-                    <i class="fa fa-eye"></i>
-                    Voir
+                <td class="text-nowrap">
+                  {% if rv.consultation %}
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{{ path('app_consultation_show', {id: rv.consultation.id}) }}">
+                      <i class="fa fa-folder-open me-1"></i> Ouvrir
                     </a>
+                  {% else %}
+                    {% if statut == 'CONFIRME' %}
+                      <form method="post"
+                            action="{{ path('app_rendez_vous_start_consultation', {id: rv.id}) }}"
+                            class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('start_consultation_' ~ rv.id) }}">
+                        <button class="btn btn-sm btn-primary">
+                          <i class="fa fa-play me-1"></i> Démarrer
+                        </button>
+                      </form>
+                    {% else %}
+                      <span class="badge bg-light text-muted border">Non démarrable</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if rv.createdAt %}
+                    <div class="small">{{ rv.createdAt|date('d/m/Y H:i') }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Actions RDV">
+                    <a class="btn btn-outline-secondary"
+                       title="Voir"
+                       href="{{ path('app_rendez_vous_show', {'id': rv.id}) }}">
+                      <i class="fa fa-eye me-1"></i> Voir
+                    </a>
+
+                    <a class="btn btn-outline-secondary"
+                       title="Imprimer"
+                       href="{{ path('app_rendez_vous_print', {'id': rv.id}) }}"
+                       target="_blank">
+                      <i class="fa fa-print me-1"></i> Imprimer
+                    </a>
+
                     <button type="button"
-                        class="btn btn-sm btn-outline-secondary js-edit-rdv"
-                        data-url="{{ path('app_rendez_vous_edit', {id: rv.id}) }}"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editRdvModal">
-                            <i class="ri-pencil-fill"></i>
+                            class="btn btn-outline-primary js-edit-rdv"
+                            title="Modifier"
+                            data-url="{{ path('app_rendez_vous_edit', {id: rv.id}) }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editRdvModal">
+                      <i class="ri-pencil-fill"></i>
                     </button>
-                </div>
+                  </div>
                 </td>
               </tr>
             {% else %}
               <tr>
-                <td colspan="8" class="text-muted">Aucun rendez-vous enregistré.</td>
+                <td colspan="8">
+                  <div class="py-5 text-center">
+                    <div class="mb-2">
+                      <i class="fa fa-info-circle text-muted" style="font-size:28px;"></i>
+                    </div>
+                    <div class="fw-semibold">Aucun rendez-vous enregistré</div>
+                    <div class="text-muted small">Ajoute un rendez-vous pour commencer.</div>
+                  </div>
+                </td>
               </tr>
             {% endfor %}
             </tbody>
@@ -121,13 +179,15 @@
 {# =========================
    MODAL AJOUT RENDEZ-VOUS
 ========================= #}
-<div class="modal fade" id="addRendezVousModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+<div class="modal fade" id="addRendezVousModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
 
-      <div class="modal-header">
-        <h5 class="modal-title">Nouveau Rendez-vous</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-plus me-2 text-primary"></i> Nouveau rendez-vous
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
 
       <div class="modal-body">
@@ -137,15 +197,17 @@
           <div class="col-md-6">{{ form_row(form.dateHeure) }}</div>
           <div class="col-md-6">{{ form_row(form.statut) }}</div>
 
-          <div class="col-md-12">{{ form_row(form.motif) }}</div>
+          <div class="col-12">{{ form_row(form.motif) }}</div>
 
           <div class="col-md-6">{{ form_row(form.patient) }}</div>
           <div class="col-md-6">{{ form_row(form.medecin) }}</div>
-
         </div>
 
-        <div class="d-flex justify-content-end mt-4">
-          <button class="btn btn-success">Enregistrer</button>
+        <div class="d-flex justify-content-end mt-4 gap-2">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Annuler</button>
+          <button class="btn btn-primary">
+            <i class="fa fa-save me-1"></i> Enregistrer
+          </button>
         </div>
 
         {{ form_end(form) }}
@@ -155,121 +217,160 @@
   </div>
 </div>
 
-
-{# Modale édition rendez-vous (contenu chargé en AJAX) #}
+{# =========================
+   MODAL EDIT RDV (AJAX)
+========================= #}
 <div class="modal fade" id="editRdvModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
 
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fa fa-pen me-1"></i> Modifier Rendez-vous
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-pen me-2 text-primary"></i> Modifier rendez-vous
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
 
       <div class="modal-body">
-        <div class="text-center py-4" id="editRdvLoader">
+        <div id="editRdvLoader" class="py-5 text-center">
           <div class="spinner-border" role="status" aria-hidden="true"></div>
-          <div class="mt-2 text-muted">Chargement...</div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
         </div>
 
         <div id="editRdvModalBody" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Fermer</button>
       </div>
 
     </div>
   </div>
 </div>
 {% endblock %}
+
 {% block javascripts %}
   {{ parent() }}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const modalEl = document.getElementById('editRdvModal');
-  const loader = document.getElementById('editRdvLoader');
-  const body   = document.getElementById('editRdvModalBody');
+  <script>
+    (function () {
+      const modalEl = document.getElementById('editRdvModal');
+      const loader  = document.getElementById('editRdvLoader');
+      const body    = document.getElementById('editRdvModalBody');
 
-  // 1) Charger le formulaire edit dans la modale
-  document.querySelectorAll('.js-edit-rdv').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
+      let currentUrl = null;
 
-      const url = btn.getAttribute('data-url');
+      function setLoading() {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+      }
 
-      // reset UI
-      loader.classList.remove('d-none');
-      body.classList.add('d-none');
-      body.innerHTML = '';
+      function showError(msg) {
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+        body.innerHTML = `
+          <div class="alert alert-danger d-flex align-items-start gap-2 mb-0">
+            <i class="fa fa-exclamation-triangle mt-1"></i>
+            <div>
+              <div class="fw-semibold">Erreur</div>
+              <div class="small">${msg || "Impossible de charger le formulaire."}</div>
+            </div>
+          </div>
+        `;
+      }
 
-      try {
+      function focusFirstField() {
+        const first = body.querySelector('input, select, textarea');
+        if (first) first.focus();
+      }
+
+      async function loadEdit(url) {
+        currentUrl = url;
+        setLoading();
+
         const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
         const html = await resp.text();
-
         body.innerHTML = html;
+
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
-        // une fois le HTML injecté => attacher submit AJAX
-        attachRdvEditAjaxSubmit();
-      } catch (err) {
-        loader.classList.add('d-none');
-        body.classList.remove('d-none');
-        body.innerHTML = '<div class="alert alert-danger">Erreur de chargement du formulaire.</div>';
+        focusFirstField();
+        bindEditSubmit();
       }
-    });
-  });
 
-  // 2) Soumission AJAX : si erreurs => re-render formulaire dans la modale
-  function attachRdvEditAjaxSubmit() {
-  const form = document.getElementById('RdvEditForm');
-  if (!form) return;
+      function bindEditSubmit() {
+        // ⚠️ ton template edit doit sortir un form avec id="RdvEditForm"
+        const form = body.querySelector('#RdvEditForm') || body.querySelector('form');
+        if (!form) return;
 
-  if (form.dataset.bound === '1') return;
-  form.dataset.bound = '1';
+        if (form.dataset.bound === '1') return;
+        form.dataset.bound = '1';
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
 
-    const action = form.getAttribute('action');
-    if (!action) {
-      body.innerHTML = '<div class="alert alert-danger">Action du formulaire manquante.</div>';
-      return;
-    }
+          const submitBtn = form.querySelector('[type="submit"]');
+          const oldHtml = submitBtn ? submitBtn.innerHTML : null;
 
-    const formData = new FormData(form);
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
+          }
 
-    const resp = await fetch(action, {
-      method: 'POST',
-      body: formData,
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
+          try {
+            const action = form.getAttribute('action') || currentUrl;
+            const formData = new FormData(form);
 
-    const contentType = resp.headers.get('content-type') || '';
+            const resp = await fetch(action, {
+              method: (form.getAttribute('method') || 'POST').toUpperCase(),
+              body: formData,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
 
-    if (contentType.includes('application/json')) {
-      const data = await resp.json();
-      if (data.success) {
-        // Fermer modal proprement + reload
-        const modal = bootstrap.Modal.getInstance(document.getElementById('editRdvModal'));
-        modal?.hide();
-        window.location.reload();
-        return;
+            const contentType = resp.headers.get('content-type') || '';
+
+            if (contentType.includes('application/json')) {
+              const data = await resp.json();
+              if (data.success) {
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+                window.location.reload();
+                return;
+              }
+            }
+
+            // erreurs => HTML
+            body.innerHTML = await resp.text();
+            focusFirstField();
+            bindEditSubmit();
+          } catch (err) {
+            showError("Une erreur est survenue lors de l'enregistrement.");
+          } finally {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = oldHtml;
+            }
+          }
+        });
       }
-    }
 
-    // Erreurs => HTML
-    body.innerHTML = await resp.text();
-    attachRdvEditAjaxSubmit();
-  });
-}
+      // Délégation => pas besoin de querySelectorAll
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-rdv');
+        if (!btn) return;
 
-  // Optionnel: nettoyer à la fermeture
-  modalEl.addEventListener('hidden.bs.modal', () => {
-    loader.classList.remove('d-none');
-    body.classList.add('d-none');
-    body.innerHTML = '';
-  });
-});
-</script>
+        const url = btn.getAttribute('data-url');
+        if (!url) return;
 
+        loadEdit(url).catch(() => showError("Impossible de charger le formulaire. Vérifie la route et la réponse AJAX."));
+      });
+
+      modalEl?.addEventListener('hidden.bs.modal', () => {
+        currentUrl = null;
+        setLoading();
+      });
+    })();
+  </script>
 {% endblock %}

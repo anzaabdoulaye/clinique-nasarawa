@@ -128,4 +128,12 @@ public function startConsultation(
 
     return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
 }
+
+    #[Route('/{id}/print', name: 'app_rendez_vous_print', methods: ['GET'])]
+    public function print(RendezVous $rendezVous): Response
+    {
+        return $this->render('rendez_vous/print.html.twig', [
+            'rendez_vous' => $rendezVous,
+        ]);
+    }
 }

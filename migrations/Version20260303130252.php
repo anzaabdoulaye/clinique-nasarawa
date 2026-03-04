@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260302152537 extends AbstractMigration
+final class Version20260303130252 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -27,12 +27,16 @@ final class Version20260302152537 extends AbstractMigration
         $this->addSql('CREATE INDEX IDX_8514B08162FF6CDF ON examen_demande (consultation_id)');
         $this->addSql('ALTER TABLE acte_realise ADD CONSTRAINT FK_ECE410B262FF6CDF FOREIGN KEY (consultation_id) REFERENCES consultation (id) NOT DEFERRABLE');
         $this->addSql('ALTER TABLE examen_demande ADD CONSTRAINT FK_8514B08162FF6CDF FOREIGN KEY (consultation_id) REFERENCES consultation (id) NOT DEFERRABLE');
+        $this->addSql('ALTER TABLE consultation ADD statut VARCHAR(255) NOT NULL');
         $this->addSql('ALTER TABLE consultation ADD histoire TEXT DEFAULT NULL');
         $this->addSql('ALTER TABLE consultation ADD examen_clinique TEXT DEFAULT NULL');
         $this->addSql('ALTER TABLE consultation ADD conduite_atenir TEXT DEFAULT NULL');
         $this->addSql('ALTER TABLE consultation ADD cim10_id INT DEFAULT NULL');
+        $this->addSql('ALTER TABLE consultation ALTER rendez_vous_id SET NOT NULL');
         $this->addSql('ALTER TABLE consultation ADD CONSTRAINT FK_964685A664681836 FOREIGN KEY (cim10_id) REFERENCES cim10_code (id) NOT DEFERRABLE');
         $this->addSql('CREATE INDEX IDX_964685A664681836 ON consultation (cim10_id)');
+        $this->addSql('ALTER TABLE service_medical ALTER libelle TYPE VARCHAR(255)');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_B85F55C6A4D60759 ON service_medical (libelle)');
     }
 
     public function down(Schema $schema): void
@@ -45,9 +49,13 @@ final class Version20260302152537 extends AbstractMigration
         $this->addSql('DROP TABLE examen_demande');
         $this->addSql('ALTER TABLE consultation DROP CONSTRAINT FK_964685A664681836');
         $this->addSql('DROP INDEX IDX_964685A664681836');
+        $this->addSql('ALTER TABLE consultation DROP statut');
         $this->addSql('ALTER TABLE consultation DROP histoire');
         $this->addSql('ALTER TABLE consultation DROP examen_clinique');
         $this->addSql('ALTER TABLE consultation DROP conduite_atenir');
         $this->addSql('ALTER TABLE consultation DROP cim10_id');
+        $this->addSql('ALTER TABLE consultation ALTER rendez_vous_id DROP NOT NULL');
+        $this->addSql('DROP INDEX UNIQ_B85F55C6A4D60759');
+        $this->addSql('ALTER TABLE service_medical ALTER libelle TYPE VARCHAR(150)');
     }
 }

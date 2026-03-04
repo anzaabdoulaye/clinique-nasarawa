@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 #[IsGranted('ROLE_USER')]
 #[Route('/hospitalisation')]
@@ -47,6 +49,34 @@ final class HospitalisationController extends AbstractController
     {
         return $this->render('hospitalisation/show.html.twig', [
             'hospitalisation' => $hospitalisation,
+        ]);
+    }
+
+    #[Route('/{id}/print', name: 'app_hospitalisation_print', methods: ['GET'])]
+    public function print(Hospitalisation $hospitalisation): Response
+    {
+        // configure Dompdf according to your needs
+        $options = new Options();
+        $options->set('defaultFont', 'Helvetica');
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+
+        // render Twig template to HTML
+        $html = $this->renderView('hospitalisation/print.html.twig', [
+            'hospitalisation' => $hospitalisation,
+        ]);
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // return PDF response
+        $pdfOutput = $dompdf->output();
+
+        return new Response($pdfOutput, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="hospitalisation-%d.pdf"', $hospitalisation->getId()),
         ]);
     }
 

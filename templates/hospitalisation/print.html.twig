@@ -1,0 +1,272 @@
+
+
+{% block title %}Fiche Hospitalisation{% endblock %}
+
+{% block body %}
+<style>
+  .sheet { max-width: 900px; margin: 0 auto; }
+  .box { border: 1px solid #000; border-radius: 6px; padding: 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .line { border-bottom: 1px dotted #333; display: inline-block; min-width: 220px; }
+  .h { font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: .5px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+  @media print {
+    .no-print { display:none !important; }
+    body { background:#fff !important; }
+  }
+</style>
+
+<div class="sheet my-3">
+
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <div class="h">CLINIQUE MAINASSARA</div>
+      <div class="small">Adresse : ______________________________</div>
+      <div class="small">Tél : __________________  Email : __________________</div>
+    </div>
+    <div class="text-end">
+      <div class="h">FICHE D’HOSPITALISATION</div>
+      <div><strong>N° :</strong> {{ hospitalisation.numero ?? '—' }}</div>
+      <div class="small"><strong>Édité le :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
+    </div>
+  </div>
+
+  <hr>
+
+  {# A. Identification #}
+  <div class="box mb-2">
+    <div class="h mb-2">A. Identification patient</div>
+    <div class="grid">
+      <div><strong>Nom & Prénom :</strong> {{ hospitalisation.dossierMedical.patient.nom }} {{ hospitalisation.dossierMedical.patient.prenom }}</div>
+      <div><strong>Sexe :</strong> {{ hospitalisation.dossierMedical.patient.sexe ?? '—' }} | <strong>Âge :</strong> {{ hospitalisation.dossierMedical.patient.age ?? '—' }}</div>
+      {# <div><strong>Date naissance :</strong> {{ hospitalisation.dossierMedical.patient.dateNaissance ? hospitalisation.dossierMedical.patient.dateNaissance|date('d/m/Y') : '—' }}</div> #}
+      <div><strong>N° dossier :</strong> {{ hospitalisation.dossierMedical.patient.code ?? '—' }}</div>
+      <div><strong>Téléphone :</strong> {{ hospitalisation.dossierMedical.patient.telephone ?? '—' }}</div>
+      <div><strong>Adresse :</strong> {{ hospitalisation.dossierMedical.patient.adresse ?? '—' }}</div>
+      <div><strong>Personne à prévenir :</strong> {{ hospitalisation.dossierMedical.patient.emergencyContactName ?? '—' }}</div>
+      <div><strong>Tél contact :</strong> {{ hospitalisation.dossierMedical.patient.emergencyContactPhone ?? '—' }}</div>
+      <div><strong>Assurance / Mutuelle :</strong> {{ hospitalisation.dossierMedical.patient.assurance ?? '—' }}</div>
+      <div><strong>N° police :</strong> {{ hospitalisation.dossierMedical.patient.numeroPolice ?? '—' }}</div>
+    </div>
+  </div>
+
+  {# B. Admission #}
+  <div class="box mb-2">
+    <div class="h mb-2">B. Admission</div>
+    <div class="grid">
+      <div><strong>Date/Heure :</strong> {{ hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('d/m/Y H:i') : '—' }}</div>
+      <div><strong>Mode :</strong> {{ hospitalisation.modeAdmission ?? '—' }}</div>
+      <div><strong>Service :</strong> {{ hospitalisation.service ?? '—' }}</div>
+      <div><strong>Unité :</strong> {{ hospitalisation.unite ?? '—' }}</div>
+      <div><strong>Médecin référent :</strong> {{ medecin.nomComplet ?? '—' }}</div>
+      <div><strong>Infirmier(ère) :</strong> {{ hospitalisation.infirmierGarde ?? '—' }}</div>
+      <div><strong>Chambre / Lit :</strong> {{ hospitalisation.chambre ?? '—' }} / {{ hospitalisation.lit ?? '—' }}</div>
+      <div><strong>Contexte :</strong> {{ hospitalisation.contexte ?? '—' }}</div>
+    </div>
+    <div class="mt-2"><strong>Motif :</strong> {{ hospitalisation.motif ?? '—' }}</div>
+    <div class="mt-1"><strong>Diagnostic d’entrée :</strong> {{ hospitalisation.diagnosticEntree ?? '—' }}</div>
+  </div>
+
+  {# C. Anamnèse #}
+  <div class="box mb-2">
+    <div class="h mb-2">C. Anamnèse / historique</div>
+    <div><strong>Histoire de la maladie :</strong><br>{{ hospitalisation.histoireMaladie ?? '—' }}</div>
+    <hr>
+    <div class="grid">
+      <div><strong>Antécédents médicaux :</strong> {{ hospitalisation.antecedentsMedicaux ?? '—' }}</div>
+      <div><strong>Antécédents chirurgicaux :</strong> {{ hospitalisation.antecedentsChirurgicaux ?? '—' }}</div>
+      <div><strong>Allergies :</strong> {{ hospitalisation.allergies ?? (patient.allergies ?? '—') }}</div>
+      <div><strong>Traitements habituels :</strong> {{ hospitalisation.traitementsHabituels ?? (patient.traitementEnCours ?? '—') }}</div>
+      <div><strong>Habitudes :</strong> {{ hospitalisation.habitudes ?? '—' }}</div>
+      <div><strong>Vaccins :</strong> {{ hospitalisation.statutVaccinal ?? '—' }}</div>
+    </div>
+  </div>
+
+  {# D. Examen clinique #}
+  <div class="box mb-2">
+    <div class="h mb-2">D. Examen clinique à l’admission</div>
+
+    <table class="mb-2">
+      <tr>
+        <th>T°</th><th>TA</th><th>FC</th><th>FR</th><th>SpO2</th><th>Poids</th><th>Taille</th><th>Glycémie</th>
+      </tr>
+      <tr>
+        <td>{{ hospitalisation.temperature ?? '—' }}</td>
+        <td>{{ hospitalisation.tension ?? '—' }}</td>
+        <td>{{ hospitalisation.fc ?? '—' }}</td>
+        <td>{{ hospitalisation.fr ?? '—' }}</td>
+        <td>{{ hospitalisation.spo2 ?? '—' }}</td>
+        <td>{{ hospitalisation.poids ?? (patient.poids ?? '—') }}</td>
+        <td>{{ hospitalisation.taille ?? (patient.taille ?? '—') }}</td>
+        <td>{{ hospitalisation.glycemie ?? '—' }}</td>
+      </tr>
+    </table>
+
+    <div class="grid">
+      <div><strong>Conscience :</strong> {{ hospitalisation.conscience ?? '—' }} (Glasgow : {{ hospitalisation.glasgow ?? '—' }}/15)</div>
+      <div><strong>Douleur EVA :</strong> {{ hospitalisation.eva ?? '—' }}/10</div>
+      <div><strong>Hydratation :</strong> {{ hospitalisation.hydratation ?? '—' }}</div>
+      <div><strong>Signes :</strong> {{ hospitalisation.signesGeneraux ?? '—' }}</div>
+    </div>
+
+    <hr>
+    <div><strong>Examen cardio :</strong> {{ hospitalisation.examenCardio ?? '—' }}</div>
+    <div><strong>Examen respiratoire :</strong> {{ hospitalisation.examenResp ?? '—' }}</div>
+    <div><strong>Examen digestif :</strong> {{ hospitalisation.examenDigestif ?? '—' }}</div>
+    <div><strong>Examen neurologique :</strong> {{ hospitalisation.examenNeuro ?? '—' }}</div>
+    <div><strong>Examen uro-génital :</strong> {{ hospitalisation.examenUro ?? '—' }}</div>
+    <div><strong>Peau / ostéo-articulaire :</strong> {{ hospitalisation.examenPeauOsteo ?? '—' }}</div>
+  </div>
+
+  {# E. Examens complémentaires #}
+  <div class="box mb-2">
+    <div class="h mb-2">E. Examens complémentaires</div>
+    <div><strong>Demandés :</strong> {{ hospitalisation.examensDemandes ?? '—' }}</div>
+    <div class="mt-1"><strong>Résultats / synthèse :</strong><br>{{ hospitalisation.resultatsExamens ?? '—' }}</div>
+  </div>
+
+  {# F. Diagnostics & plan de soins #}
+  <div class="box mb-2">
+    <div class="h mb-2">F. Diagnostics et plan de soins</div>
+    <div><strong>Diagnostic retenu :</strong> {{ hospitalisation.diagnosticRetenu ?? '—' }}</div>
+    <div><strong>Associés :</strong> {{ hospitalisation.diagnosticsAssocies ?? '—' }}</div>
+    <div><strong>Plan :</strong> {{ hospitalisation.planSoins ?? '—' }}</div>
+    <div><strong>Précautions :</strong> {{ hospitalisation.precautions ?? '—' }}</div>
+  </div>
+
+  {# G. Prescriptions #}
+  <div class="box mb-2">
+    <div class="h mb-2">G. Prescriptions médicales</div>
+    <div><strong>Traitements :</strong><br>{{ hospitalisation.traitementsPrescrits ?? '—' }}</div>
+    <div class="mt-1"><strong>Perfusions / solutés :</strong> {{ hospitalisation.perfusions ?? '—' }}</div>
+    <div class="mt-1"><strong>Régime :</strong> {{ hospitalisation.regime ?? '—' }}</div>
+    <div class="mt-1"><strong>Actes / procédures :</strong> {{ hospitalisation.actes ?? '—' }}</div>
+    <div class="mt-1"><strong>Contrôles :</strong> {{ hospitalisation.examensControle ?? '—' }}</div>
+  </div>
+
+  {# H. Surveillance #}
+  <div class="box mb-2">
+    <div class="h mb-2">H. Surveillance infirmière</div>
+    <div class="grid">
+      <div><strong>Constantes :</strong> {{ hospitalisation.frequenceConstantes ?? '—' }}</div>
+      <div><strong>Diurèse :</strong> {{ hospitalisation.diurese ?? '—' }}</div>
+      <div><strong>Entrées/Sorties :</strong> {{ hospitalisation.entreesSorties ?? '—' }}</div>
+      <div><strong>Pansements :</strong> {{ hospitalisation.pansements ?? '—' }}</div>
+    </div>
+    <div class="mt-1"><strong>Notes infirmières :</strong><br>{{ hospitalisation.notesInfirmieres ?? '—' }}</div>
+  </div>
+
+  {# I. Évolution #}
+  <div class="box mb-2">
+    <div class="h mb-2">I. Évolution / visites médicales</div>
+    <div class="small text-muted">Section à compléter quotidiennement (observations, décisions, modifications traitement).</div>
+    <div style="height: 70px;"></div>
+  </div>
+
+  {# J. Sortie #}
+  <div class="box mb-2">
+    <div class="h mb-2">J. Sortie / fin d’hospitalisation</div>
+    <div class="grid">
+      <div><strong>Date/Heure sortie :</strong> {{ hospitalisation.dateSortie ? hospitalisation.dateSortie|date('d/m/Y H:i') : '—' }}</div>
+      <div><strong>Mode :</strong> {{ hospitalisation.modeSortie ?? '—' }}</div>
+      <div><strong>Diagnostic final :</strong> {{ hospitalisation.diagnosticFinal ?? '—' }}</div>
+      <div><strong>Durée séjour :</strong> {{ hospitalisation.dureeSejour ?? '—' }} jours</div>
+    </div>
+    <div class="mt-1"><strong>Recommandations :</strong><br>{{ hospitalisation.recommandations ?? '—' }}</div>
+  </div>
+
+  {# Signatures #}
+  <div class="box">
+    <div class="h mb-2">Signatures</div>
+    <div class="grid">
+      <div><strong>Médecin</strong> : ____________________  Cachet : ____________________</div>
+      <div><strong>Infirmier(ère)</strong> : ____________________</div>
+      <div><strong>Patient/Parent</strong> : ____________________</div>
+      <div><strong>Date</strong> : ____/____/______</div>
+    </div>
+  </div>
+
+  <div class="no-print mt-3 d-flex gap-2">
+    <button class="btn btn-primary" onclick="window.print()"><i class="ri-printer-line me-1"></i> Imprimer</button>
+    <a href="{{ path('app_hospitalisation_show', {id: hospitalisation.id}) }}" class="btn btn-soft-secondary">Retour</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{# 
+
+{% block title %}Fiche hospitalisation - {{ hospitalisation.id }}{% endblock %}
+
+{% block body %}
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #222; }
+  .header { text-align: center; margin-bottom: 12px; }
+  .meta { margin-bottom: 8px; }
+  .section { margin-bottom: 10px; }
+  .label { font-weight: 600; width: 180px; display: inline-block; }
+  .value { display: inline-block; }
+  .boxed { border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+</style>
+
+<div class="header">
+  <h2>Fiche d'hospitalisation</h2>
+  <div>Clinique Mainassara</div>
+</div>
+
+<div class="boxed">
+  <div class="meta">
+    <div><span class="label">N° hospitalisation :</span> <span class="value">{{ hospitalisation.id }}</span></div>
+    <div><span class="label">Date admission :</span> <span class="value">{{ hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('Y-m-d H:i') : '-' }}</span></div>
+    <div><span class="label">Date sortie :</span> <span class="value">{{ hospitalisation.dateSortie ? hospitalisation.dateSortie|date('Y-m-d H:i') : '-' }}</span></div>
+  </div>
+
+  <div class="section">
+    <div><span class="label">Patient :</span>
+      <span class="value">
+        {% if hospitalisation.dossierMedical and hospitalisation.dossierMedical.patient %}
+          {{ hospitalisation.dossierMedical.patient.nom }} {{ hospitalisation.dossierMedical.patient.prenom }}
+          ({{ hospitalisation.dossierMedical.patient.code }})
+        {% else %}
+          -
+        {% endif %}
+      </span>
+    </div>
+    <div><span class="label">Médecin référent :</span> <span class="value">{{ hospitalisation.medecinReferent ? hospitalisation.medecinReferent.nom ~ ' ' ~ hospitalisation.medecinReferent.prenom : '-' }}</span></div>
+  </div>
+
+  <hr />
+
+  <div class="section">
+    <div><span class="label">Motif d'admission :</span></div>
+    <div class="value">{{ hospitalisation.motifAdmission }}</div>
+  </div>
+
+  <div class="section">
+    <div><span class="label">Histoire de la maladie :</span></div>
+    <div class="value">{{ hospitalisation.histoireMaladie }}</div>
+  </div>
+
+  <div class="section">
+    <div><span class="label">Évolution :</span></div>
+    <div class="value">{{ hospitalisation.evolution }}</div>
+  </div>
+
+  <div class="section">
+    <div><span class="label">Conclusion :</span></div>
+    <div class="value">{{ hospitalisation.conclusion }}</div>
+  </div>
+
+  <div class="section">
+    <div><span class="label">Statut :</span> <span class="value">{{ hospitalisation.statut.value }}</span></div>
+  </div>
+
+  <hr />
+  <div class="section">
+    <div><span class="label">Créé le :</span> <span class="value">{{ hospitalisation.createdAt ? hospitalisation.createdAt|date('Y-m-d H:i') : '-' }}</span></div>
+    <div><span class="label">Modifié le :</span> <span class="value">{{ hospitalisation.modifiedAt ? hospitalisation.modifiedAt|date('Y-m-d H:i') : '-' }}</span></div>
+  </div>
+</div>
+
+{% endblock %} #}

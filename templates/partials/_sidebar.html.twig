@@ -1,35 +1,93 @@
 <!-- ========== App Menu ========== -->
+<style>
+
+/* =============================
+   LOGO CLINIQUE
+============================= */
+
+.navbar-brand-box{
+    height:auto !important;
+    padding: 5px;
+    text-align:center;
+}
+
+/* logo circulaire */
+.clinique-logo{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    background:white;
+    padding:3px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    transition:all 0.3s;
+}
+
+/* effet hover */
+.clinique-logo:hover{
+    transform:scale(1.05);
+}
+
+/* logo réduit sidebar */
+.logo-sm .clinique-logo{
+    width:40px;
+    height:40px;
+}
+
+/* alignement logo */
+.logo{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* espace menu */
+.menu-title{
+    margin-top:10px;
+}
+
+</style>
+
 <div class="app-menu navbar-menu">
+
     <!-- LOGO -->
     <div class="navbar-brand-box">
-        <a href="{{ path('home') }}" class="logo logo-dark">
-            <span class="logo-sm">
-                <img src="{{ asset('assets/images/logo-sm.png') }}" alt="" height="22">
-            </span>
-            <span class="logo-lg">
-                <img src="{{ asset('assets/images/logo-dark.png') }}" alt="" height="17">
-            </span>
-        </a>
+
         <a href="{{ path('home') }}" class="logo logo-light">
-            <span class="logo-sm">
-                <img src="{{ asset('assets/images/logo-sm.png') }}" alt="" height="22">
-            </span>
+
             <span class="logo-lg">
-                <img src="{{ asset('assets/images/logo-light.png') }}" alt="" height="17">
+                <img src="{{ asset('logo.png') }}" 
+                     alt="Clinique Mainassara"
+                     class="clinique-logo">
             </span>
+
+            <span class="logo-sm">
+                <img src="{{ asset('logo.png') }}" 
+                     alt="Clinique Mainassara"
+                     class="clinique-logo">
+            </span>
+
         </a>
-        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
+
+        <button type="button"
+                class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
+                id="vertical-hover">
             <i class="ri-record-circle-line"></i>
         </button>
+
     </div>
 
-    <div class="dropdown sidebar-user m-1 rounded">
+    <!-- USER -->
+    <div class="dropdown sidebar-user m-2 rounded">
         <button type="button" class="btn material-shadow-none" data-bs-toggle="dropdown">
             <span class="d-flex align-items-center gap-2">
-                <img class="rounded header-profile-user" src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Header Avatar">
+                <img class="rounded header-profile-user"
+                     src="{{ asset('assets/images/users/avatar-1.jpg') }}"
+                     alt="Header Avatar">
+
                 <span class="text-start">
                     <span class="d-block fs-14 sidebar-user-name-sub-text">
-                        <i class="ri ri-circle-fill fs-10 text-success align-baseline"></i> 
+                        <i class="ri ri-circle-fill fs-10 text-success align-baseline"></i>
                         <span class="align-middle">Online</span>
                     </span>
                 </span>
@@ -39,77 +97,94 @@
 
     <div id="scrollbar">
         <div class="container-fluid">
-            <div id="two-column-menu"></div>
-            
-            <ul class="navbar-nav" id="navbar-nav">
-                <li class="menu-title"><span data-key="t-menu">Menu</span></li>
+
+            <ul class="navbar-nav">
+
+                <li class="menu-title">
+                    <span>MENU</span>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'home' ? 'active' : '' }}"
-                    href="{{ path('home') }}">
+                       href="{{ path('home') }}">
                         <i class="ri-dashboard-line"></i>
                         <span>Tableau de bord</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_patient_index' ? 'active' : '' }}"
-                    href="{{ path('app_patient_index') }}">
+                       href="{{ path('app_patient_index') }}">
                         <i class="ri-group-line"></i>
-                        <span data-key="t-apps">Patients</span>
+                        <span>Patients</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_consultation_index' ? 'active' : '' }}"
-                    href="{{ path('app_consultation_index') }}">
+                       href="{{ path('app_consultation_index') }}">
                         <i class="ri-health-book-line"></i>
-                        <span data-key="t-ecommerce">Consultations</span>
+                        <span>Consultations</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_rendez_vous_index' ? 'active' : '' }}"
-                    href="{{ path('app_rendez_vous_index') }}">
-                        <i class="ri-calendar-event-line"></i> 
-                        <span data-key="t-ecommerce">Rendez-vous</span>
+                       href="{{ path('app_rendez_vous_index') }}">
+                        <i class="ri-calendar-event-line"></i>
+                        <span>Rendez-vous</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_facture_index' ? 'active' : '' }}"
-                    href="{{ path('app_facture_index') }}">
-                        <i class="ri-cash-line"></i> 
-                        <span data-key="t-ecommerce">Factures</span>
+                       href="{{ path('app_facture_index') }}">
+                        <i class="ri-cash-line"></i>
+                        <span>Factures</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
-                    <a class="nav-link menu-link" href="#" role="button">
+                    <a class="nav-link menu-link"
+                       href="#">
                         <i class="ri-folder-chart-line"></i>
-                        <span data-key="t-ecommerce">Rapports</span>
+                        <span>Rapports</span>
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_hospitalisation_index' ? 'active' : '' }}"
-                    href="{{ path('app_hospitalisation_index') }}">
-                        <i class="ri-hospital-line"></i> 
-                        <span data-key="t-ecommerce">Hospitalisation</span>
+                       href="{{ path('app_hospitalisation_index') }}">
+                        <i class="ri-hospital-line"></i>
+                        <span>Hospitalisation</span>
                     </a>
                 </li>
+
+                <li class="menu-title">
+                    <span>AUTRES</span>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_utilisateur_index' ? 'active' : '' }}"
+                       href="{{ path('app_utilisateur_index') }}">
+                        <i class="ri-user-line"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_utilisateur_param' ? 'active' : '' }}"
+                       href="{{ path('app_utilisateur_param') }}">
+                        <i class="ri-settings-5-line"></i>
+                        <span>Paramètres</span>
+                    </a>
+                </li>
+
             </ul>
-             <ul class="navbar-nav" id="navbar-nav">
-                <li class="menu-title"><span data-key="t-menu">Autres</span></li>
-                <li class="nav-item">
-                          <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_utilisateur_index' ? 'active' : '' }}"
-                    href="{{ path('app_utilisateur_index') }}">
-                        <i class="ri-user-line"></i> 
-                        <span data-key="t-dashboards">Utilisateurs</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                        <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_utilisateur_param' ? 'active' : '' }}"
-                    href="{{ path('app_utilisateur_param') }}">
-                        <i class="ri-settings-5-line"></i> 
-                        <span data-key="t-dashboards">Paramètres</span>
-                    </a>
-                </li>
-            </ul>    
+
         </div>
     </div>
+
     <div class="sidebar-background"></div>
+
 </div>
