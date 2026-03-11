@@ -34,13 +34,13 @@
     }
 
     .medic-col {
-    width: 160px;
+        width: 160px;
     }
 
     .medic-text {
-    max-width: 160px;
-    white-space: normal;
-    word-break: break-word;
+        max-width: 160px;
+        white-space: normal;
+        word-break: break-word;
     }
 
     .scheduled-cell {
@@ -50,6 +50,14 @@
     .hour-active {
         background-color: #0d6efd !important;
         color: #fff !important;
+    }
+
+    .hour-missed {
+        background: #f8d7da !important;
+    }
+
+    .hour-upcoming {
+        background: #fff3cd !important;
     }
 
     .admin-cell-btn {
@@ -80,11 +88,74 @@
         background: #6c757d;
         display: inline-block;
     }
+
+    .alert-strip {
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .alert-strip-danger {
+        background: #f8d7da;
+        color: #842029;
+        border: 1px solid #f1aeb5;
+    }
+
+    .alert-strip-warning {
+        background: #fff3cd;
+        color: #664d03;
+        border: 1px solid #ffecb5;
+    }
+
+    .badge-alert {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 6px;
+        margin-right: 4px;
+    }
+
+    .badge-alert-info {
+        background: #e7f1ff;
+        color: #0a58ca;
+    }
+
+    .badge-alert-warning {
+        background: #fff3cd;
+        color: #997404;
+    }
+
+    .badge-alert-danger {
+        background: #f8d7da;
+        color: #842029;
+    }
 </style>
 
 {# Initialisation des variables #}
 {% set statut = hospitalisation.statut.value ?? hospitalisation.statut %}
 {% set patient = hospitalisation.dossierMedical.patient ?? null %}
+{% set today = "now"|date("Y-m-d") %}
+{% set currentHour = "now"|date("G") %}
+{% set missedCount = 0 %}
+{% set endingTodayCount = 0 %}
+
+{% for t in hospitalisation.traitements %}
+    {% if t.dateFin and t.dateFin|date("Y-m-d") == today %}
+        {% set endingTodayCount = endingTodayCount + 1 %}
+    {% endif %}
+
+    {% if t.dateDebut and t.dateFin and t.dateDebut|date("Y-m-d") <= today and t.dateFin|date("Y-m-d") >= today %}
+        {% for h in t.heuresAdministration %}
+            {% if h < currentHour and not t.isAdministeredAt("now"|date_modify("midnight"), h) %}
+                {% set missedCount = missedCount + 1 %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
 
 <div class="hs-wrap mt-4">
     {# ====== ENTÊTE ====== #}
@@ -121,7 +192,6 @@
         </div>
 
         <div class="card-body">
-            {# ====== INFOS CLÉS ====== #}
             <div class="hs-kv mb-4">
                 <div class="hs-field">
                     <div class="hs-label">Dossier Médical</div>
@@ -141,7 +211,6 @@
                 </div>
             </div>
 
-            {# ====== SECTIONS MÉDICALES ====== #}
             <div class="row g-3">
                 <div class="col-12">
                     <div class="hs-section">
@@ -176,77 +245,107 @@
             </button>
         </div>
 
+        {% if missedCount > 0 %}
+            <div class="alert-strip alert-strip-danger">
+                ⚠ {{ missedCount }} administration(s) manquée(s) aujourd’hui.
+            </div>
+        {% endif %}
+
+        {% if endingTodayCount > 0 %}
+            <div class="alert-strip alert-strip-warning">
+                ⏳ {{ endingTodayCount }} traitement(s) se termine(nt) aujourd’hui.
+            </div>
+        {% endif %}
+
         <div class="table-responsive">
             <table class="table table-bordered align-middle table-soins">
                 <thead>
                     <tr>
-                       <th class="text-start medic-col">Médicament / Soin</th>
+                        <th class="text-start medic-col">Médicament / Soin</th>
                         <th style="min-width: 100px;">Période</th>
-                        {% for h in 0..23 %}<th class="hour-cell">{{ h }}h</th>{% endfor %}
+                        {% for h in 0..23 %}
+                            <th class="hour-cell">{{ h }}h</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-    {% for t in hospitalisation.traitements %}
-        {% set startTs = t.dateDebut ? t.dateDebut|date('U') : null %}
-        {% set endTs = t.dateFin ? t.dateFin|date('U') : null %}
-        {% set dayCount = (startTs and endTs and endTs >= startTs)
-            ? ((endTs - startTs) / 86400)|round(0, 'floor')
-            : 0
-        %}
+                    {% for t in hospitalisation.traitements %}
+                        {% set startTs = t.dateDebut ? t.dateDebut|date('U') : null %}
+                        {% set endTs = t.dateFin ? t.dateFin|date('U') : null %}
+                        {% set dayCount = (startTs and endTs and endTs >= startTs)
+                            ? ((endTs - startTs) / 86400)|round(0, 'floor')
+                            : 0
+                        %}
 
-        {% for i in 0..dayCount %}
-            {% set currentDate = t.dateDebut|date_modify('+' ~ i ~ ' day') %}
+                        {% for i in 0..dayCount %}
+                            {% set currentDate = t.dateDebut|date_modify('+' ~ i ~ ' day') %}
 
-            <tr>
-                {% if i == 0 %}
-                    <td class="text-start fw-bold small medic-text" rowspan="{{ dayCount + 1 }}">
-                      {{ t.description }}
-                  </td>
-                {% endif %}
+                            <tr>
+                                {% if i == 0 %}
+                                    <td class="text-start fw-bold small medic-text" rowspan="{{ dayCount + 1 }}">
+                                        <div>{{ t.description }}</div>
 
-                <td class="text-muted small">
-                    {{ currentDate|date('d/m/Y') }}
-                </td>
+                                        {% if t.dateDebut and t.dateFin and t.dateDebut|date("Y-m-d") <= today and t.dateFin|date("Y-m-d") >= today %}
+                                            <span class="badge-alert badge-alert-info">Actif aujourd’hui</span>
+                                        {% endif %}
 
-                {% for h in 0..23 %}
-                    {% set scheduled = h in t.heuresAdministration %}
-                    {% set administered = t.isAdministeredAt(currentDate, h) %}
+                                        {% if t.dateFin and t.dateFin|date("Y-m-d") == today %}
+                                            <span class="badge-alert badge-alert-warning">Fin aujourd’hui</span>
+                                        {% endif %}
 
-                    <td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }}">
-    {% if scheduled %}
-        <button
-            type="button"
-            class="admin-cell-btn js-admin-toggle"
-            data-url="{{ path('app_administration_traitement_toggle', {'id': t.id}) }}"
-            data-date="{{ currentDate|date('Y-m-d') }}"
-            data-heure="{{ h }}"
-            title="Confirmer administration"
-        >
-            {% if administered %}
-                <i class="fa fa-check text-white"></i>
-            {% else %}
-                <span class="admin-dot"></span>
-            {% endif %}
-        </button>
-    {% endif %}
-</td>
-                {% endfor %}
-            </tr>
-        {% endfor %}
-    {% else %}
-        <tr>
-            <td colspan="26" class="text-center py-4 text-muted small">
-                Aucun traitement enregistré.
-            </td>
-        </tr>
-    {% endfor %}
-</tbody>
+                                        {% if t.heuresAdministration is empty %}
+                                            <span class="badge-alert badge-alert-danger">Aucune heure</span>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+
+                                <td class="text-muted small">
+                                    {{ currentDate|date('d/m/Y') }}
+                                </td>
+
+                                {% for h in 0..23 %}
+                                    {% set scheduled = h in t.heuresAdministration %}
+                                    {% set administered = t.isAdministeredAt(currentDate, h) %}
+                                    {% set isToday = currentDate|date('Y-m-d') == today %}
+                                    {% set missed = scheduled and isToday and h < currentHour and not administered %}
+                                    {% set upcoming = scheduled and isToday and h == currentHour and not administered %}
+
+                                    <td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }} {{ missed ? 'hour-missed' : '' }} {{ upcoming ? 'hour-upcoming' : '' }}">
+                                        {% if scheduled %}
+                                            <button
+                                                type="button"
+                                                class="admin-cell-btn js-admin-toggle"
+                                                data-url="{{ path('app_administration_traitement_toggle', {'id': t.id}) }}"
+                                                data-date="{{ currentDate|date('Y-m-d') }}"
+                                                data-heure="{{ h }}"
+                                                title="{% if administered %}Administré{% elseif missed %}Administration manquée{% elseif upcoming %}À administrer maintenant{% else %}Prévu{% endif %}"
+                                            >
+                                                {% if administered %}
+                                                    <i class="fa fa-check text-white"></i>
+                                                {% elseif missed %}
+                                                    <i class="fa fa-exclamation text-danger"></i>
+                                                {% else %}
+                                                    <span class="admin-dot"></span>
+                                                {% endif %}
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="26" class="text-center py-4 text-muted small">
+                                Aucun traitement enregistré.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
 </div>
 
-{# ====== MODAL DYNAMIQUE UNIQUE ====== #}
 <div class="modal fade" id="ajaxModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -399,41 +498,42 @@
             }
         });
     </script>
+
     <script>
-document.addEventListener('click', async function (e) {
-    const btn = e.target.closest('.js-admin-toggle');
-    if (!btn) return;
+        document.addEventListener('click', async function (e) {
+            const btn = e.target.closest('.js-admin-toggle');
+            if (!btn) return;
 
-    e.preventDefault();
+            e.preventDefault();
 
-    const url = btn.dataset.url;
-    const date = btn.dataset.date;
-    const heure = btn.dataset.heure;
+            const url = btn.dataset.url;
+            const date = btn.dataset.date;
+            const heure = btn.dataset.heure;
 
-    const formData = new FormData();
-    formData.append('date', date);
-    formData.append('heure', heure);
+            const formData = new FormData();
+            formData.append('date', date);
+            formData.append('heure', heure);
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Erreur lors de la mise à jour.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Erreur serveur.');
             }
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert(data.message || 'Erreur lors de la mise à jour.');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Erreur serveur.');
-    }
-});
-</script>
+    </script>
 {% endblock %}

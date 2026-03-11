@@ -133,17 +133,17 @@ class TraitementHospitalisation
         return in_array($hour, $this->heuresAdministration, true);
     }
 
-    public function isAdministeredAt(\DateTimeImmutable $date, int $hour): bool
-    {
-        foreach ($this->administrations as $administration) {
-            if (
-                $administration->getDateAdministration()?->format('Y-m-d') === $date->format('Y-m-d')
-                && $administration->getHeure() === $hour
-            ) {
-                return true;
-            }
+    public function isAdministeredAt(\DateTimeInterface $date, int $hour): bool
+{
+    foreach ($this->administrations as $administration) {
+        if (
+            $administration->getDateAdministration()?->format('Y-m-d') === $date->format('Y-m-d')
+            && $administration->getHeure() === $hour
+        ) {
+            return true;
         }
-
-        return false;
     }
+
+    return false;
+}
 }
