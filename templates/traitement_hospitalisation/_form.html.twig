@@ -1,4 +1,87 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+{# templates/traitement_hospitalisation/_form.html.twig #}
+
+<style>
+    .hours-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+    }
+
+    .hours-grid .form-check {
+        margin-bottom: 0;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .hours-grid .form-check:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .hours-grid label {
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .form-section-title {
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.05em;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+</style>
+
+{{ form_start(form, {
+    action: path('app_traitement_hospitalisation_new', {'hospitalisation': hospitalisation.id})
+}) }}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="form-section-title">
+                <i class="fa fa-info-circle text-primary"></i> Informations Générales
+            </div>
+            {{ form_row(form.description) }}
+        </div>
+
+        <div class="col-md-6">
+            {{ form_row(form.dateDebut) }}
+        </div>
+        <div class="col-md-6">
+            {{ form_row(form.dateFin) }}
+        </div>
+
+        <div class="col-12 mt-4">
+            <div class="form-section-title">
+                <i class="fa fa-clock text-primary"></i> Heures d'administration
+            </div>
+
+            <div class="hours-grid">
+                {% for hour in form.heuresAdministration %}
+                    <div class="form-check">
+                        {{ form_widget(hour) }}
+                        {{ form_label(hour) }}
+                    </div>
+                {% endfor %}
+            </div>
+            {{ form_errors(form.heuresAdministration) }}
+        </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" class="btn btn-primary px-4 fw-bold">
+            <i class="fa fa-save me-2"></i> Enregistrer le traitement
+        </button>
+    </div>
 {{ form_end(form) }}

@@ -16,11 +16,12 @@ use App\Enum\StatutFacture;
 use App\Enum\StatutHospitalisation;
 use App\Enum\StatutPaiement;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
+use App\Service\TreatmentAlertService;
 
 class HomeController extends AbstractController
 {
     #[Route('/', name: 'home')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(ManagerRegistry $doctrine, TreatmentAlertService $treatmentAlertService): Response
     {
         $em = $doctrine->getManager();
 
@@ -217,6 +218,8 @@ $unpaidTotal = (float) $em->createQueryBuilder()
             ->getQuery()
             ->getSingleScalarResult();
 
+        $treatmentAlerts = $treatmentAlertService->getDashboardAlerts();
+
         return $this->render('pages/index.html.twig', [
             'consultations_today' => $consultationsToday,
             'new_patients_today' => $newPatientsToday,
@@ -237,6 +240,7 @@ $unpaidTotal = (float) $em->createQueryBuilder()
             'flow_urgences' => $flowUrgences,
             'hosp_sorties_today' => $sortiesToday,
             'hosp_transfers' => $transfers,
+            ...$treatmentAlerts,
         ]);
     }
 }

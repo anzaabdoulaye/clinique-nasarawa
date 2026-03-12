@@ -331,46 +331,126 @@
   </div>
 
   <div class="col-12 col-xl-4">
-    <div class="card h-100">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="card-title mb-0">Alertes opérationnelles</h5>
-        <span class="badge bg-danger-subtle text-danger">Priorité</span>
-      </div>
-      <div class="card-body">
-        <div class="vstack gap-3">
-          <div class="p-3 border rounded-3">
-            <div class="d-flex justify-content-between">
-              <div class="fw-semibold">Impayés élevés</div>
-              <span class="badge bg-danger-subtle text-danger">{{ unpaid_high_count }}</span>
-            </div>
-            <div class="text-muted small">Relancer les dossiers > 20 000 FCFA.</div>
+  <div class="card h-100">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">Alertes opérationnelles</h5>
+      <span class="badge bg-danger-subtle text-danger">Priorité</span>
+    </div>
+    <div class="card-body">
+      <div class="vstack gap-3">
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Impayés élevés</div>
+            <span class="badge bg-danger-subtle text-danger">{{ unpaid_high_count }}</span>
           </div>
-
-          <div class="p-3 border rounded-3">
-            <div class="d-flex justify-content-between">
-              <div class="fw-semibold">Urgences critiques</div>
-              <span class="badge bg-warning-subtle text-warning">{{ critical_cases }}</span>
-            </div>
-            <div class="text-muted small">Prioriser triage + allocation personnel.</div>
-          </div>
-
-          <div class="p-3 border rounded-3">
-            <div class="d-flex justify-content-between">
-              <div class="fw-semibold">Lits presque saturés</div>
-              <span class="badge bg-info-subtle text-info">{{ occupancy_rate }}%</span>
-            </div>
-            <div class="text-muted small">Préparer sorties / transferts.</div>
-          </div>
+          <div class="text-muted small">Relancer les dossiers &gt; 20 000 FCFA.</div>
         </div>
 
-        <hr class="my-4">
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Urgences critiques</div>
+            <span class="badge bg-warning-subtle text-warning">{{ critical_cases }}</span>
+          </div>
+          <div class="text-muted small">Prioriser triage + allocation personnel.</div>
+        </div>
 
-        <a href="#" class="btn btn-soft-danger w-100">
-          <i class="ri-notification-3-line me-1"></i> Voir toutes les alertes
-        </a>
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Lits presque saturés</div>
+            <span class="badge bg-info-subtle text-info">{{ occupancy_rate }}%</span>
+          </div>
+          <div class="text-muted small">Préparer sorties / transferts.</div>
+        </div>
+
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Administrations manquées</div>
+            <span class="badge bg-danger-subtle text-danger">{{ missed_treatments_count|default(0) }}</span>
+          </div>
+          <div class="text-muted small">Soins prévus non confirmés aujourd’hui.</div>
+        </div>
+
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Administrations imminentes</div>
+            <span class="badge bg-warning-subtle text-warning">{{ upcoming_treatments_count|default(0) }}</span>
+          </div>
+          <div class="text-muted small">Traitements à administrer maintenant ou bientôt.</div>
+        </div>
+
+        <div class="p-3 border rounded-3">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">Fins de traitement aujourd’hui</div>
+            <span class="badge bg-info-subtle text-info">{{ ending_treatments_count|default(0) }}</span>
+          </div>
+          <div class="text-muted small">Vérifier arrêt ou renouvellement.</div>
+        </div>
       </div>
+
+      {% if treatment_alert_items is defined and treatment_alert_items is not empty %}
+        <div class="mt-4">
+          <div class="fw-semibold mb-2">Patients à surveiller</div>
+
+          <div class="vstack gap-2">
+            {% for item in treatment_alert_items|slice(0, 5) %}
+              <a href="{{ path('app_hospitalisation_show', { id: item.hospitalisation_id }) }}"
+                 class="text-decoration-none">
+                <div class="p-2 border rounded-3">
+                  <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                      <div class="fw-semibold small">
+                        {% if item.type == 'missed' %}
+                          <span class="text-danger">
+                            <i class="ri-alarm-warning-line me-1"></i>{{ item.label }}
+                          </span>
+                        {% elseif item.type == 'ending' %}
+                          <span class="text-warning">
+                            <i class="ri-time-line me-1"></i>{{ item.label }}
+                          </span>
+                        {% elseif item.type == 'upcoming' %}
+                          <span class="text-info">
+                            <i class="ri-notification-3-line me-1"></i>{{ item.label }}
+                          </span>
+                        {% else %}
+                          <span class="text-muted">{{ item.label }}</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="small text-muted">
+                        <strong>{{ item.patient }}</strong>
+                      </div>
+
+                      <div class="small text-muted">
+                        {{ item.traitement }}
+                        {% if item.heure %}
+                          — à {{ item.heure }}
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <i class="ri-arrow-right-s-line text-muted"></i>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+
+          {% if treatment_alert_items|length > 5 %}
+            <div class="text-muted small mt-2">
+              + {{ treatment_alert_items|length - 5 }} autre(s) alerte(s)
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <hr class="my-4">
+
+      <a href="#" class="btn btn-soft-danger w-100">
+        <i class="ri-notification-3-line me-1"></i> Voir toutes les alertes
+      </a>
     </div>
   </div>
+</div>
 </div>
 
 {% endblock %}
