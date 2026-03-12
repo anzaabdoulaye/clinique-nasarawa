@@ -42,24 +42,3 @@
     </div>
   </form>
 </div>
-
-<script>
-document.querySelector('#ligneResultForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = e.target;
-
-  const res = await fetch(form.action, {
-    method: 'POST',
-    body: new FormData(form),
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.success) {
-    alert(data?.message ?? "Erreur lors de l'enregistrement.");
-    return;
-  }
-
-  location.reload();
-});
-</script>

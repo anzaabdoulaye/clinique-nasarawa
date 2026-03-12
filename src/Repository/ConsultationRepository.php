@@ -16,6 +16,20 @@ class ConsultationRepository extends ServiceEntityRepository
         parent::__construct($registry, Consultation::class);
     }
 
+    public function searchByDossierOrPatientCode(string $term): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.dossierMedical', 'dm')
+            ->leftJoin('dm.patient', 'p')
+            ->addSelect('dm', 'p', 'm')
+            ->leftJoin('c.medecin', 'm')
+            ->andWhere('dm.numeroDossier LIKE :term OR p.code LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->orderBy('c.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Consultation[] Returns an array of Consultation objects
     //     */

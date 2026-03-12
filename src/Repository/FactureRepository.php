@@ -29,6 +29,19 @@ class FactureRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findAllWithRelations(): array
+    {
+        return $this->createQueryBuilder('f')
+            ->leftJoin('f.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('f.lignes', 'l')->addSelect('l')
+            ->leftJoin('f.paiements', 'pa')->addSelect('pa')
+            ->orderBy('f.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Facture[] Returns an array of Facture objects
     //     */

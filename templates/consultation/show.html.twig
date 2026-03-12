@@ -66,16 +66,6 @@
                     {{ locked ? 'disabled' : '' }}>
                 <i class="fa fa-pen me-1"></i> Saisie médicale
             </button>
-
-            <button type="button"
-                    class="btn btn-outline-primary js-open-prescription"
-                    data-bs-toggle="modal"
-                    data-bs-target="#prescriptionModal"
-                    data-url="{{ path('app_consultation_prescription_modal', {id: consultation.id}) }}">
-                <i class="ri-file-text-line me-1"></i> Prescription
-            </button>
-
-            {{ include('consultation/_delete_form.html.twig') }}
         </div>
     </div>
 
@@ -106,7 +96,7 @@
                                 <th>Catégorie</th>
                                 <th>Quantité</th>
                                 <th>Instructions</th>
-                                <th>Statut</th>
+                               
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
@@ -123,23 +113,6 @@
                                 </td>
                                 <td>{{ p.quantite|default(1) }}</td>
                                 <td>{{ p.instructions ?: '-' }}</td>
-                                <td>
-                                    {% if p.statut.value == 'prescrit' %}
-                                        <span class="badge bg-warning-subtle text-warning">Prescrit</span>
-                                    {% elseif p.statut.value == 'facture' %}
-                                        <span class="badge bg-info-subtle text-info">Facturé</span>
-                                    {% elseif p.statut.value == 'paye' %}
-                                        <span class="badge bg-primary-subtle text-primary">Payé</span>
-                                    {% elseif p.statut.value == 'en_cours' %}
-                                        <span class="badge bg-secondary-subtle text-secondary">En cours</span>
-                                    {% elseif p.statut.value == 'realise' %}
-                                        <span class="badge bg-success-subtle text-success">Réalisé</span>
-                                    {% elseif p.statut.value == 'annule' %}
-                                        <span class="badge bg-danger-subtle text-danger">Annulé</span>
-                                    {% else %}
-                                        <span class="badge bg-light text-dark">{{ p.statut.value }}</span>
-                                    {% endif %}
-                                </td>
                                 <td class="text-end">
                                     <button type="button"
                                             class="btn btn-sm btn-outline-primary js-edit-prestation"
@@ -181,7 +154,9 @@
                 <div class="card-body">
                     <div class="text-muted small">Poids</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.poids ?? '-' }} <span class="text-muted fs-6">kg</span>
+                       <div class="fs-4 fw-semibold" id="consultation-poids">
+    {{ consultation.poids ?? '-' }} <span class="text-muted fs-6">kg</span>
+</div>
                     </div>
                 </div>
             </div>
@@ -192,7 +167,9 @@
                 <div class="card-body">
                     <div class="text-muted small">Taille</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
+                       <div class="fs-4 fw-semibold" id="consultation-taille">
+    {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
+</div>
                     </div>
                 </div>
             </div>
@@ -203,7 +180,9 @@
                 <div class="card-body">
                     <div class="text-muted small">Température</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.temperature ?? '-' }} <span class="text-muted fs-6">°C</span>
+                        <div class="fs-4 fw-semibold" id="consultation-temperature">
+    {{ consultation.temperature ?? '-' }} <span class="text-muted fs-6">°C</span>
+</div>
                     </div>
                 </div>
             </div>
@@ -214,7 +193,9 @@
                 <div class="card-body">
                     <div class="text-muted small">Fréquence cardiaque</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.frequenceCardiaque ?? '-' }} <span class="text-muted fs-6">bpm</span>
+                        <div class="fs-4 fw-semibold" id="consultation-frequence">
+    {{ consultation.frequenceCardiaque ?? '-' }} <span class="text-muted fs-6">bpm</span>
+</div>
                     </div>
                 </div>
             </div>
@@ -256,12 +237,12 @@
                         <div class="card-body">
                             <div class="mb-3">
                                 <div class="text-muted small">Motifs</div>
-                                <div>{{ consultation.motifs ?? '-' }}</div>
+                                <div id="consultation-motifs">{{ consultation.motifs ?? '-' }}</div>
                             </div>
 
                             <div>
                                 <div class="text-muted small">Histoire / Anamnèse</div>
-                                <div>{{ consultation.histoire ?? '-' }}</div>
+                                <div id="consultation-histoire">{{ consultation.histoire ?? '-' }}</div>
                             </div>
                         </div>
                     </div>
@@ -273,22 +254,22 @@
                         <div class="card-body">
                             <div class="mb-3">
                                 <div class="text-muted small">Examen clinique</div>
-                                <div>{{ consultation.examenClinique ?? '-' }}</div>
+                                <div id="consultation-examen">{{ consultation.examenClinique ?? '-' }}</div>
                             </div>
 
                             <div class="mb-3">
                                 <div class="text-muted small">Tension artérielle</div>
-                                <div>{{ consultation.tensionArterielle ?? '-' }}</div>
+                                <div id="consultation-tension">{{ consultation.tensionArterielle ?? '-' }}</div>
                             </div>
 
                             <div class="mb-3">
                                 <div class="text-muted small">Diagnostic</div>
-                                <div>{{ consultation.diagnostic ?? '-' }}</div>
+                                <div id="consultation-diagnostic">{{ consultation.diagnostic ?? '-' }}</div>
                             </div>
 
                             <div>
                                 <div class="text-muted small">CIM10</div>
-                                <div>
+                                <div id="consultation-cim10">
                                     {% if consultation.cim10 is defined and consultation.cim10 %}
                                         {{ consultation.cim10 }}
                                     {% else %}
@@ -304,7 +285,7 @@
                     <div class="card">
                         <div class="card-header fw-semibold">Conduite à tenir</div>
                         <div class="card-body">
-                            {{ consultation.conduiteATenir ?? '-' }}
+                            <div id="consultation-conduite">{{ consultation.conduiteATenir ?? '-' }}</div>
                         </div>
                     </div>
                 </div>
@@ -312,7 +293,9 @@
                 <div class="col-12">
                     <div class="text-muted small">
                         Créée : {{ consultation.createdAt ? consultation.createdAt|date('Y-m-d H:i') : '-' }}
-                        — Modifiée : {{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i') : '-' }}
+                        — Modifiée : <div id="consultation-modified-at">
+    {{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i') : '-' }}
+</div>
                     </div>
                 </div>
             </div>
@@ -368,17 +351,33 @@
    MODAL EDIT CONSULTATION (AJAX)
 ========================= #}
 <div class="modal fade" id="editConsultationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Saisie médicale</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="editConsultationModalBody">
-                <div class="text-center py-3">Chargement...</div>
-            </div>
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-pen me-2 text-primary"></i> Saisie médicale
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="editConsultationLoader" class="py-5 text-center">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
         </div>
+
+        <div id="editConsultationModalBody" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">
+          Fermer
+        </button>
+      </div>
+
     </div>
+  </div>
 </div>
 
 {# =========================
@@ -409,181 +408,218 @@
 {% block javascripts %}
     {{ parent() }}
     <script>
-(() => {
-    const consultationModalEl = document.getElementById('editConsultationModal');
-    const consultationLoader = document.getElementById('editConsultationLoader');
-    const consultationBody = document.getElementById('editConsultationModalBody');
-
-    let consultationCurrentUrl = null;
-
-    function consultationSetLoading() {
-        if (!consultationLoader || !consultationBody) return;
-        consultationLoader.classList.remove('d-none');
-        consultationBody.classList.add('d-none');
-        consultationBody.innerHTML = '';
-    }
-
-    function consultationShowError(message) {
-        if (!consultationLoader || !consultationBody) return;
-        consultationLoader.classList.add('d-none');
-        consultationBody.classList.remove('d-none');
-        consultationBody.innerHTML = `
-            <div class="alert alert-danger d-flex align-items-start gap-2 mb-0" role="alert">
-                <i class="fa fa-exclamation-triangle mt-1"></i>
-                <div>
-                    <div class="fw-semibold">Erreur</div>
-                    <div class="small">${message || 'Impossible de charger le formulaire.'}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    function consultationFocusFirstField() {
-        if (!consultationBody) return;
-        const first = consultationBody.querySelector('.is-invalid, input, select, textarea');
-        if (first) first.focus();
-    }
-
-    function openAccordionForErrors() {
-        if (!consultationBody) return;
-
-        const invalidField = consultationBody.querySelector('.is-invalid');
-        if (!invalidField) return;
-
-        const collapse = invalidField.closest('.accordion-collapse');
-        if (!collapse) return;
-
-        consultationBody.querySelectorAll('.accordion-collapse').forEach(el => {
-            if (el !== collapse) {
-                bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).hide();
-            }
-        });
-
-        bootstrap.Collapse.getOrCreateInstance(collapse, { toggle: false }).show();
-
-        const trigger = consultationBody.querySelector(`[data-bs-target="#${collapse.id}"]`);
-        if (trigger) {
-            consultationBody.querySelectorAll('.accordion-button').forEach(btn => {
-                btn.classList.add('collapsed');
-                btn.setAttribute('aria-expanded', 'false');
-            });
-
-            trigger.classList.remove('collapsed');
-            trigger.setAttribute('aria-expanded', 'true');
+    (() => {
+        const modalEl = document.getElementById('editConsultationModal');
+        if (!modalEl) {
+            console.error('Modal #editConsultationModal introuvable');
+            return;
         }
-    }
 
-    function afterConsultationHtmlInjected() {
-        consultationLoader.classList.add('d-none');
-        consultationBody.classList.remove('d-none');
-        openAccordionForErrors();
-        consultationFocusFirstField();
-        bindConsultationForm();
-    }
+        let currentUrl = null;
 
-    function bindConsultationForm() {
-        if (!consultationBody) return;
+        function getLoader() {
+            return modalEl.querySelector('#editConsultationLoader');
+        }
 
-        const form = consultationBody.querySelector('#medicalForm');
-        if (!form || form.dataset.bound === '1') return;
+        function getBody() {
+            return modalEl.querySelector('#editConsultationModalBody');
+        }
 
-        form.dataset.bound = '1';
+        function setLoading() {
+            const loader = getLoader();
+            const body = getBody();
 
-        form.addEventListener('submit', async function (e) {
-            e.preventDefault();
+            if (!loader || !body) {
+                console.error('Loader ou body introuvable dans la modale', { loader, body });
+                return;
+            }
 
-            const submitButtons = form.querySelectorAll('button[type="submit"]');
-            const originals = Array.from(submitButtons).map(btn => btn.innerHTML);
+            loader.classList.remove('d-none');
+            body.classList.add('d-none');
+            body.innerHTML = '';
+        }
 
-            submitButtons.forEach((btn, index) => {
-                btn.disabled = true;
-                if (index === 0) {
-                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
+        function showError(message, details = '') {
+            const loader = getLoader();
+            const body = getBody();
+
+            if (!body) {
+                console.error('Body introuvable pour afficher erreur', { message, details });
+                return;
+            }
+
+            if (loader) {
+                loader.classList.add('d-none');
+            }
+
+            body.classList.remove('d-none');
+            body.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <div class="fw-semibold mb-1">Erreur</div>
+                    <div>${message || 'Impossible de charger le formulaire.'}</div>
+                    ${details ? `<hr><pre class="mb-0 small" style="white-space: pre-wrap;">${details}</pre>` : ''}
+                </div>
+            `;
+        }
+
+        function bindMedicalForm() {
+            const body = getBody();
+            if (!body) return;
+
+            const form = body.querySelector('#medicalForm');
+            console.log('bindMedicalForm =>', !!form);
+
+            if (!form) {
+                showError('Le formulaire #medicalForm est introuvable dans la modale.');
+                return;
+            }
+
+            if (form.dataset.bound === '1') return;
+            form.dataset.bound = '1';
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                console.log('SUBMIT AJAX intercepté');
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const oldHtml = submitBtn ? submitBtn.innerHTML : '';
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = 'Enregistrement...';
+                }
+
+                try {
+                    const response = await fetch(form.action || currentUrl, {
+                        method: (form.method || 'POST').toUpperCase(),
+                        body: new FormData(form),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+console.log('submit status=', response.status, 'contentType=', contentType);
+console.log('submit redirected =', response.redirected);
+console.log('submit final url =', response.url);
+
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        console.log('JSON reçu:', data);
+
+                        if (response.ok && data.success) {
+                            bootstrap.Modal.getInstance(modalEl)?.hide();
+                            const d = data.data || {};
+
+                            const setHtml = (id, value) => {
+                                const el = document.getElementById(id);
+                                if (el) el.innerHTML = value ?? '-';
+                            };
+
+                            setHtml('consultation-poids', `${d.poids ?? '-'} <span class="text-muted fs-6">kg</span>`);
+                            setHtml('consultation-taille', `${d.taille ?? '-'} <span class="text-muted fs-6">cm</span>`);
+                            setHtml('consultation-temperature', `${d.temperature ?? '-'} <span class="text-muted fs-6">°C</span>`);
+                            setHtml('consultation-frequence', `${d.frequenceCardiaque ?? '-'} <span class="text-muted fs-6">bpm</span>`);
+
+                            setHtml('consultation-motifs', d.motifs || '-');
+                            setHtml('consultation-histoire', d.histoire || '-');
+                            setHtml('consultation-examen', d.examenClinique || '-');
+                            setHtml('consultation-tension', d.tensionArterielle || '-');
+                            setHtml('consultation-diagnostic', d.diagnostic || '-');
+                            setHtml('consultation-cim10', d.cim10 || '-');
+                            setHtml('consultation-conduite', d.conduiteATenir || '-');
+                            setHtml('consultation-modified-at', d.modifiedAt || '-');
+
+                            bootstrap.Modal.getInstance(modalEl)?.hide();
+                            return;
+                        }
+
+                        showError(data.message || 'Erreur JSON côté serveur.', JSON.stringify(data, null, 2));
+                        return;
+                    }
+
+                    const html = await response.text();
+                    console.log('HTML reçu après submit');
+
+                    const loader = getLoader();
+                    const body = getBody();
+                    if (!body) return;
+
+                    body.innerHTML = html;
+                    if (loader) loader.classList.add('d-none');
+                    body.classList.remove('d-none');
+
+                    bindMedicalForm();
+                } catch (error) {
+                    console.error('Erreur submit fetch:', error);
+                    showError('Erreur JS/fetch pendant la soumission.', error.message || '');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = oldHtml;
+                    }
                 }
             });
+        }
+
+        async function loadMedicalForm(url) {
+            currentUrl = url;
+            console.log('loadMedicalForm()', url);
+            setLoading();
 
             try {
-                const response = await fetch(form.action || consultationCurrentUrl, {
-                    method: (form.method || 'POST').toUpperCase(),
-                    body: new FormData(form),
+                const response = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
 
-                const contentType = response.headers.get('content-type') || '';
+                const text = await response.text();
+                console.log('GET status=', response.status);
 
-                if (contentType.includes('application/json')) {
-                    const data = await response.json();
-
-                    if (data.success) {
-                        const modalInstance = bootstrap.Modal.getInstance(consultationModalEl);
-                        modalInstance?.hide();
-                        return;
-                    }
-
-                    consultationShowError(data.message || "Une erreur est survenue lors de l'enregistrement.");
+                if (!response.ok) {
+                    showError(`Chargement impossible (HTTP ${response.status})`, text);
                     return;
                 }
 
-                const html = await response.text();
-                consultationBody.innerHTML = html;
-                afterConsultationHtmlInjected();
-            } catch (error) {
-                console.error('Erreur soumission consultation:', error);
-                consultationShowError("Une erreur est survenue lors de l'enregistrement.");
-            } finally {
-                submitButtons.forEach((btn, index) => {
-                    btn.disabled = false;
-                    btn.innerHTML = originals[index];
-                });
-            }
-        });
-    }
+                const loader = getLoader();
+                const body = getBody();
 
-    async function loadConsultationForm(url) {
-        consultationCurrentUrl = url;
-        consultationSetLoading();
-
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                if (!body) {
+                    showError('Le conteneur #editConsultationModalBody est introuvable.');
+                    return;
                 }
-            });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                body.innerHTML = text;
+                if (loader) loader.classList.add('d-none');
+                body.classList.remove('d-none');
+
+                bindMedicalForm();
+            } catch (error) {
+                console.error('Erreur GET fetch:', error);
+                showError('Erreur JS/fetch pendant le chargement.', error.message || '');
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-edit-consultation');
+            if (!btn) return;
+
+            const url = btn.dataset.url;
+            console.log('clic .js-edit-consultation =>', url);
+
+            if (!url) {
+                showError('Aucune URL trouvée sur le bouton.');
+                return;
             }
 
-            const html = await response.text();
-            consultationBody.innerHTML = html;
-            afterConsultationHtmlInjected();
-        } catch (error) {
-            console.error('Erreur chargement consultation:', error);
-            consultationShowError("Impossible de charger le formulaire.");
-        }
-    }
+            loadMedicalForm(url);
+        });
 
-    document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.js-edit-consultation');
-        if (!btn) return;
-
-        if (btn.classList.contains('disabled') || btn.hasAttribute('disabled')) {
-            e.preventDefault();
-            return;
-        }
-
-        const url = btn.dataset.url;
-        if (!url) return;
-
-        loadConsultationForm(url);
-    });
-
-    consultationModalEl?.addEventListener('hidden.bs.modal', function () {
-        consultationCurrentUrl = null;
-        consultationSetLoading();
-    });
-})();
-</script>
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            currentUrl = null;
+            setLoading();
+        });
+    })();
+    </script>
 {% endblock %}

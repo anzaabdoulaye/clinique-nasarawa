@@ -8,7 +8,7 @@
 
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white border-0 py-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
             <h5 class="mb-0 fw-semibold">
               <i class="fa fa-stethoscope me-2 text-primary"></i> Consultations
@@ -16,21 +16,37 @@
             <div class="text-muted small">Historique des consultations enregistrées</div>
           </div>
 
-           
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
-            <i class="fa fa-plus me-1"></i> Nouvelle consultation
-          </button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <form method="get" action="{{ path('app_consultation_index') }}" class="app-search d-flex">
+              <div class="position-relative">
+                <input
+                  type="text"
+                  name="q"
+                  class="form-control"
+                  placeholder="N° dossier ou code patient"
+                  autocomplete="off"
+                  value="{{ app.request.query.get('q') }}"
+                  style="min-width: 280px;"
+                >
+                <span class="mdi mdi-magnify search-widget-icon"></span>
+              </div>
 
-          <form class="app-search d-none d-md-block">
-                    <div class="position-relative">
-                        <input type="text" class="form-control" placeholder="Rechercher Patient/Dossier" autocomplete="off" id="search-options" value="">
-                        <span class="mdi mdi-magnify search-widget-icon"></span>
-                        <span class="mdi mdi-close-circle search-widget-icon search-widget-icon-close d-none" id="search-close-options"></span>
-                    </div>
-                </form>
-          
+              <button type="submit" class="btn btn-primary ms-2">
+                <i class="fa fa-search me-1"></i> Rechercher
+              </button>
+
+              {% if app.request.query.get('q') %}
+                <a href="{{ path('app_consultation_index') }}" class="btn btn-light border ms-2">
+                  Réinitialiser
+                </a>
+              {% endif %}
+            </form>
+
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
+              <i class="fa fa-plus me-1"></i> Nouvelle consultation
+            </button>
+          </div>
         </div>
-        
       </div>
 
       <div class="card-body">
@@ -39,7 +55,7 @@
             <thead class="table-light">
               <tr class="text-nowrap">
                 <th class="text-uppercase small text-muted">Date</th>
-                <th class="text-uppercase small text-muted">Dossier</th>
+                <th class="text-uppercase small text-muted">Dossier / Patient</th>
                 <th class="text-uppercase small text-muted">Médecin</th>
                 <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
               </tr>
@@ -57,12 +73,23 @@
                   {% endif %}
                 </td>
 
-                <td class="text-nowrap">
+                <td>
                   {% if c.dossierMedical %}
-                    <span class="badge bg-light text-dark border">
+                    <div class="fw-semibold">
                       <i class="fa fa-folder-open me-1 text-muted"></i>
                       {{ c.dossierMedical.numeroDossier ?? ('#' ~ c.dossierMedical.id) }}
-                    </span>
+                    </div>
+
+                    {% set patient = c.dossierMedical.patient ?? null %}
+                    {% if patient %}
+                      <div class="small text-muted">
+                        Patient :
+                        {{ patient.code ?? '—' }}
+                        {% if patient.nom or patient.prenom %}
+                          — {{ patient.nom ?? '' }} {{ patient.prenom ?? '' }}
+                        {% endif %}
+                      </div>
+                    {% endif %}
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
@@ -87,11 +114,11 @@
                     </a>
 
                     <button type="button"
-                            class="btn btn-outline-primary js-edit-consultation"
-                            title="Modifier"
+                            class="btn btn-outline-primary js-edit-consultation-admin"
+                            title="Modifier les informations de base"
                             data-bs-toggle="modal"
                             data-bs-target="#editConsultationModal"
-                            data-url="{{ path('app_consultation_medical_edit', {'id': c.id}) }}">
+                            data-url="{{ path('app_consultation_admin_edit', {'id': c.id}) }}">
                       <i class="ri-pencil-fill"></i>
                     </button>
                   </div>
@@ -124,7 +151,7 @@
    MODAL AJOUT CONSULTATION
 ========================= #}
 <div class="modal fade" id="addConsultationModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
     <div class="modal-content border-0 shadow">
 
       <div class="modal-header bg-white">
@@ -135,31 +162,23 @@
       </div>
 
       <div class="modal-body">
-        {# ✅ si tu as déjà un formulaire "form" passé au template #}
         {% if form is defined %}
           {{ form_start(form) }}
             <div class="row g-3">
-              <div class="col-md-3">{{ form_row(form.poids) }}</div>
-              <div class="col-md-3">{{ form_row(form.taille) }}</div>
-              <div class="col-md-3">{{ form_row(form.temperature) }}</div>
-              <div class="col-md-3">{{ form_row(form.tensionArterielle) }}</div>
-
-              <div class="col-md-3">{{ form_row(form.frequenceCardiaque) }}</div>
               {% if form.children.medecin is defined %}
-                <div class="col-md-3">{{ form_row(form.medecin) }}</div>
+                <div class="col-md-6">{{ form_row(form.medecin) }}</div>
               {% endif %}
+
               {% if form.children.dossierMedical is defined %}
-                <div class="col-md-3">{{ form_row(form.dossierMedical) }}</div>
+                <div class="col-md-6">{{ form_row(form.dossierMedical) }}</div>
               {% endif %}
+
               {% if form.children.rendezVous is defined %}
-                <div class="col-md-3">{{ form_row(form.rendezVous) }}</div>
+                <div class="col-md-6">{{ form_row(form.rendezVous) }}</div>
               {% endif %}
 
-              <div class="col-12">{{ form_row(form.motifs) }}</div>
-              <div class="col-12">{{ form_row(form.diagnostic) }}</div>
-
-              {% if form.children.facture is defined %}
-                <div class="col-md-6">{{ form_row(form.facture) }}</div>
+              {% if form.children.dateConsultation is defined %}
+                <div class="col-md-6">{{ form_row(form.dateConsultation) }}</div>
               {% endif %}
             </div>
 
@@ -172,7 +191,6 @@
         {% else %}
           <div class="alert alert-warning mb-0">
             Le formulaire <code>form</code> n'est pas transmis à ce template.
-            Passe-le depuis le contrôleur (createForm + render).
           </div>
         {% endif %}
       </div>
@@ -186,15 +204,15 @@
 </div>
 
 {# =========================
-   MODAL EDIT CONSULTATION (AJAX)
+   MODAL EDIT CONSULTATION BASE (AJAX)
 ========================= #}
 <div class="modal fade" id="editConsultationModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
     <div class="modal-content border-0 shadow">
 
       <div class="modal-header bg-white">
         <h5 class="modal-title fw-semibold">
-          <i class="fa fa-pen me-2 text-primary"></i> Modifier la consultation
+          <i class="fa fa-pen me-2 text-primary"></i> Modifier les informations de base
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
@@ -222,11 +240,10 @@
 {% block javascripts %}
   {{ parent() }}
   <script>
-    (function () {
+    (() => {
       const editModalEl = document.getElementById('editConsultationModal');
       const loader = document.getElementById('editConsultationLoader');
       const body = document.getElementById('editConsultationModalBody');
-
       let currentUrl = null;
 
       function showError(message) {
@@ -254,64 +271,49 @@
         if (first) first.focus();
       }
 
-      async function loadEditForm(url) {
-        currentUrl = url;
-        setLoading();
-
-        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-
-        const html = await res.text();
-        body.innerHTML = html;
-
-        loader.classList.add('d-none');
-        body.classList.remove('d-none');
-
-        focusFirstField();
-
+      function bindForm() {
         const form = body.querySelector('form');
-        if (!form) return;
+        if (!form || form.dataset.bound === '1') return;
+
+        form.dataset.bound = '1';
 
         form.addEventListener('submit', async (ev) => {
           ev.preventDefault();
 
-          // Désactiver le bouton submit pendant l'envoi
           const submitBtn = form.querySelector('[type="submit"]');
           const oldSubmitHtml = submitBtn ? submitBtn.innerHTML : null;
+
           if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
           }
 
           try {
-            const formData = new FormData(form);
-            const submitUrl = form.getAttribute('action') || currentUrl;
-            const method = (form.getAttribute('method') || 'POST').toUpperCase();
-
-            const submitRes = await fetch(submitUrl, {
-              method,
-              body: formData,
+            const submitRes = await fetch(form.getAttribute('action') || currentUrl, {
+              method: (form.getAttribute('method') || 'POST').toUpperCase(),
+              body: new FormData(form),
               headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const contentType = submitRes.headers.get('content-type') || '';
 
-            // JSON => succès attendu
             if (contentType.includes('application/json')) {
               const json = await submitRes.json();
+
               if (json.success) {
                 bootstrap.Modal.getInstance(editModalEl)?.hide();
-
-                // Option pro: refresh simple (tu peux remplacer par fetch + update row plus tard)
                 window.location.reload();
                 return;
               }
+
+              showError(json.message || "Une erreur est survenue.");
+              return;
             }
 
-            // Sinon HTML (form avec erreurs)
             const submitHtml = await submitRes.text();
             body.innerHTML = submitHtml;
             focusFirstField();
+            bindForm();
           } catch (err) {
             showError("Une erreur est survenue lors de l'enregistrement.");
           } finally {
@@ -320,19 +322,41 @@
               submitBtn.innerHTML = oldSubmitHtml;
             }
           }
-        }, { once: true });
+        });
+      }
+
+      async function loadEditForm(url) {
+        currentUrl = url;
+        setLoading();
+
+        try {
+          const res = await fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+
+          const html = await res.text();
+          body.innerHTML = html;
+
+          loader.classList.add('d-none');
+          body.classList.remove('d-none');
+
+          focusFirstField();
+          bindForm();
+        } catch (err) {
+          showError("Impossible de charger le formulaire.");
+        }
       }
 
       document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.js-edit-consultation');
+        const btn = e.target.closest('.js-edit-consultation-admin');
         if (!btn) return;
 
         const url = btn.getAttribute('data-url');
         if (!url) return;
 
-        loadEditForm(url).catch((err) => {
-          showError("Impossible de charger le formulaire. Vérifie la route et la réponse AJAX.");
-        });
+        loadEditForm(url);
       });
 
       editModalEl?.addEventListener('hidden.bs.modal', () => {

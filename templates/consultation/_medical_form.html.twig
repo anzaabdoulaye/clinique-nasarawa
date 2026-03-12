@@ -1,5 +1,7 @@
-{{ form_start(form, { attr: { id: 'medicalForm' } }) }}
-
+{{ form_start(form, {
+    action: path('app_consultation_medical_edit', { id: consultation.id }),
+    attr: { id: 'medicalForm' }
+}) }}
 {% if form.vars.errors|length > 0 %}
     <div class="alert alert-danger">
         {{ form_errors(form) }}

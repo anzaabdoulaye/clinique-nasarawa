@@ -47,6 +47,17 @@ final class ConsultationController extends AbstractController
                 return $this->redirectToRoute('app_consultation_index');
             }
         }
+        $q = trim((string) $request->query->get('q', ''));
+
+        if ($q !== '') {
+            $consultations = $consultationRepository->searchByDossierOrPatientCode($q);
+        } else {
+            $consultations = $consultationRepository->findBy([], ['createdAt' => 'DESC']);
+        }
+
+        return $this->render('consultation/index.html.twig', [
+            'consultations' => $consultations,
+        ]);
 
         return $this->render('consultation/index.html.twig', [
             'consultations' => $consultationRepository->findAll(),
@@ -163,64 +174,83 @@ public function edit(
 
 
    #[Route('/{id}/medical', name: 'app_consultation_medical_edit', methods: ['GET', 'POST'])]
-    public function editMedical(
-        Request $request,
-        Consultation $consultation,
-        EntityManagerInterface $em
-    ): Response {
-        if (\in_array($consultation->getStatut(), [StatutConsultation::CLOTURE, StatutConsultation::ANNULE], true)) {
-            if ($request->isXmlHttpRequest()) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Consultation clôturée/annulée : modification interdite.'
-                ], 403);
-            }
-
-            $this->addFlash('warning', 'Consultation clôturée/annulée : modification interdite.');
-            return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
-        }
-
-        $form = $this->createForm(ConsultationType::class, $consultation, [
-            'context' => 'medical',
-        ]);
-        $form->handleRequest($request);
-
-                    if ($form->isSubmitted()) {
-                    if ($form->isValid()) {
-                $em->flush();
-
-                if ($request->isXmlHttpRequest()) {
-                    return $this->json([
-                        'success' => true,
-                        'message' => 'Données médicales enregistrées.'
-                    ]);
-                }
-
-                $this->addFlash('success', 'Données médicales enregistrées.');
-                return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
-            }
-
-            if ($request->isXmlHttpRequest()) {
-                return $this->render('consultation/_medical_form.html.twig', [
-                    'consultation' => $consultation,
-                    'form' => $form->createView(),
-                ], new Response('', 422));
-            }
-        }
-
+public function editMedical(
+    Request $request,
+    Consultation $consultation,
+    EntityManagerInterface $em
+): Response {
+    if (\in_array($consultation->getStatut(), [StatutConsultation::CLOTURE, StatutConsultation::ANNULE], true)) {
         if ($request->isXmlHttpRequest()) {
-        return $this->render('consultation/_medical_form.html.twig', [
-            'consultation' => $consultation,
-            'form' => $form->createView(),
-        ]);
+            return $this->json([
+                'success' => false,
+                'message' => 'Consultation clôturée ou annulée : modification interdite.',
+            ], Response::HTTP_FORBIDDEN);
         }
 
-        return $this->render('consultation/medical_edit.html.twig', [
+        $this->addFlash('warning', 'Consultation clôturée ou annulée : modification interdite.');
+
+        return $this->redirectToRoute('app_consultation_show', [
+            'id' => $consultation->getId(),
+        ]);
+    }
+
+    $form = $this->createForm(ConsultationType::class, $consultation, [
+        'context' => 'medical',
+    ]);
+
+    $form->handleRequest($request);
+
+    if ($form->isSubmitted() && $form->isValid()) {
+    $em->flush();
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->json([
+            'success' => true,
+            'message' => 'Données médicales enregistrées.',
+            'data' => [
+                'poids' => $consultation->getPoids(),
+                'taille' => $consultation->getTaille(),
+                'temperature' => $consultation->getTemperature(),
+                'frequenceCardiaque' => $consultation->getFrequenceCardiaque(),
+                'tensionArterielle' => $consultation->getTensionArterielle(),
+                'motifs' => $consultation->getMotifs(),
+                'histoire' => $consultation->getHistoire(),
+                'examenClinique' => $consultation->getExamenClinique(),
+                'diagnostic' => $consultation->getDiagnostic(),
+                'cim10' => $consultation->getCim10() ? (string) $consultation->getCim10() : '-',
+                'conduiteATenir' => $consultation->getConduiteATenir(),
+                'modifiedAt' => $consultation->getModifiedAt()?->format('Y-m-d H:i'),
+            ]
+        ]);
+    }
+
+        $this->addFlash('success', 'Données médicales enregistrées.');
+        return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
+    }
+
+    if ($form->isSubmitted() && !$form->isValid()) {
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('consultation/_medical_form.html.twig', [
+                'consultation' => $consultation,
+                'form' => $form->createView(),
+            ], new Response('', Response::HTTP_UNPROCESSABLE_ENTITY));
+        }
+
+        $this->addFlash('error', 'Le formulaire contient des erreurs. Veuillez corriger les champs.');
+    }
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->render('consultation/_medical_form.html.twig', [
             'consultation' => $consultation,
             'form' => $form->createView(),
         ]);
     }
 
+    return $this->render('consultation/medical_edit.html.twig', [
+        'consultation' => $consultation,
+        'form' => $form->createView(),
+    ]);
+}
 
     #[Route('/{id}', name: 'app_consultation_delete', methods: ['POST'])]
     public function delete(Request $request, Consultation $consultation, EntityManagerInterface $entityManager): Response
@@ -385,6 +415,45 @@ public function laboBonModal(
     return $this->render('laboratoire/bons/_modal_create.html.twig', [
         'consultation' => $consultation,
         'patient' => $patient,
+    ]);
+}
+
+#[Route('/{id}/edit-admin', name: 'app_consultation_admin_edit', methods: ['GET', 'POST'])]
+public function editAdmin(
+    Request $request,
+    Consultation $consultation,
+    EntityManagerInterface $em
+): Response {
+    $form = $this->createForm(ConsultationType::class, $consultation, [
+        'context' => 'admin',
+    ]);
+
+    $form->handleRequest($request);
+
+    if ($form->isSubmitted() && $form->isValid()) {
+        $em->flush();
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'message' => 'Informations de base mises à jour.'
+            ]);
+        }
+
+        $this->addFlash('success', 'Informations de base mises à jour.');
+        return $this->redirectToRoute('app_consultation_index');
+    }
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->render('consultation/_admin_form.html.twig', [
+            'consultation' => $consultation,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    return $this->render('consultation/admin_edit.html.twig', [
+        'consultation' => $consultation,
+        'form' => $form->createView(),
     ]);
 }
 
