@@ -1,0 +1,28 @@
+{{ form_start(form) }}
+<div class="mb-3">
+    {{ form_label(form.medicament) }}
+    {{ form_widget(form.medicament) }}
+    {{ form_errors(form.medicament) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.numeroLot) }}
+    {{ form_widget(form.numeroLot) }}
+    {{ form_errors(form.numeroLot) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.datePeremption) }}
+    {{ form_widget(form.datePeremption) }}
+    {{ form_errors(form.datePeremption) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.quantite) }}
+    {{ form_widget(form.quantite) }}
+    {{ form_errors(form.quantite) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.prixAchat) }}
+    {{ form_widget(form.prixAchat) }}
+    {{ form_errors(form.prixAchat) }}
+</div>
+<button class="btn btn-primary">Enregistrer</button>
+{{ form_end(form) }}

@@ -1,0 +1,33 @@
+{{ form_start(form) }}
+<div class="mb-3">
+    {{ form_label(form.nom) }}
+    {{ form_widget(form.nom) }}
+    {{ form_errors(form.nom) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.sku) }}
+    {{ form_widget(form.sku) }}
+    {{ form_errors(form.sku) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.codeBarre) }}
+    {{ form_widget(form.codeBarre) }}
+    {{ form_errors(form.codeBarre) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.description) }}
+    {{ form_widget(form.description) }}
+    {{ form_errors(form.description) }}
+</div>
+<div class="mb-3">
+    {{ form_label(form.prixUnitaire) }}
+    {{ form_widget(form.prixUnitaire) }}
+    {{ form_errors(form.prixUnitaire) }}
+</div>
+<div class="form-check mb-3">
+    {{ form_widget(form.actif) }}
+    {{ form_label(form.actif) }}
+    {{ form_errors(form.actif) }}
+</div>
+<button class="btn btn-primary">Enregistrer</button>
+{{ form_end(form) }}

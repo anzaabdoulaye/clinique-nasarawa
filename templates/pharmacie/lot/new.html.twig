@@ -1,0 +1,135 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau lot{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="mb-1 fw-bold">
+                <i class="ri-archive-line text-primary me-2"></i>
+                Ajouter un lot
+            </h3>
+            <p class="text-muted mb-0">
+                Enregistrez un nouveau lot de médicament avec sa quantité, son prix et sa date de péremption.
+            </p>
+        </div>
+
+        <div>
+            <a href="{{ path('app_lot_index') }}" class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-1"></i> Retour à la liste des lots
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# Formulaire principal #}
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                    <h5 class="mb-1 fw-semibold">
+                        <i class="ri-file-add-line text-success me-2"></i>
+                        Informations du lot
+                    </h5>
+                    <p class="text-muted mb-0 small">
+                        Renseignez les informations nécessaires pour ajouter correctement ce lot au stock.
+                    </p>
+                </div>
+
+                <div class="card-body p-4">
+                    {% include 'pharmacie/lot/_form.html.twig' with {'form': form} %}
+                </div>
+            </div>
+        </div>
+
+        {# Colonne d'aide #}
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-information-line text-info me-2"></i>
+                        Bonnes pratiques
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="info-box">
+                            <div class="info-icon bg-primary-subtle text-primary">
+                                <i class="ri-capsule-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Médicament</h6>
+                                <p class="text-muted mb-0 small">
+                                    Assurez-vous de rattacher le lot au bon médicament pour un suivi fiable du stock.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-icon bg-warning-subtle text-warning">
+                                <i class="ri-calendar-check-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Date de péremption</h6>
+                                <p class="text-muted mb-0 small">
+                                    Vérifiez soigneusement la date afin d’anticiper les alertes et éviter les erreurs de dispensation.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-icon bg-success-subtle text-success">
+                                <i class="ri-stack-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Quantité</h6>
+                                <p class="text-muted mb-0 small">
+                                    La quantité saisie servira au calcul du stock disponible pour les ventes et la gestion FIFO.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-lightbulb-flash-line text-warning me-2"></i>
+                        Conseils
+                    </h5>
+
+                    <ul class="text-muted small ps-3 mb-0">
+                        <li class="mb-2">Renseignez un numéro de lot lisible et unique si possible.</li>
+                        <li class="mb-2">Contrôlez la cohérence entre prix d’achat, quantité et dates.</li>
+                        <li class="mb-2">Ajoutez rapidement les nouveaux arrivages pour garder un stock à jour.</li>
+                        <li>Surveillez les lots proches de péremption depuis le tableau de bord pharmacie.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-box {
+        display: flex;
+        gap: 0.875rem;
+        align-items: flex-start;
+    }
+
+    .info-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .card {
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

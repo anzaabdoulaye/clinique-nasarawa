@@ -1,0 +1,182 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Éditer lot{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    {% set expireSoon = lot.datePeremption is defined and lot.datePeremption and lot.datePeremption <= date('+30 days') %}
+    {% set expired = lot.datePeremption is defined and lot.datePeremption and lot.datePeremption < date() %}
+    {% set stockEmpty = lot.quantite is defined and lot.quantite <= 0 %}
+    {% set stockLow = lot.quantite is defined and lot.quantite > 0 and lot.quantite <= 10 %}
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="mb-1 fw-bold">
+                <i class="ri-edit-2-line text-primary me-2"></i>
+                Éditer le lot
+            </h3>
+            <p class="text-muted mb-0">
+                Modifiez les informations du lot
+                <strong>{{ lot.numeroLot ?: ('#' ~ lot.id) }}</strong>.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ path('app_lot_show', {id: lot.id}) }}" class="btn btn-outline-primary">
+                <i class="ri-eye-line me-1"></i> Voir le détail
+            </a>
+            <a href="{{ path('app_lot_index') }}" class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-1"></i> Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# Formulaire principal #}
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 p-4 pb-0">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+                        <div>
+                            <h5 class="mb-1 fw-semibold">
+                                <i class="ri-file-edit-line text-success me-2"></i>
+                                Formulaire de modification
+                            </h5>
+                            <p class="text-muted mb-0 small">
+                                Mettez à jour les informations du lot pour garder un stock fiable et traçable.
+                            </p>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if expired %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                    Expiré
+                                </span>
+                            {% elseif expireSoon %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">
+                                    Péremption proche
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                    Valide
+                                </span>
+                            {% endif %}
+
+                            {% if stockEmpty %}
+                                <span class="badge bg-danger px-3 py-2">Stock épuisé</span>
+                            {% elseif stockLow %}
+                                <span class="badge bg-warning text-dark px-3 py-2">Stock faible</span>
+                            {% else %}
+                                <span class="badge bg-primary px-3 py-2">Stock disponible</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    {% include 'pharmacie/lot/_form.html.twig' with {'form': form} %}
+                </div>
+            </div>
+        </div>
+
+        {# Colonne latérale #}
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-bar-chart-box-line text-info me-2"></i>
+                        État actuel du lot
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="state-box">
+                            <span class="state-label">Médicament</span>
+                            <span class="state-value">
+                                {{ lot.medicament ? lot.medicament.nom : '—' }}
+                            </span>
+                        </div>
+
+                        <div class="state-box">
+                            <span class="state-label">Numéro de lot</span>
+                            <span class="state-value">
+                                {{ lot.numeroLot ?: '—' }}
+                            </span>
+                        </div>
+
+                        <div class="state-box">
+                            <span class="state-label">Quantité</span>
+                            <span class="state-value fw-semibold">
+                                {{ lot.quantite }}
+                            </span>
+                        </div>
+
+                        <div class="state-box">
+                            <span class="state-label">Péremption</span>
+                            <span class="state-value">
+                                {{ lot.datePeremption ? lot.datePeremption|date('d/m/Y') : '—' }}
+                            </span>
+                        </div>
+
+                        <div class="state-box">
+                            <span class="state-label">Prix d’achat</span>
+                            <span class="state-value fw-semibold">
+                                {{ lot.prixAchat|number_format(0, ',', ' ') }} FCFA
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-lightbulb-flash-line text-warning me-2"></i>
+                        Recommandations
+                    </h5>
+
+                    <ul class="small text-muted ps-3 mb-0">
+                        <li class="mb-2">Vérifiez que le médicament associé est correct avant d’enregistrer.</li>
+                        <li class="mb-2">Contrôlez soigneusement la date de péremption.</li>
+                        <li class="mb-2">Toute modification de quantité impacte directement le stock disponible.</li>
+                        <li class="mb-2">Assurez-vous que le prix d’achat correspond à l’entrée réelle du lot.</li>
+                        {% if expired %}
+                            <li>Ce lot est déjà expiré : évitez son utilisation pour les ventes.</li>
+                        {% elseif expireSoon %}
+                            <li>Ce lot arrive bientôt à péremption : surveillez son écoulement.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .state-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .9rem 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: .9rem;
+        background: #fff;
+        gap: 1rem;
+    }
+
+    .state-label {
+        color: #6c757d;
+        font-size: .92rem;
+    }
+
+    .state-value {
+        color: #212529;
+        text-align: right;
+        font-weight: 500;
+        word-break: break-word;
+    }
+
+    .card {
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

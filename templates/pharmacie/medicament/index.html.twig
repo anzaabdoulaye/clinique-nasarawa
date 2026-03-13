@@ -1,0 +1,168 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Médicaments{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# ===== En-tête de page ===== #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-medicine-bottle-line me-2 text-primary"></i>
+                Médicaments
+            </h2>
+            <p class="text-muted mb-0">
+                Gérez le catalogue des médicaments disponibles dans votre pharmacie.
+            </p>
+        </div>
+
+        <div>
+            <a class="btn btn-primary shadow-sm" href="{{ path('app_medicament_new') }}">
+                <i class="ri-add-line me-1"></i>
+                Nouveau médicament
+            </a>
+        </div>
+    </div>
+
+    {# ===== Carte principale ===== #}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <h5 class="mb-1 fw-semibold text-dark">Catalogue des médicaments</h5>
+                    <small class="text-muted">
+                        Total : <span class="fw-semibold">{{ medicaments|length }}</span> médicament(s)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body px-4 pb-4">
+
+            {% if medicaments|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-semibold text-dark">#</th>
+                                <th class="fw-semibold text-dark">Nom</th>
+                                <th class="fw-semibold text-dark">SKU</th>
+                                <th class="fw-semibold text-dark">Code-barres</th>
+                                <th class="fw-semibold text-dark">Prix unitaire</th>
+                                <th class="fw-semibold text-dark">Statut</th>
+                                <th class="fw-semibold text-dark text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in medicaments %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-3 py-2">
+                                            #{{ m.id }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
+                                                 style="width: 40px; height: 40px; font-weight: 700;">
+                                                {{ m.nom|slice(0, 1)|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold text-dark">{{ m.nom }}</div>
+                                                <small class="text-muted">Produit pharmaceutique</small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {% if m.sku %}
+                                            <span class="fw-semibold text-dark">{{ m.sku }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if m.codeBarre %}
+                                            <span class="text-dark">{{ m.codeBarre }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold text-success fs-6">
+                                            {{ m.prixUnitaire|number_format(0, ',', ' ') }} FCFA
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if m.actif %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                <i class="ri-checkbox-circle-line me-1"></i>
+                                                Actif
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2">
+                                                <i class="ri-close-circle-line me-1"></i>
+                                                Inactif
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
+                                            <a class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                               href="{{ path('app_medicament_show', {id: m.id}) }}">
+                                                <i class="ri-eye-line me-1"></i>
+                                                Voir
+                                            </a>
+
+                                            <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                               href="{{ path('app_medicament_edit', {id: m.id}) }}">
+                                                <i class="ri-pencil-line me-1"></i>
+                                                Éditer
+                                            </a>
+
+                                            <form method="post"
+                                                  action="{{ path('app_medicament_delete', {id: m.id}) }}"
+                                                  onsubmit="return confirm('Supprimer ce médicament ?');"
+                                                  class="d-inline-block m-0">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ m.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                    <i class="ri-delete-bin-line me-1"></i>
+                                                    Supprimer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center"
+                             style="width: 70px; height: 70px;">
+                            <i class="ri-medicine-bottle-line fs-2 text-muted"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucun médicament enregistré</h5>
+                    <p class="text-muted mb-4">
+                        Ajoutez un médicament pour commencer à constituer votre catalogue pharmaceutique.
+                    </p>
+                    <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_medicament_new') }}">
+                        <i class="ri-add-line me-1"></i>
+                        Nouveau médicament
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

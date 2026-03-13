@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Médicaments{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>Liste des médicaments</h1>
+    <a class="btn btn-primary mb-3" href="{{ path('app_medicament_new') }}">Nouveau médicament</a>
+
+    <table class="table">
+        <thead>
+            <tr><th>#</th><th>Nom</th><th>SKU</th><th>Code-barres</th><th>Prix</th><th>Actif</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for m in medicaments %}
+                <tr>
+                    <td>{{ m.id }}</td>
+                    <td>{{ m.nom }}</td>
+                    <td>{{ m.sku ?: '—' }}</td>
+                    <td>{{ m.codeBarre ?: '—' }}</td>
+                    <td>{{ m.prixUnitaire }}</td>
+                    <td>{{ m.actif ? 'Oui' : 'Non' }}</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ path('app_medicament_show', {id: m.id}) }}">Voir</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_medicament_edit', {id: m.id}) }}">Éditer</a>
+                        <form style="display:inline-block" method="post" action="{{ path('app_medicament_delete', {id: m.id}) }}" onsubmit="return confirm('Supprimer ce médicament ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ m.id) }}" />
+                            <button class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7">Aucun médicament</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

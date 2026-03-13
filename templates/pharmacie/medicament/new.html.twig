@@ -1,0 +1,134 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau médicament{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="mb-1 fw-bold">
+                <i class="ri-capsule-line text-primary me-2"></i>
+                Ajouter un médicament
+            </h3>
+            <p class="text-muted mb-0">
+                Créez une nouvelle fiche médicament pour la gestion du stock et des ventes en pharmacie.
+            </p>
+        </div>
+
+        <div>
+            <a href="{{ path('app_medicament_index') }}" class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-1"></i> Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                    <h5 class="mb-1 fw-semibold">
+                        <i class="ri-file-add-line text-success me-2"></i>
+                        Informations du médicament
+                    </h5>
+                    <p class="text-muted mb-0 small">
+                        Renseignez les informations principales du produit pour son enregistrement.
+                    </p>
+                </div>
+
+                <div class="card-body p-4">
+                    {% include 'pharmacie/medicament/_form.html.twig' with {'form': form} %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-information-line text-info me-2"></i>
+                        Informations utiles
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="info-box">
+                            <div class="info-icon bg-primary-subtle text-primary">
+                                <i class="ri-capsule-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Nom du médicament</h6>
+                                <p class="text-muted mb-0 small">
+                                    Utilisez une désignation claire et standardisée pour faciliter la recherche et la vente.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-icon bg-warning-subtle text-warning">
+                                <i class="ri-barcode-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Références produit</h6>
+                                <p class="text-muted mb-0 small">
+                                    Le SKU et le code-barres aident à identifier rapidement le médicament en stock.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-icon bg-success-subtle text-success">
+                                <i class="ri-money-dollar-circle-line"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Prix unitaire</h6>
+                                <p class="text-muted mb-0 small">
+                                    Définissez correctement le prix unitaire pour éviter les erreurs lors de l’encaissement.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="ri-lightbulb-flash-line text-warning me-2"></i>
+                        Conseils
+                    </h5>
+
+                    <ul class="text-muted small ps-3 mb-0">
+                        <li class="mb-2">Saisissez un nom précis et facilement compréhensible.</li>
+                        <li class="mb-2">Ajoutez le code-barres si le produit en dispose.</li>
+                        <li class="mb-2">Contrôlez le prix avant validation.</li>
+                        <li class="mb-2">N’activez que les produits réellement utilisables.</li>
+                        <li>Gardez une nomenclature homogène pour tous les médicaments.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-box {
+        display: flex;
+        gap: 0.875rem;
+        align-items: flex-start;
+    }
+
+    .info-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .card {
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Caisse - Ventes{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# ===== En-tête de page ===== #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-shopping-cart-2-line me-2 text-primary"></i>
+                Caisse - Ventes
+            </h2>
+            <p class="text-muted mb-0">
+                Consultez l’historique des ventes enregistrées à la caisse.
+            </p>
+        </div>
+
+        <div>
+            <a class="btn btn-primary shadow-sm" href="{{ path('app_caisse_new') }}">
+                <i class="ri-add-line me-1"></i>
+                Nouvelle vente
+            </a>
+        </div>
+    </div>
+
+    {# ===== Carte principale ===== #}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <h5 class="mb-1 fw-semibold text-dark">Ventes récentes</h5>
+                    <small class="text-muted">
+                        Total : <span class="fw-semibold">{{ ventes|length }}</span> vente(s)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body px-4 pb-4">
+
+            {% if ventes|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-semibold text-dark">#</th>
+                                <th class="fw-semibold text-dark">Date</th>
+                                <th class="fw-semibold text-dark">Montant total</th>
+                                <th class="fw-semibold text-dark">Vendeur</th>
+                                <th class="fw-semibold text-dark text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in ventes %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-3 py-2">
+                                            #{{ v.id }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if v.date %}
+                                            <div class="fw-semibold text-dark">{{ v.date|date('d/m/Y') }}</div>
+                                            <small class="text-muted">{{ v.date|date('H:i') }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Non définie</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold text-success fs-6">
+                                            {{ v.total|number_format(0, ',', ' ') }} FCFA
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if v.vendeur %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
+                                                     style="width: 38px; height: 38px; font-weight: 700;">
+                                                    {{ v.vendeur.getNomComplet()|slice(0, 1)|upper }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ v.vendeur.getNomComplet() }}</div>
+                                                    <small class="text-muted">Utilisateur caisse</small>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Non renseigné</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-center">
+                                        <a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="#">
+                                            <i class="ri-eye-line me-1"></i>
+                                            Voir
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center"
+                             style="width: 70px; height: 70px;">
+                            <i class="ri-file-list-3-line fs-2 text-muted"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucune vente enregistrée</h5>
+                    <p class="text-muted mb-4">
+                        Commencez par créer une nouvelle vente pour alimenter l’historique de la caisse.
+                    </p>
+                    <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_caisse_new') }}">
+                        <i class="ri-add-line me-1"></i>
+                        Nouvelle vente
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

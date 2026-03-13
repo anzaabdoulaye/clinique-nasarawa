@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Lots de médicaments{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# ===== En-tête de page ===== #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-capsule-line me-2 text-primary"></i>
+                Lots de médicaments
+            </h2>
+            <p class="text-muted mb-0">
+                Gérez les lots, les dates de péremption et les quantités disponibles en stock.
+            </p>
+        </div>
+
+        <div>
+            <a class="btn btn-primary shadow-sm" href="{{ path('app_lot_new') }}">
+                <i class="ri-add-line me-1"></i>
+                Nouveau lot
+            </a>
+        </div>
+    </div>
+
+    {# ===== Carte principale ===== #}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <h5 class="mb-1 fw-semibold text-dark">Liste des lots</h5>
+                    <small class="text-muted">
+                        Total : <span class="fw-semibold">{{ lots|length }}</span> lot(s)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body px-4 pb-4">
+
+            {% if lots|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-semibold text-dark">#</th>
+                                <th class="fw-semibold text-dark">Médicament</th>
+                                <th class="fw-semibold text-dark">Numéro de lot</th>
+                                <th class="fw-semibold text-dark">Péremption</th>
+                                <th class="fw-semibold text-dark">Quantité</th>
+                                <th class="fw-semibold text-dark text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lot in lots %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark border px-3 py-2">
+                                            #{{ lot.id }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if lot.medicament %}
+                                            <div class="fw-semibold text-dark">
+                                                {{ lot.medicament.getNom() }}
+                                            </div>
+                                            <small class="text-muted">Produit pharmaceutique</small>
+                                        {% else %}
+                                            <span class="text-muted">Non renseigné</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if lot.numeroLot %}
+                                            <span class="fw-semibold text-dark">{{ lot.numeroLot }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if lot.datePeremption %}
+                                            {% set joursRestants = date(lot.datePeremption).diff(date()).days %}
+                                            <div class="fw-semibold text-dark">
+                                                {{ lot.datePeremption|date('d/m/Y') }}
+                                            </div>
+
+                                            {% if lot.datePeremption < date() %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                    Expiré
+                                                </span>
+                                            {% elseif lot.datePeremption|date('U') <= ("now"|date_modify("+30 days"))|date('U') %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                                    Bientôt expiré
+                                                </span>
+                                            {% else %}
+                                                <small class="text-muted">Valide</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if lot.quantite > 0 %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                {{ lot.quantite }} unité(s)
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                                Rupture
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
+                                            <a class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                               href="{{ path('app_lot_show', {id: lot.id}) }}">
+                                                <i class="ri-eye-line me-1"></i>
+                                                Voir
+                                            </a>
+
+                                            <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                               href="{{ path('app_lot_edit', {id: lot.id}) }}">
+                                                <i class="ri-pencil-line me-1"></i>
+                                                Éditer
+                                            </a>
+
+                                            <form method="post"
+                                                  action="{{ path('app_lot_delete', {id: lot.id}) }}"
+                                                  onsubmit="return confirm('Supprimer ce lot ?');"
+                                                  class="d-inline-block m-0">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ lot.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                    <i class="ri-delete-bin-line me-1"></i>
+                                                    Supprimer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center"
+                             style="width: 70px; height: 70px;">
+                            <i class="ri-capsule-line fs-2 text-muted"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucun lot enregistré</h5>
+                    <p class="text-muted mb-4">
+                        Commencez par ajouter un nouveau lot pour suivre votre stock de médicaments.
+                    </p>
+                    <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_lot_new') }}">
+                        <i class="ri-add-line me-1"></i>
+                        Nouveau lot
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

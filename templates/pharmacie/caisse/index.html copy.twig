@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Caisse - Ventes{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>Ventes récentes</h1>
+    <a class="btn btn-primary mb-3" href="{{ path('app_caisse_new') }}">Nouvelle vente</a>
+
+    <table class="table">
+        <thead>
+            <tr><th>#</th><th>Date</th><th>Total</th><th>Vendeur</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for v in ventes %}
+                <tr>
+                    <td>{{ v.id }}</td>
+                    <td>{{ v.date ? v.date.format('d/m/Y H:i') : '' }}</td>
+                    <td>{{ v.total }}</td>
+                    <td>{{ v.vendeur ? v.vendeur.getNomComplet() : '' }}</td>
+                    <td><a class="btn btn-sm btn-outline-secondary" href="#">Voir</a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">Aucune vente</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

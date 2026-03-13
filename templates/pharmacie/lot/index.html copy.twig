@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Lots{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>Lots de médicaments</h1>
+    <a class="btn btn-primary mb-3" href="{{ path('app_lot_new') }}">Nouveau lot</a>
+
+    <table class="table">
+        <thead>
+            <tr><th>#</th><th>Médicament</th><th>Lot</th><th>Péremption</th><th>Quantité</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for lot in lots %}
+                <tr>
+                    <td>{{ lot.id }}</td>
+                    <td>{{ lot.medicament ? lot.medicament.getNom() : '' }}</td>
+                    <td>{{ lot.numeroLot ?: '—' }}</td>
+                    <td>{{ lot.datePeremption ? lot.datePeremption|date('d/m/Y') : '—' }}</td>
+                    <td>{{ lot.quantite }}</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ path('app_lot_show', {id: lot.id}) }}">Voir</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ path('app_lot_edit', {id: lot.id}) }}">Éditer</a>
+                        <form style="display:inline-block" method="post" action="{{ path('app_lot_delete', {id: lot.id}) }}" onsubmit="return confirm('Supprimer ce lot ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ lot.id) }}" />
+                            <button class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6">Aucun lot</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

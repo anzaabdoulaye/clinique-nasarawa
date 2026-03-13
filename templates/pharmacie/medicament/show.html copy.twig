@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau médicament{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1 fw-bold">
+                <i class="ri-capsule-line text-primary me-2"></i>
+                Détails du médicament
+            </h3>
+            <p class="text-muted mb-0">Fiche descriptive et lots associés.</p>
+        </div>
+
+        <div class="btn-group">
+            <a href="{{ path('app_medicament_index') }}" class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-1"></i> Retour
+            </a>
+            <a href="{{ path('app_medicament_edit', {'id': medicament.id}) }}" class="btn btn-primary">
+                <i class="ri-edit-line me-1"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Informations</h5>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Nom</dt>
+                        <dd class="col-sm-9">{{ medicament.nom }}</dd>
+
+                        <dt class="col-sm-3">SKU</dt>
+                        <dd class="col-sm-9">{{ medicament.sku ?: '—' }}</dd>
+
+                        <dt class="col-sm-3">Code-barres</dt>
+                        <dd class="col-sm-9">{{ medicament.codeBarre ?: '—' }}</dd>
+
+                        <dt class="col-sm-3">Description</dt>
+                        <dd class="col-sm-9">{{ medicament.description ?: '—' }}</dd>
+
+                        <dt class="col-sm-3">Prix unitaire</dt>
+                        <dd class="col-sm-9">{{ medicament.prixUnitaire|number_format(2, ',', ' ') }} </dd>
+
+                        <dt class="col-sm-3">Actif</dt>
+                        <dd class="col-sm-9">{{ medicament.actif ? 'Oui' : 'Non' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Lots associés</h5>
+
+                    {% if medicament.lots is not empty %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Lot</th>
+                                        <th>Peremption</th>
+                                        <th>Quantité</th>
+                                        <th>Prix achat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lot in medicament.lots %}
+                                        <tr>
+                                            <td>{{ lot.numeroLot ?: lot.id }}</td>
+                                            <td>{{ lot.datePeremption ? lot.datePeremption|date('Y-m-d') : '—' }}</td>
+                                            <td>{{ lot.quantite }}</td>
+                                            <td>{{ lot.prixAchat is not null ? lot.prixAchat|number_format(2, ',', ' ') : '—' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucun lot associé pour ce médicament.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        Informations utiles
+                    </h5>
+                    <p class="text-muted small mb-0">Utilisez les boutons ci-dessus pour modifier ou retourner à la liste.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
