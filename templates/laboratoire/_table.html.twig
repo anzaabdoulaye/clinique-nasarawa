@@ -1,0 +1,61 @@
+<div class="table-responsive">
+    <table class="table align-middle table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Patient</th>
+                <th>Examen</th>
+                <th>Consultation</th>
+                <th>Médecin</th>
+                <th>Date prescription</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for prestation in prestations %}
+            {% set consultation = prestation.consultation %}
+            {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
+            {% set patient = rdv ? rdv.patient|default(null) : null %}
+            {% set statut = prestation.statut.value %}
+            <tr>
+                <td>{{ prestation.id }}</td>
+                <td>
+                    {% if patient %}
+                        {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ prestation.tarifPrestation.libelle }}</td>
+                <td>#{{ consultation.id }}</td>
+                <td>
+                    {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}
+                </td>
+                <td>{{ prestation.createdAt ? prestation.createdAt|date('Y-m-d H:i') : '-' }}</td>
+                <td>
+                    {% if statut == 'paye' %}
+                        <span class="badge bg-success">Payé</span>
+                    {% elseif statut == 'en_cours' %}
+                        <span class="badge bg-primary">En cours</span>
+                    {% elseif statut == 'realise' %}
+                        <span class="badge bg-secondary">Réalisé</span>
+                    {% else %}
+                        <span class="badge bg-dark">{{ statut }}</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ path('app_laboratoire_show', {id: prestation.id}) }}"
+                       class="btn btn-sm btn-outline-primary">
+                        Voir
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8" class="text-center text-muted">{{ emptyMessage }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

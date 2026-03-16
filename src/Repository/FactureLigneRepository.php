@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\FactureLigne;
+use App\Entity\PrescriptionPrestation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,6 +15,16 @@ class FactureLigneRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, FactureLigne::class);
+    }
+
+    public function findOneByPrescriptionPrestation(PrescriptionPrestation $prescription): ?FactureLigne
+    {
+        return $this->createQueryBuilder('fl')
+            ->andWhere('fl.prescriptionPrestation = :prescription')
+            ->setParameter('prescription', $prescription)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     //    /**

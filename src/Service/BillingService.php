@@ -17,7 +17,7 @@ final class BillingService
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private BonExamenRepository $bonRepo, // ✅ injecte ce repo
+        private BonExamenRepository $bonRepo,
     ) {}
 
     public function generateDraftInvoice(Consultation $c, int $forfaitConsultation = 0): Facture

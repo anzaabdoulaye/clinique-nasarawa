@@ -1,0 +1,104 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Examen laboratoire #{{ prestation.id }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    {% set consultation = prestation.consultation %}
+    {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
+    {% set patient = rdv ? rdv.patient|default(null) : null %}
+    {% set statut = prestation.statut.value %}
+
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h3 class="mb-1">Examen laboratoire #{{ prestation.id }}</h3>
+            <div class="text-muted small">
+                {{ prestation.tarifPrestation.libelle }}
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_laboratoire_index') }}" class="btn btn-outline-secondary">
+                Retour
+            </a>
+
+            {% if statut == 'paye' %}
+                <form method="post" action="{{ path('app_laboratoire_prendre_en_charge', {id: prestation.id}) }}">
+                    <button type="submit" class="btn btn-primary">
+                        Prendre en charge
+                    </button>
+                </form>
+            {% endif %}
+
+            {% if statut in ['paye', 'en_cours'] %}
+                <form method="post" action="{{ path('app_laboratoire_realiser', {id: prestation.id}) }}">
+                    <button type="submit" class="btn btn-success">
+                        Marquer réalisé
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Patient</div>
+                <div class="card-body">
+                    <div><strong>Nom :</strong>
+                        {% if patient %}
+                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
+                    <div><strong>Rendez-vous :</strong> {{ rdv ? ('#' ~ rdv.id) : '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Examen</div>
+                <div class="card-body">
+                    <div><strong>Libellé :</strong> {{ prestation.tarifPrestation.libelle }}</div>
+                    <div><strong>Catégorie :</strong> {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}</div>
+                    <div><strong>Quantité :</strong> {{ prestation.quantite }}</div>
+                    <div><strong>Service :</strong> {{ prestation.tarifPrestation.serviceExecution ?: '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Suivi</div>
+                <div class="card-body">
+                    <div><strong>Statut :</strong>
+                        {% if statut == 'paye' %}
+                            <span class="badge bg-success">Payé</span>
+                        {% elseif statut == 'en_cours' %}
+                            <span class="badge bg-primary">En cours</span>
+                        {% elseif statut == 'realise' %}
+                            <span class="badge bg-secondary">Réalisé</span>
+                        {% else %}
+                            <span class="badge bg-dark">{{ statut }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2"><strong>Date création :</strong> {{ prestation.createdAt ? prestation.createdAt|date('Y-m-d H:i') : '-' }}</div>
+                    <div><strong>Dernière mise à jour :</strong> {{ prestation.modifiedAt ? prestation.modifiedAt|date('Y-m-d H:i') : '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white fw-semibold">Instructions médicales</div>
+                <div class="card-body">
+                    {{ prestation.instructions ?: 'Aucune instruction particulière.' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,63 +4,48 @@
 
 {% block body %}
 <div class="container-fluid">
+    {% set rdv = consultation.rendezVous|default(null) %}
+    {% set patient = rdv ? (rdv.patient|default(null)) : null %}
+    {% set st = consultation.statut is defined and consultation.statut ? (consultation.statut.name ?? consultation.statut.value ?? '') : '' %}
+    {% set badgeClass =
+        st in ['EN_COURS'] ? 'bg-primary' :
+        st in ['BROUILLON'] ? 'bg-secondary' :
+        st in ['CLOTURE', 'CLOTUREE'] ? 'bg-success' :
+        st in ['ANNULE', 'ANNULEE'] ? 'bg-danger' :
+        'bg-dark'
+    %}
+    {% set locked = st in ['CLOTURE', 'CLOTUREE', 'ANNULE', 'ANNULEE'] %}
+
     {# ===================== HEADER ===================== #}
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
         <div>
             <h3 class="mb-1">
                 Consultation <span class="text-muted">#{{ consultation.id }}</span>
             </h3>
 
             <div class="text-muted small">
-                {% if consultation.rendezVous is defined and consultation.rendezVous %}
-                    RDV #{{ consultation.rendezVous.id }}
-                    {% if consultation.rendezVous.dateHeure is defined %}
-                        — {{ consultation.rendezVous.dateHeure|date('Y-m-d H:i') }}
+                {% if rdv %}
+                    RDV #{{ rdv.id }}
+                    {% if rdv.dateHeure is defined and rdv.dateHeure %}
+                        — {{ rdv.dateHeure|date('Y-m-d H:i') }}
                     {% endif %}
                 {% endif %}
             </div>
 
             <div class="mt-2 d-flex flex-wrap gap-2">
-                {# Statut consultation #}
-                {% if consultation.statut is defined and consultation.statut %}
-                    {% set st = consultation.statut.name ?? consultation.statut.value ?? '' %}
-                    {% set badgeClass =
-                        st in ['EN_COURS'] ? 'bg-primary' :
-                        st in ['BROUILLON'] ? 'bg-secondary' :
-                        st in ['CLOTURE','CLOTUREE'] ? 'bg-success' :
-                        st in ['ANNULE','ANNULEE'] ? 'bg-danger' :
-                        'bg-dark'
-                    %}
-                    <span class="badge {{ badgeClass }}">{{ st }}</span>
-                {% endif %}
+                <span class="badge {{ badgeClass }}">{{ st ?: 'N/A' }}</span>
 
-                {# Médecin #}
-{#                 {% if consultation.medecin is defined and consultation.medecin %}
+                {% if consultation.medecin is defined and consultation.medecin %}
                     <span class="badge bg-light text-dark border">
                         Médecin :
-                        {% if consultation.medecin %}
-                        <span class="badge bg-light text-dark border">
-                            Médecin :
-                            {{ consultation.medecin.nomComplet
-                                ?? (consultation.medecin.nom ~ ' ' ~ consultation.medecin.prenom)
-                                ?? consultation.medecin.id
-                            }}
-                        </span>
-                    {% endif %}
+                        {{ consultation.medecin.nomComplet|default(((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim))|default(consultation.medecin.id) }}
                     </span>
-                {% endif %} #}
-
-               {# Patient #}
-                {% set rdv = consultation.rendezVous|default(null) %}
-                {% set patient = rdv ? (rdv.patient|default(null)) : null %}
+                {% endif %}
 
                 {% if patient %}
                     <span class="badge bg-light text-dark border">
                         Patient :
-                        {{ patient.nomComplet
-                            |default(((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim))
-                            |default(patient.id)
-                        }}
+                        {{ patient.nomComplet|default(((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim))|default(patient.id) }}
                     </span>
                 {% endif %}
             </div>
@@ -72,80 +57,145 @@
                 <i class="fa fa-arrow-left me-1"></i> Retour
             </a>
 
-            {# Bouton édition Phase C : désactivé si clôturée/annulée #}
-            {% set stName = (consultation.statut.name ?? '') %}
-            {% set locked = stName in ['CLOTURE', 'CLOTUREE', 'ANNULE', 'ANNULEE'] %}
+            <button type="button"
+                    class="btn btn-primary js-edit-consultation {{ locked ? 'disabled' : '' }}"
+                    title="Saisie médicale"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editConsultationModal"
+                    data-url="{{ path('app_consultation_medical_edit', {'id': consultation.id}) }}"
+                    {{ locked ? 'disabled' : '' }}>
+                <i class="fa fa-pen me-1"></i> Saisie médicale
+            </button>
+        </div>
+    </div>
 
-           <button type="button"
-                class="btn btn-primary js-edit-consultation {{ locked ? 'disabled' : '' }}"
-                title="Saisie médicale"
-                data-bs-toggle="modal"
-                data-bs-target="#editConsultationModal"
-                data-url="{{ path('app_consultation_medical_edit', {'id': consultation.id}) }}"
-                {{ locked ? 'disabled' : '' }}>
-                
-            <i class="fa fa-pen me-1"></i> Saisie médicale
-        </button>
+    {# ===================== PRESTATIONS PRESCRITES ===================== #}
+    <div class="card shadow-sm border-0 rounded-4 mt-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Prestations prescrites</h5>
+                <small class="text-muted">Actes, examens et consommables demandés par le médecin</small>
+            </div>
 
-         <button type="button"
-                class="btn btn-outline-success js-open-facture"
-                data-bs-toggle="modal"
-                data-bs-target="#factureModal"
-                data-url="{{ path('app_consultation_facture_modal', {id: consultation.id}) }}">
-        <i class="ri-bill-line me-1"></i> Facturer
-        </button>
+            <button type="button"
+                    class="btn btn-primary btn-sm js-add-prestation"
+                    data-bs-toggle="modal"
+                    data-bs-target="#prestationModal"
+                    data-url="{{ path('app_prescription_prestation_new', {id: consultation.id}) }}">
+                <i class="ri-add-line me-1"></i> Ajouter
+            </button>
+        </div>
 
-        <button type="button"
-        class="btn btn-outline-primary js-open-prescription"
-        data-bs-toggle="modal"
-        data-bs-target="#prescriptionModal"
-        data-url="{{ path('app_consultation_prescription_modal', {id: consultation.id}) }}">
-  <i class="ri-file-text-line me-1"></i> Prescription
-</button>
+        <div class="card-body">
+            {% if consultation.prescriptionsPrestations is defined and consultation.prescriptionsPrestations|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Prestation</th>
+                                <th>Catégorie</th>
+                                <th>Quantité</th>
+                                <th>Instructions</th>
+                               
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in consultation.prescriptionsPrestations %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {{ p.tarifPrestation.libelle|default('-') }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        {{ p.tarifPrestation.categorie.value|default('-')|replace({'_':' '})|title }}
+                                    </span>
+                                </td>
+                                <td>{{ p.quantite|default(1) }}</td>
+                                <td>{{ p.instructions ?: '-' }}</td>
+                                <td class="text-end">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary js-edit-prestation"
+                                            title="Modifier"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#prestationModal"
+                                            data-url="{{ path('app_prescription_prestation_edit', {id: p.id}) }}">
+                                        <i class="ri-pencil-line"></i>
+                                    </button>
 
-            {# On garde delete mais idéalement réservé admin #}
-            {{ include('consultation/_delete_form.html.twig') }}
+                                    <form method="post"
+                                          action="{{ path('app_prescription_prestation_delete', {id: p.id}) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Supprimer cette prestation ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_prestation_' ~ p.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="ri-file-list-3-line fs-1 text-muted"></i>
+                    <p class="text-muted mb-0 mt-2">Aucune prestation prescrite pour cette consultation.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 
     {# ===================== KPI CARDS (Constantes) ===================== #}
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 mt-1">
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Poids</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.poids ?? '-' }} <span class="text-muted fs-6">kg</span>
+                       <div class="fs-4 fw-semibold" id="consultation-poids">
+    {{ consultation.poids ?? '-' }} <span class="text-muted fs-6">kg</span>
+</div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Taille</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
+                       <div class="fs-4 fw-semibold" id="consultation-taille">
+    {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
+</div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Température</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.temperature ?? '-' }} <span class="text-muted fs-6">°C</span>
+                        <div class="fs-4 fw-semibold" id="consultation-temperature">
+    {{ consultation.temperature ?? '-' }} <span class="text-muted fs-6">°C</span>
+</div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Fréquence cardiaque</div>
                     <div class="fs-4 fw-semibold">
-                        {{ consultation.frequenceCardiaque ?? '-' }} <span class="text-muted fs-6">bpm</span>
+                        <div class="fs-4 fw-semibold" id="consultation-frequence">
+    {{ consultation.frequenceCardiaque ?? '-' }} <span class="text-muted fs-6">bpm</span>
+</div>
                     </div>
                 </div>
             </div>
@@ -155,33 +205,29 @@
     {# ===================== TABS ===================== #}
     <ul class="nav nav-tabs" id="consultTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-clinique" data-bs-toggle="tab" data-bs-target="#pane-clinique"
-                    type="button" role="tab">
+            <button class="nav-link active"
+                    id="tab-clinique"
+                    data-bs-toggle="tab"
+                    data-bs-target="#pane-clinique"
+                    type="button"
+                    role="tab">
                 Clinique
             </button>
         </li>
+
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-prescriptions" data-bs-toggle="tab" data-bs-target="#pane-prescriptions"
-                    type="button" role="tab">
+            <button class="nav-link"
+                    id="tab-prescriptions"
+                    data-bs-toggle="tab"
+                    data-bs-target="#pane-prescriptions"
+                    type="button"
+                    role="tab">
                 Prescriptions
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-examens" data-bs-toggle="tab" data-bs-target="#pane-examens"
-                    type="button" role="tab">
-                Examens demandés
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-actes" data-bs-toggle="tab" data-bs-target="#pane-actes"
-                    type="button" role="tab">
-                Actes réalisés
             </button>
         </li>
     </ul>
 
     <div class="tab-content border border-top-0 rounded-bottom p-3" id="consultTabsContent">
-
         {# ========== CLINIQUE ========== #}
         <div class="tab-pane fade show active" id="pane-clinique" role="tabpanel">
             <div class="row g-3">
@@ -189,13 +235,14 @@
                     <div class="card h-100">
                         <div class="card-header fw-semibold">Motif & Histoire</div>
                         <div class="card-body">
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <div class="text-muted small">Motifs</div>
-                                <div>{{ consultation.motifs ?? '-' }}</div>
+                                <div id="consultation-motifs">{{ consultation.motifs ?? '-' }}</div>
                             </div>
+
                             <div>
                                 <div class="text-muted small">Histoire / Anamnèse</div>
-                                <div>{{ consultation.histoire ?? '-' }}</div>
+                                <div id="consultation-histoire">{{ consultation.histoire ?? '-' }}</div>
                             </div>
                         </div>
                     </div>
@@ -205,24 +252,24 @@
                     <div class="card h-100">
                         <div class="card-header fw-semibold">Examen & Diagnostic</div>
                         <div class="card-body">
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <div class="text-muted small">Examen clinique</div>
-                                <div>{{ consultation.examenClinique ?? '-' }}</div>
+                                <div id="consultation-examen">{{ consultation.examenClinique ?? '-' }}</div>
                             </div>
 
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <div class="text-muted small">Tension artérielle</div>
-                                <div>{{ consultation.tensionArterielle ?? '-' }}</div>
+                                <div id="consultation-tension">{{ consultation.tensionArterielle ?? '-' }}</div>
                             </div>
 
-                            <div class="mb-2">
-                                <div class="text-muted small">Diagnostic (texte)</div>
-                                <div>{{ consultation.diagnostic ?? '-' }}</div>
+                            <div class="mb-3">
+                                <div class="text-muted small">Diagnostic</div>
+                                <div id="consultation-diagnostic">{{ consultation.diagnostic ?? '-' }}</div>
                             </div>
 
                             <div>
-                                <div class="text-muted small">Diagnostic CIM10 (optionnel)</div>
-                                <div>
+                                <div class="text-muted small">CIM10</div>
+                                <div id="consultation-cim10">
                                     {% if consultation.cim10 is defined and consultation.cim10 %}
                                         {{ consultation.cim10 }}
                                     {% else %}
@@ -238,7 +285,7 @@
                     <div class="card">
                         <div class="card-header fw-semibold">Conduite à tenir</div>
                         <div class="card-body">
-                            {{ consultation.conduiteATenir ?? '-' }}
+                            <div id="consultation-conduite">{{ consultation.conduiteATenir ?? '-' }}</div>
                         </div>
                     </div>
                 </div>
@@ -246,7 +293,9 @@
                 <div class="col-12">
                     <div class="text-muted small">
                         Créée : {{ consultation.createdAt ? consultation.createdAt|date('Y-m-d H:i') : '-' }}
-                        — Modifiée : {{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i') : '-' }}
+                        — Modifiée : <div id="consultation-modified-at">
+    {{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i') : '-' }}
+</div>
                     </div>
                 </div>
             </div>
@@ -254,6 +303,18 @@
 
         {# ========== PRESCRIPTIONS ========== #}
         <div class="tab-pane fade" id="pane-prescriptions" role="tabpanel">
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Prescription</h6>
+                    <span class="badge bg-light text-dark border">
+                        {{ consultation.prescriptions is defined ? consultation.prescriptions|length : 0 }} document(s)
+                    </span>
+                </div>
+                <div class="card-body" id="prescriptionSummary">
+                    {% include 'prescription/_summary.html.twig' with { consultation: consultation } %}
+                </div>
+            </div>
+
             {% if consultation.prescriptions is defined and consultation.prescriptions|length > 0 %}
                 <div class="table-responsive">
                     <table class="table align-middle">
@@ -269,7 +330,7 @@
                         {% for p in consultation.prescriptions %}
                             <tr>
                                 <td>{{ p.id }}</td>
-                   {# ========== EXAMENS ==========            <td>{{ p.datePrescription ? p.datePrescription|date('Y-m-d H:i') : '-' }}</td>  #}   
+                                <td>{{ p.datePrescription is defined and p.datePrescription ? p.datePrescription|date('Y-m-d H:i') : '-' }}</td>
                                 <td>{{ p.commentaire ?? '-' }}</td>
                                 <td class="text-end">
                                     {{ p.lignes is defined ? p.lignes|length : 0 }}
@@ -283,121 +344,6 @@
                 <div class="text-muted">Aucune prescription pour le moment.</div>
             {% endif %}
         </div>
-
-        <div class="card mb-3">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h6 class="mb-0">Examens — Bon laboratoire</h6>
-    <button type="button"
-            class="btn btn-sm btn-outline-primary js-open-bon"
-            data-bs-toggle="modal"
-            data-bs-target="#bonExamenModal"
-            data-url="{{ path('app_consultation_labo_bon_modal', {id: consultation.id}) }}">
-      <i class="ri-add-line me-1"></i> Demander examens
-    </button>
-  </div>
-
-  <div class="card-body" id="bonExamenList">
-    {% include 'laboratoire/bons/_consultation_list.html.twig' with { consultation: consultation, bons: bonsLabo } %}
-  </div>
-</div>
-
-<div class="modal fade" id="bonExamenModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-body p-4 text-center text-muted">Chargement...</div>
-    </div>
-  </div>
-</div>
-
-        <div class="card mb-3">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h6 class="mb-0">Prescription</h6>
-    <span class="badge bg-light text-dark border">
-      {{ consultation.prescriptions|length }} document(s)
-    </span>
-  </div>
-  <div class="card-body" id="prescriptionSummary">
-    {% include 'prescription/_summary.html.twig' with { consultation: consultation } %}
-  </div>
-</div>
-
-        {# ========== EXAMENS ========== #}
-        <div class="tab-pane fade" id="pane-examens" role="tabpanel">
-            {% if consultation.examensDemandes is defined and consultation.examensDemandes|length > 0 %}
-                <div class="table-responsive">
-                <a class="btn btn-outline-secondary btn-sm"
-                target="_blank"
-                href="{{ path('app_consultation_examens_bon', {id: consultation.id}) }}">
-                <i class="ri-printer-line me-1"></i> Bon d’examens
-                </a>
-                    <table class="table align-middle">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Libellé</th>
-                            <th>Urgence</th>
-                            <th>Statut</th>
-                            <th>Note</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for e in consultation.examensDemandes %}
-                            <tr>
-                                <td>{{ e.id }}</td>
-                                <td>{{ e.libelle ?? '-' }}</td>
-                                <td>
-                                    {% if e.urgence %}
-                                        <span class="badge bg-danger">Urgent</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Non</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {{ e.statut.name ?? e.statut.value ?? '-' }}
-                                </td>
-                                <td>{{ e.note ?? '-' }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-muted">Aucun examen demandé pour le moment.</div>
-            {% endif %}
-        </div>
-
-        {# ========== ACTES ========== #}
-        <div class="tab-pane fade" id="pane-actes" role="tabpanel">
-            {% if consultation.actesRealises is defined and consultation.actesRealises|length > 0 %}
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Libellé</th>
-                            <th>Quantité</th>
-                            <th>PU</th>
-                            <th>Note</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for a in consultation.actesRealises %}
-                            <tr>
-                                <td>{{ a.id }}</td>
-                                <td>{{ a.libelle ?? '-' }}</td>
-                                <td>{{ a.quantite ?? 1 }}</td>
-                                <td>{{ a.prixUnitaire ?? '-' }}</td>
-                                <td>{{ a.note ?? '-' }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-muted">Aucun acte réalisé pour le moment.</div>
-            {% endif %}
-        </div>
-
     </div>
 </div>
 
@@ -410,7 +356,7 @@
 
       <div class="modal-header bg-white">
         <h5 class="modal-title fw-semibold">
-          <i class="fa fa-pen me-2 text-primary"></i> Modifier la consultation
+          <i class="fa fa-pen me-2 text-primary"></i> Saisie médicale
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
@@ -435,399 +381,392 @@
 </div>
 
 {# =========================
-   MODAL FACTURE (AJAX)
+   MODAL PRESTATION (AJAX)
 ========================= #}
-<div class="modal fade" id="factureModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-body p-0">
-        <div class="p-4 text-center text-muted">Chargement...</div>
-      </div>
+<div class="modal fade" id="prestationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" id="prestationModalContent">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3 mb-0">Chargement...</p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-
 {# =========================
    MODAL RESUME PRESCRIPTION (AJAX)
 ========================= #}
-
 <div class="modal fade" id="prescriptionModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-body p-4 text-center text-muted">Chargement...</div>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-body p-4 text-center text-muted">Chargement...</div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 {% block javascripts %}
-  {{ parent() }}
-  <script>
-    (function () {
-      const editModalEl = document.getElementById('editConsultationModal');
-      const loader = document.getElementById('editConsultationLoader');
-      const body = document.getElementById('editConsultationModalBody');
+    {{ parent() }}
+    <script>
+    (() => {
+        const modalEl = document.getElementById('editConsultationModal');
+        if (!modalEl) {
+            console.error('Modal #editConsultationModal introuvable');
+            return;
+        }
 
-      let currentUrl = null;
+        let currentUrl = null;
 
-      function showError(message) {
-        loader.classList.add('d-none');
-        body.classList.remove('d-none');
-        body.innerHTML = `
-          <div class="alert alert-danger d-flex align-items-start gap-2 mb-0" role="alert">
-            <i class="fa fa-exclamation-triangle mt-1"></i>
-            <div>
-              <div class="fw-semibold">Erreur</div>
-              <div class="small">${message || 'Impossible de charger le formulaire.'}</div>
+        function getLoader() {
+            return modalEl.querySelector('#editConsultationLoader');
+        }
+
+        function getBody() {
+            return modalEl.querySelector('#editConsultationModalBody');
+        }
+
+        function setLoading() {
+            const loader = getLoader();
+            const body = getBody();
+
+            if (!loader || !body) {
+                console.error('Loader ou body introuvable dans la modale', { loader, body });
+                return;
+            }
+
+            loader.classList.remove('d-none');
+            body.classList.add('d-none');
+            body.innerHTML = '';
+        }
+
+        function showError(message, details = '') {
+            const loader = getLoader();
+            const body = getBody();
+
+            if (!body) {
+                console.error('Body introuvable pour afficher erreur', { message, details });
+                return;
+            }
+
+            if (loader) {
+                loader.classList.add('d-none');
+            }
+
+            body.classList.remove('d-none');
+            body.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <div class="fw-semibold mb-1">Erreur</div>
+                    <div>${message || 'Impossible de charger le formulaire.'}</div>
+                    ${details ? `<hr><pre class="mb-0 small" style="white-space: pre-wrap;">${details}</pre>` : ''}
+                </div>
+            `;
+        }
+
+        function bindMedicalForm() {
+            const body = getBody();
+            if (!body) return;
+
+            const form = body.querySelector('#medicalForm');
+            console.log('bindMedicalForm =>', !!form);
+
+            if (!form) {
+                showError('Le formulaire #medicalForm est introuvable dans la modale.');
+                return;
+            }
+
+            if (form.dataset.bound === '1') return;
+            form.dataset.bound = '1';
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                console.log('SUBMIT AJAX intercepté');
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const oldHtml = submitBtn ? submitBtn.innerHTML : '';
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = 'Enregistrement...';
+                }
+
+                try {
+                    const response = await fetch(form.action || currentUrl, {
+                        method: (form.method || 'POST').toUpperCase(),
+                        body: new FormData(form),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+console.log('submit status=', response.status, 'contentType=', contentType);
+console.log('submit redirected =', response.redirected);
+console.log('submit final url =', response.url);
+
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        console.log('JSON reçu:', data);
+
+                        if (response.ok && data.success) {
+                            bootstrap.Modal.getInstance(modalEl)?.hide();
+                            const d = data.data || {};
+
+                            const setHtml = (id, value) => {
+                                const el = document.getElementById(id);
+                                if (el) el.innerHTML = value ?? '-';
+                            };
+
+                            setHtml('consultation-poids', `${d.poids ?? '-'} <span class="text-muted fs-6">kg</span>`);
+                            setHtml('consultation-taille', `${d.taille ?? '-'} <span class="text-muted fs-6">cm</span>`);
+                            setHtml('consultation-temperature', `${d.temperature ?? '-'} <span class="text-muted fs-6">°C</span>`);
+                            setHtml('consultation-frequence', `${d.frequenceCardiaque ?? '-'} <span class="text-muted fs-6">bpm</span>`);
+
+                            setHtml('consultation-motifs', d.motifs || '-');
+                            setHtml('consultation-histoire', d.histoire || '-');
+                            setHtml('consultation-examen', d.examenClinique || '-');
+                            setHtml('consultation-tension', d.tensionArterielle || '-');
+                            setHtml('consultation-diagnostic', d.diagnostic || '-');
+                            setHtml('consultation-cim10', d.cim10 || '-');
+                            setHtml('consultation-conduite', d.conduiteATenir || '-');
+                            setHtml('consultation-modified-at', d.modifiedAt || '-');
+
+                            bootstrap.Modal.getInstance(modalEl)?.hide();
+                            return;
+                        }
+
+                        showError(data.message || 'Erreur JSON côté serveur.', JSON.stringify(data, null, 2));
+                        return;
+                    }
+
+                    const html = await response.text();
+                    console.log('HTML reçu après submit');
+
+                    const loader = getLoader();
+                    const body = getBody();
+                    if (!body) return;
+
+                    body.innerHTML = html;
+                    if (loader) loader.classList.add('d-none');
+                    body.classList.remove('d-none');
+
+                    bindMedicalForm();
+                } catch (error) {
+                    console.error('Erreur submit fetch:', error);
+                    showError('Erreur JS/fetch pendant la soumission.', error.message || '');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = oldHtml;
+                    }
+                }
+            });
+        }
+
+        async function loadMedicalForm(url) {
+            currentUrl = url;
+            console.log('loadMedicalForm()', url);
+            setLoading();
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const text = await response.text();
+                console.log('GET status=', response.status);
+
+                if (!response.ok) {
+                    showError(`Chargement impossible (HTTP ${response.status})`, text);
+                    return;
+                }
+
+                const loader = getLoader();
+                const body = getBody();
+
+                if (!body) {
+                    showError('Le conteneur #editConsultationModalBody est introuvable.');
+                    return;
+                }
+
+                body.innerHTML = text;
+                if (loader) loader.classList.add('d-none');
+                body.classList.remove('d-none');
+
+                bindMedicalForm();
+            } catch (error) {
+                console.error('Erreur GET fetch:', error);
+                showError('Erreur JS/fetch pendant le chargement.', error.message || '');
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-edit-consultation');
+            if (!btn) return;
+
+            const url = btn.dataset.url;
+            console.log('clic .js-edit-consultation =>', url);
+
+            if (!url) {
+                showError('Aucune URL trouvée sur le bouton.');
+                return;
+            }
+
+            loadMedicalForm(url);
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            currentUrl = null;
+            setLoading();
+        });
+    })();
+    </script>
+    <script>
+(() => {
+    const prestationModalEl = document.getElementById('prestationModal');
+    const prestationModalContent = document.getElementById('prestationModalContent');
+
+    if (!prestationModalEl || !prestationModalContent) {
+        console.error('Modale prestation introuvable');
+        return;
+    }
+
+    function showLoading() {
+        prestationModalContent.innerHTML = `
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3 mb-0">Chargement...</p>
             </div>
-          </div>
         `;
-      }
+    }
 
-      function setLoading() {
-        loader.classList.remove('d-none');
-        body.classList.add('d-none');
-        body.innerHTML = '';
-      }
+    function showError(message, details = '') {
+        prestationModalContent.innerHTML = `
+            <div class="modal-header">
+                <h5 class="modal-title">Erreur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger mb-0">
+                    <div class="fw-semibold mb-1">${message || 'Impossible de charger le formulaire.'}</div>
+                    ${details ? `<pre class="small mt-2 mb-0" style="white-space: pre-wrap;">${details}</pre>` : ''}
+                </div>
+            </div>
+        `;
+    }
 
-      function focusFirstField() {
-        const first = body.querySelector('input, select, textarea');
-        if (first) first.focus();
-      }
+    function bindPrestationForm() {
+        const form = prestationModalContent.querySelector('#prestationForm') || prestationModalContent.querySelector('form');
+        console.log('bindPrestationForm =>', !!form);
 
-      async function loadEditForm(url) {
-        currentUrl = url;
-        setLoading();
+        if (!form) {
+            showError('Le formulaire prestation est introuvable.', prestationModalContent.innerHTML);
+            return;
+        }
 
-        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (form.dataset.bound === '1') return;
+        form.dataset.bound = '1';
 
-        const html = await res.text();
-        body.innerHTML = html;
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            console.log('SUBMIT prestation intercepté');
 
-        loader.classList.add('d-none');
-        body.classList.remove('d-none');
+            const submitBtn = form.querySelector('.js-submit-prestation, button[type="submit"]');
+            const oldHtml = submitBtn ? submitBtn.innerHTML : '';
 
-        focusFirstField();
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enregistrement...`;
+            }
 
-        const form = body.querySelector('form');
-        if (!form) return;
+            try {
+                const response = await fetch(form.action, {
+                    method: (form.method || 'POST').toUpperCase(),
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
 
-        form.addEventListener('submit', async (ev) => {
-          ev.preventDefault();
+                const contentType = response.headers.get('content-type') || '';
+                console.log('submit prestation status=', response.status, 'contentType=', contentType);
+                console.log('submit prestation redirected=', response.redirected);
+                console.log('submit prestation final url=', response.url);
 
-          // Désactiver le bouton submit pendant l'envoi
-          const submitBtn = form.querySelector('[type="submit"]');
-          const oldSubmitHtml = submitBtn ? submitBtn.innerHTML : null;
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Enregistrement...`;
-          }
+                if (contentType.includes('application/json')) {
+                    const data = await response.json();
+                    console.log('JSON prestation reçu:', data);
 
-          try {
-            const formData = new FormData(form);
-            const submitUrl = form.getAttribute('action') || currentUrl;
-            const method = (form.getAttribute('method') || 'POST').toUpperCase();
+                    if (response.ok && data.success) {
+                        bootstrap.Modal.getInstance(prestationModalEl)?.hide();
+                        window.location.reload();
+                        return;
+                    }
 
-            const submitRes = await fetch(submitUrl, {
-              method,
-              body: formData,
-              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    showError(data.message || 'Erreur lors de l’enregistrement.');
+                    return;
+                }
+
+                const html = await response.text();
+                prestationModalContent.innerHTML = html;
+                bindPrestationForm();
+            } catch (error) {
+                console.error('Erreur soumission prestation:', error);
+                showError('Erreur JS/fetch pendant la soumission.', error.message || '');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = oldHtml;
+                }
+            }
+        });
+    }
+
+    async function openPrestationModal(url) {
+        console.log('openPrestationModal =>', url);
+        showLoading();
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
 
-            const contentType = submitRes.headers.get('content-type') || '';
+            const html = await response.text();
+            console.log('GET prestation status=', response.status);
 
-            // JSON => succès attendu
-            if (contentType.includes('application/json')) {
-              const json = await submitRes.json();
-              if (json.success) {
-                bootstrap.Modal.getInstance(editModalEl)?.hide();
-
-                // Option pro: refresh simple (tu peux remplacer par fetch + update row plus tard)
-                window.location.reload();
+            if (!response.ok) {
+                showError(`Chargement impossible (HTTP ${response.status})`, html);
                 return;
-              }
             }
 
-            // Sinon HTML (form avec erreurs)
-            const submitHtml = await submitRes.text();
-            body.innerHTML = submitHtml;
-            focusFirstField();
-          } catch (err) {
-            showError("Une erreur est survenue lors de l'enregistrement.");
-          } finally {
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = oldSubmitHtml;
-            }
-          }
-        }, { once: true });
-      }
+            prestationModalContent.innerHTML = html;
+            bindPrestationForm();
+        } catch (error) {
+            console.error('Erreur chargement prestation:', error);
+            showError('Impossible de charger le formulaire.', error.message || '');
+        }
+    }
 
-      document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.js-edit-consultation');
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.js-add-prestation, .js-edit-prestation');
         if (!btn) return;
 
-        const url = btn.getAttribute('data-url');
-        if (!url) return;
+        const url = btn.dataset.url;
+        console.log('clic prestation =>', url);
 
-        loadEditForm(url).catch((err) => {
-          showError("Impossible de charger le formulaire. Vérifie la route et la réponse AJAX.");
-        });
-      });
-
-      editModalEl?.addEventListener('hidden.bs.modal', () => {
-        currentUrl = null;
-        setLoading();
-      });
-    })();
-  </script>
-  <script>
-/* =========================
-   1) Ouvrir modal Prescription (GET)
-========================= */
-document.addEventListener('click', async (e) => {
-  const openBtn = e.target.closest('.js-open-prescription');
-  if (!openBtn) return;
-
-  const url = openBtn.dataset.url;
-  const modalEl = document.querySelector('#prescriptionModal');
-  const content = modalEl.querySelector('.modal-content');
-
-  content.innerHTML = `<div class="modal-body p-4 text-center text-muted">Chargement...</div>`;
-  const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
-  content.innerHTML = await res.text();
-});
-
-/* =========================
-   2) Ajouter une ligne (prototype)
-========================= */
-document.addEventListener('click', (e) => {
-  const addBtn = e.target.closest('.js-add-line');
-  if (!addBtn) return;
-
-  const container = document.querySelector('#prescriptionLines');
-  if (!container) return;
-
-  const prototype = container.dataset.prototype;
-  let index = parseInt(container.dataset.index || '0', 10);
-
-  const html = prototype.replace(/__name__/g, index);
-  container.insertAdjacentHTML('beforeend', html);
-
-  container.dataset.index = (index + 1).toString();
-});
-
-/* =========================
-   3) Supprimer une ligne
-========================= */
-document.addEventListener('click', (e) => {
-  const rmBtn = e.target.closest('.js-remove-line');
-  if (!rmBtn) return;
-
-  const row = rmBtn.closest('.js-line-item');
-  if (!row) return;
-
-  // Si _delete existe (éléments existants), on coche _delete
-  const del = row.querySelector('input[type="checkbox"][name$="[_delete]"]');
-  if (del) {
-    del.checked = true;
-    row.classList.add('d-none');
-    return;
-  }
-
-  // Sinon (nouvelle ligne non persistée) => on supprime du DOM
-  row.remove();
-});
-
-/* =========================
-   4) Submit AJAX + refresh résumé
-========================= */
-document.addEventListener('submit', async (e) => {
-  const form = e.target.closest('#prescriptionForm');
-  if (!form) return;
-
-  e.preventDefault();
-
-  const modalEl = document.querySelector('#prescriptionModal');
-  const content = modalEl.querySelector('.modal-content');
-  const btn = content.querySelector('.js-submit-prescription');
-  if (btn) btn.disabled = true;
-
-  const res = await fetch(form.action, {
-    method: 'POST',
-    body: new FormData(form),
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  });
-
-  if (res.ok) {
-    const data = await res.json().catch(() => null);
-    if (data?.success) {
-      const summary = document.querySelector('#prescriptionSummary');
-      if (summary && data.summaryHtml) summary.innerHTML = data.summaryHtml;
-
-      const bsModal = bootstrap.Modal.getInstance(modalEl);
-      bsModal?.hide();
-      return;
-    }
-  }
-
-  // erreurs => replace modal content
-  const data = await res.json().catch(() => null);
-  if (data?.html) {
-    content.innerHTML = data.html;
-  } else {
-    alert("Erreur lors de l'enregistrement de la prescription.");
-  }
-});
-</script>
-
-  <script>
-    document.addEventListener('click', async (e) => {
-    // Ouvrir modal facture
-    const openBtn = e.target.closest('.js-open-facture');
-    if (openBtn) {
-        const url = openBtn.dataset.url;
-        const modalEl = document.querySelector('#factureModal');
-        const modalBody = modalEl.querySelector('.modal-content');
-
-        modalBody.innerHTML = `<div class="modal-body p-4 text-center text-muted">Chargement...</div>`;
-
-        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        modalBody.innerHTML = await res.text();
-        return;
-    }
-
-    // Payer
-    const payBtn = e.target.closest('.js-payer-facture');
-    if (payBtn) {
-        const url = payBtn.dataset.url;
-        const modalEl = document.querySelector('#factureModal');
-        const select = modalEl.querySelector('#modePaiementSelect');
-        const mode = select ? select.value : '';
-
-        if (!mode) {
-        alert('Veuillez sélectionner un mode de paiement.');
-        return;
+        if (!url) {
+            showError('Aucune URL trouvée pour la modale prestation.');
+            return;
         }
 
-        payBtn.disabled = true;
-
-        const formData = new FormData();
-        formData.append('modePaiement', mode);
-
-        const res = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok || !data || data.success !== true) {
-        payBtn.disabled = false;
-        alert(data?.message ?? "Erreur lors du paiement.");
-        return;
-        }
-
-        // Recharger le contenu du modal (pour afficher statut PAYE)
-        const openUrl = modalEl.querySelector('.js-payer-facture')?.dataset?.reloadUrl
-        || document.querySelector('.js-open-facture')?.dataset?.url;
-
-        if (openUrl) {
-        const r2 = await fetch(openUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        modalEl.querySelector('.modal-content').innerHTML = await r2.text();
-        } else {
-        location.reload();
-        }
-    }
+        openPrestationModal(url);
     });
-</script>
-<script>
-document.addEventListener('click', async (e) => {
-  // Ouvrir modal
-  const open = e.target.closest('.js-open-bon');
-  if (open) {
-    const modalEl = document.querySelector('#bonExamenModal');
-    const content = modalEl.querySelector('.modal-content');
-    content.innerHTML = `<div class="modal-body p-4 text-center text-muted">Chargement...</div>`;
-    const res = await fetch(open.dataset.url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
-    content.innerHTML = await res.text();
-    return;
-  }
 
-  // Add row (dans la modal)
-  if (e.target.closest('.js-add-row')) {
-    const rows = document.querySelector('#rows');
-    if (!rows) return;
-
-    let idx = parseInt(rows.dataset.index || '1', 10);
-
-    rows.insertAdjacentHTML('beforeend', `
-      <div class="card mb-2 js-row">
-        <div class="card-body">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-              <label class="form-label">Libellé</label>
-              <input class="form-control" name="examens[${idx}][libelle]" placeholder="Ex: NFS, CRP, Glycémie...">
-            </div>
-            <div class="col-md-2">
-              <div class="form-check mt-4">
-                <input class="form-check-input" type="checkbox" name="examens[${idx}][urgence]" value="1" id="u${idx}">
-                <label class="form-check-label" for="u${idx}">Urgent</label>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Note</label>
-              <input class="form-control" name="examens[${idx}][note]" placeholder="Optionnel">
-            </div>
-            <div class="col-md-1 text-end">
-              <button type="button" class="btn btn-outline-danger js-remove-row" title="Supprimer">
-                <i class="ri-delete-bin-line"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `);
-
-    rows.dataset.index = String(idx + 1);
-    return;
-  }
-
-  // Remove row
-  const rm = e.target.closest('.js-remove-row');
-  if (rm) {
-    rm.closest('.js-row')?.remove();
-    return;
-  }
-});
-
-// Submit create bon
-document.addEventListener('submit', async (e) => {
-  const form = e.target.closest('#bonCreateForm');
-  if (!form) return;
-
-  e.preventDefault();
-
-  const res = await fetch(form.action, {
-    method: 'POST',
-    body: new FormData(form),
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.success) {
-    alert(data?.message ?? 'Erreur création bon.');
-    return;
-  }
-
-  // refresh list
-  const list = document.querySelector('#bonExamenList');
-  if (list && data.listHtml) list.innerHTML = data.listHtml;
-
-  // close modal
-  const modalEl = document.querySelector('#bonExamenModal');
-  bootstrap.Modal.getInstance(modalEl)?.hide();
-});
+    prestationModalEl.addEventListener('hidden.bs.modal', function () {
+        showLoading();
+    });
+})();
 </script>
 {% endblock %}

@@ -2,165 +2,84 @@
 
 namespace App\Controller;
 
-use App\Entity\BonExamen;
-use App\Entity\BonExamenLigne;
-use App\Entity\ExamenDemande;
-use App\Enum\StatutBonExamen;
-use App\Enum\StatutExamenDemande;
+use App\Entity\PrescriptionPrestation;
+use App\Enum\StatutPrescriptionPrestation;
+use App\Repository\PrescriptionPrestationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/laboratoire')]
 final class LaboratoireController extends AbstractController
 {
-/*     #[Route('/examens', name: 'app_laboratoire_examens', methods: ['GET'])]
-    public function index(Request $request, EntityManagerInterface $em): Response
+    #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
+    public function index(PrescriptionPrestationRepository $repository): Response
     {
-        $statut = $request->query->get('statut', StatutExamenDemande::DEMANDE->value);
-        $q = trim((string) $request->query->get('q', ''));
+        $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
+        $enCours = $repository->findExamensLaboEnCours();
+        $realises = $repository->findExamensLaboRealises();
 
-        $qb = $em->getRepository(ExamenDemande::class)->createQueryBuilder('e')
-            ->join('e.consultation', 'c')
-            ->leftJoin('c.rendezVous', 'r')
-            ->leftJoin('r.patient', 'p')
-            ->addSelect('c', 'r', 'p')
-            ->orderBy('e.id', 'DESC');
-
-        // Filtre statut
-        if (StatutExamenDemande::tryFrom($statut)) {
-            $qb->andWhere('e.statut = :s')->setParameter('s', StatutExamenDemande::from($statut));
-        }
-
-        // Recherche simple
-        if ($q !== '') {
-            $qb->andWhere('LOWER(e.libelle) LIKE :q OR LOWER(p.nom) LIKE :q OR LOWER(p.prenom) LIKE :q')
-               ->setParameter('q', '%'.mb_strtolower($q).'%');
-        }
-
-        $examens = $qb->getQuery()->getResult();
-
-        return $this->render('laboratoire/examens/index.html.twig', [
-            'examens' => $examens,
-            'statut' => $statut,
-            'q' => $q,
+        return $this->render('laboratoire/index.html.twig', [
+            'aTraiter' => $aTraiter,
+            'enCours' => $enCours,
+            'realises' => $realises,
         ]);
     }
- */
-    #[Route('/examens/{id}/prelever', name: 'app_laboratoire_examens_prelever', methods: ['POST'])]
-    public function prelever(ExamenDemande $examen, EntityManagerInterface $em, Request $request): Response
+
+    #[Route('/prestation/{id}', name: 'app_laboratoire_show', methods: ['GET'])]
+    public function show(PrescriptionPrestation $prestation): Response
     {
-        if ($examen->getStatut() !== StatutExamenDemande::DEMANDE) {
-            return $this->json(['success' => false, 'message' => 'Statut invalide.'], 422);
-        }
+        $this->verifierDestinationLaboratoire($prestation);
 
-        $examen->setStatut(StatutExamenDemande::PRELEVE);
-        $em->flush();
-
-        return $this->json(['success' => true]);
+        return $this->render('laboratoire/show.html.twig', [
+            'prestation' => $prestation,
+        ]);
     }
 
-    #[Route('/examens/{id}/resultat', name: 'app_laboratoire_examens_resultat', methods: ['GET', 'POST'])]
-    public function resultat(ExamenDemande $examen, EntityManagerInterface $em, Request $request): Response
-    {
-        if ($request->isMethod('POST')) {
-            $resultat = (string) $request->request->get('resultatTexte', '');
-            $prix = $request->request->get('prixUnitaire'); // optionnel
-            $prix = $prix !== null ? (string) $prix : null;
+    #[Route('/prestation/{id}/prendre-en-charge', name: 'app_laboratoire_prendre_en_charge', methods: ['POST'])]
+    public function prendreEnCharge(
+        PrescriptionPrestation $prestation,
+        EntityManagerInterface $em
+    ): Response {
+        $this->verifierDestinationLaboratoire($prestation);
 
-            $examen->setResultatTexte($resultat !== '' ? $resultat : null);
-            $examen->setResultatSaisiLe(new \DateTimeImmutable());
-            $examen->setResultatSaisiLe($this->getUser()); // si Utilisateur est ton user
-
-            // Optionnel : prix pour facturation
-            if ($prix !== null && $prix !== '') {
-                $examen->setPrixUnitaire($prix);
-            }
-
-            $examen->setStatut(StatutExamenDemande::RESULTAT_RECU);
-
+        if ($prestation->getStatut() === StatutPrescriptionPrestation::PAYE) {
+            $prestation->setStatut(StatutPrescriptionPrestation::EN_COURS);
             $em->flush();
-
-            return $this->json(['success' => true]);
         }
 
-        return $this->render('laboratoire/examens/_modal_resultat.html.twig', [
-            'examen' => $examen,
+        return $this->redirectToRoute('app_laboratoire_show', [
+            'id' => $prestation->getId(),
         ]);
     }
 
-     #[Route('/bons', name: 'app_labo_bons', methods: ['GET'])]
-    public function index(Request $request, EntityManagerInterface $em): Response
-    {
-        $statut = (string) $request->query->get('statut', StatutBonExamen::DEMANDE->value);
-        $q = trim((string) $request->query->get('q', ''));
+    #[Route('/prestation/{id}/realiser', name: 'app_laboratoire_realiser', methods: ['POST'])]
+    public function realiser(
+        PrescriptionPrestation $prestation,
+        EntityManagerInterface $em
+    ): Response {
+        $this->verifierDestinationLaboratoire($prestation);
 
-        $qb = $em->getRepository(BonExamen::class)->createQueryBuilder('b')
-            ->leftJoin('b.patient', 'p')->addSelect('p')
-            ->leftJoin('b.medecin', 'm')->addSelect('m')
-            ->orderBy('b.id', 'DESC');
-
-        if (StatutBonExamen::tryFrom($statut)) {
-            $qb->andWhere('b.statut = :s')->setParameter('s', StatutBonExamen::from($statut));
+        if (\in_array($prestation->getStatut(), [
+            StatutPrescriptionPrestation::PAYE,
+            StatutPrescriptionPrestation::EN_COURS,
+        ], true)) {
+            $prestation->setStatut(StatutPrescriptionPrestation::REALISE);
+            $em->flush();
         }
 
-        if ($q !== '') {
-            $qb->andWhere('LOWER(p.nom) LIKE :q OR LOWER(p.prenom) LIKE :q OR LOWER(b.token) LIKE :q')
-               ->setParameter('q', '%'.mb_strtolower($q).'%');
-        }
-
-        return $this->render('laboratoire/bons/index.html.twig', [
-            'bons' => $qb->getQuery()->getResult(),
-            'statut' => $statut,
-            'q' => $q,
+        return $this->redirectToRoute('app_laboratoire_show', [
+            'id' => $prestation->getId(),
         ]);
     }
 
-    #[Route('/ligne/{id}/modal', name: 'app_labo_ligne_modal', methods: ['GET'])]
-    public function ligneModal(BonExamenLigne $ligne): Response
+    private function verifierDestinationLaboratoire(PrescriptionPrestation $prestation): void
     {
-        return $this->render('laboratoire/bons/_modal_ligne.html.twig', [
-            'ligne' => $ligne,
-            'bon' => $ligne->getBon(),
-        ]);
-    }
+        $service = $prestation->getTarifPrestation()?->getServiceExecution();
 
-    #[Route('/ligne/{id}/save', name: 'app_labo_ligne_save', methods: ['POST'])]
-    public function ligneSave(BonExamenLigne $ligne, Request $request, EntityManagerInterface $em): Response
-    {
-        $ligne->setResultatValeur($request->request->get('resultatValeur') ?: null);
-        $ligne->setUnite($request->request->get('unite') ?: null);
-        $ligne->setValeursNormales($request->request->get('valeursNormales') ?: null);
-        $ligne->setResultatTexte($request->request->get('resultatTexte') ?: null);
-
-        $prix = $request->request->get('prixUnitaire');
-        $ligne->setPrixUnitaire(($prix !== null && $prix !== '') ? (string)$prix : null);
-
-        $ligne->setResultatSaisiLe(new \DateTimeImmutable());
-        $ligne->setResultatSaisiPar($this->getUser());
-
-        $bon = $ligne->getBon();
-        $bon->recomputeStatut();
-
-        $em->flush();
-
-        return $this->json(['success' => true]);
-    }
-
-    #[Route('/bon/{id}/print', name: 'app_labo_bon_print', methods: ['GET'])]
-    public function print(BonExamen $bon): Response
-    {
-        return $this->render('laboratoire/bons/print.html.twig', ['bon' => $bon]);
-    }
-
-    #[Route('/bon/token/{token}/print', name: 'app_labo_bon_print_token', methods: ['GET'])]
-    public function printByToken(string $token, EntityManagerInterface $em): Response
-    {
-        $bon = $em->getRepository(BonExamen::class)->findOneBy(['token' => $token]);
-        if (!$bon) throw $this->createNotFoundException('Bon introuvable');
-
-        return $this->render('laboratoire/bons/print.html.twig', ['bon' => $bon]);
+        if ($service !== 'laboratoire') {
+            throw $this->createNotFoundException('Cette prestation ne relève pas du laboratoire.');
+        }
     }
 }

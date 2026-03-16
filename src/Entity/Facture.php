@@ -2,19 +2,18 @@
 
 namespace App\Entity;
 
-use App\Enum\ModePaiement;
-use App\Enum\StatutPaiement;
+use App\Enum\StatutFacture;
 use App\Repository\FactureRepository;
-
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FactureRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Facture
 {
     use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -22,10 +21,16 @@ class Facture
 
     #[ORM\OneToOne(inversedBy: 'facture')]
     #[ORM\JoinColumn(nullable: false)]
-    private Consultation $consultation;
+    private ?Consultation $consultation = null;
 
-    #[ORM\Column]
-    private float $montant;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $montantTotal = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $montantPaye = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $resteAPayer = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $dateEmission;
@@ -33,77 +38,80 @@ class Facture
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $datePaiement = null;
 
-    #[ORM\Column(enumType: StatutPaiement::class)]
-    private StatutPaiement $statutPaiement = StatutPaiement::EN_ATTENTE;
-
-    #[ORM\Column(type: 'string', enumType: ModePaiement::class, nullable: true)]
-    private ?ModePaiement $modePaiement = null;
+    #[ORM\Column(enumType: StatutFacture::class)]
+    private StatutFacture $statut = StatutFacture::BROUILLON;
 
     #[ORM\OneToMany(mappedBy: 'facture', targetEntity: FactureLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $lignes;
 
+    #[ORM\OneToMany(mappedBy: 'facture', targetEntity: Paiement::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $paiements;
+
     public function __construct()
     {
         $this->lignes = new ArrayCollection();
+        $this->paiements = new ArrayCollection();
         $this->dateEmission = new \DateTimeImmutable();
+        $this->statut = StatutFacture::BROUILLON;
+        $this->montantTotal = 0;
+        $this->montantPaye = 0;
+        $this->resteAPayer = 0;
     }
 
-    /** @return Collection<int, FactureLigne> */
-    public function getLignes(): Collection { return $this->lignes; }
-
-    public function addLigne(FactureLigne $ligne): self
+    #[ORM\PrePersist]
+    public function prePersist(): void
     {
-        if (!$this->lignes->contains($ligne)) {
-            $this->lignes->add($ligne);
-            $ligne->setFacture($this);
+        if (!isset($this->dateEmission)) {
+            $this->dateEmission = new \DateTimeImmutable();
         }
-        return $this;
     }
 
-    public function clearLignes(): void
-    {
-        $this->lignes->clear(); // orphanRemoval => suppression DB après flush
-    }
-
-    public function recalcMontant(): void
-    {
-        $sum = 0.0;
-        foreach ($this->lignes as $l) {
-            $sum += (float) $l->getTotal();
-        }
-        $this->montant = $sum; // float chez toi (ok pour l’instant)
-    }
-    
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getConsultation(): Consultation
+    public function getConsultation(): ?Consultation
     {
         return $this->consultation;
     }
 
-    public function setConsultation(Consultation $consultation): self
+    public function setConsultation(?Consultation $consultation): static
     {
         $this->consultation = $consultation;
-
-        if ($consultation->getFacture() !== $this) {
-            $consultation->setFacture($this);
-        }
-
         return $this;
     }
 
-    public function getMontant(): float
+    public function getMontantTotal(): int
     {
-        return $this->montant;
+        return $this->montantTotal;
     }
 
-    public function setMontant(float $montant): self
+    public function setMontantTotal(int $montantTotal): static
     {
-        $this->montant = $montant;
+        $this->montantTotal = max(0, $montantTotal);
+        return $this;
+    }
 
+    public function getMontantPaye(): int
+    {
+        return $this->montantPaye;
+    }
+
+    public function setMontantPaye(int $montantPaye): static
+    {
+        $this->montantPaye = max(0, $montantPaye);
+        return $this;
+    }
+
+    public function getResteAPayer(): int
+    {
+        return $this->resteAPayer;
+    }
+
+    public function setResteAPayer(int $resteAPayer): static
+    {
+        $this->resteAPayer = max(0, $resteAPayer);
         return $this;
     }
 
@@ -112,10 +120,9 @@ class Facture
         return $this->dateEmission;
     }
 
-    public function setDateEmission(\DateTimeImmutable $dateEmission): self
+    public function setDateEmission(\DateTimeImmutable $dateEmission): static
     {
         $this->dateEmission = $dateEmission;
-
         return $this;
     }
 
@@ -124,34 +131,117 @@ class Facture
         return $this->datePaiement;
     }
 
-    public function setDatePaiement(?\DateTimeImmutable $datePaiement): self
+    public function setDatePaiement(?\DateTimeImmutable $datePaiement): static
     {
         $this->datePaiement = $datePaiement;
+        return $this;
+    }
+
+    public function getStatut(): StatutFacture
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(StatutFacture $statut): static
+    {
+        $this->statut = $statut;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FactureLigne>
+     */
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
+
+    public function addLigne(FactureLigne $ligne): static
+    {
+        if (!$this->lignes->contains($ligne)) {
+            $this->lignes->add($ligne);
+            $ligne->setFacture($this);
+        }
 
         return $this;
     }
 
-    public function getStatutPaiement(): StatutPaiement
+    public function removeLigne(FactureLigne $ligne): static
     {
-        return $this->statutPaiement;
-    }
-
-    public function setStatutPaiement(StatutPaiement $statutPaiement): self
-    {
-        $this->statutPaiement = $statutPaiement;
+        if ($this->lignes->removeElement($ligne)) {
+            if ($ligne->getFacture() === $this) {
+                $ligne->setFacture(null);
+            }
+        }
 
         return $this;
     }
 
-    public function getModePaiement(): ?ModePaiement
+    /**
+     * @return Collection<int, Paiement>
+     */
+    public function getPaiements(): Collection
     {
-        return $this->modePaiement;
+        return $this->paiements;
     }
 
-    public function setModePaiement(?ModePaiement $modePaiement): self
+    public function addPaiement(Paiement $paiement): static
     {
-        $this->modePaiement = $modePaiement;
+        if (!$this->paiements->contains($paiement)) {
+            $this->paiements->add($paiement);
+            $paiement->setFacture($this);
+        }
 
         return $this;
+    }
+
+    public function removePaiement(Paiement $paiement): static
+    {
+        if ($this->paiements->removeElement($paiement)) {
+            if ($paiement->getFacture() === $this) {
+                $paiement->setFacture(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function recalculerMontants(): void
+    {
+        $montantTotal = 0;
+        foreach ($this->lignes as $ligne) {
+            $montantTotal += $ligne->getTotal();
+        }
+
+        $montantPaye = 0;
+        foreach ($this->paiements as $paiement) {
+            $montantPaye += $paiement->getMontant();
+        }
+
+        $this->montantTotal = $montantTotal;
+        $this->montantPaye = $montantPaye;
+        $this->resteAPayer = max(0, $montantTotal - $montantPaye);
+
+        if ($this->montantTotal === 0) {
+            $this->statut = StatutFacture::BROUILLON;
+            $this->datePaiement = null;
+            return;
+        }
+
+        if ($this->montantPaye <= 0) {
+            $this->statut = StatutFacture::NON_PAYE;
+            $this->datePaiement = null;
+            return;
+        }
+
+        if ($this->montantPaye < $this->montantTotal) {
+            $this->statut = StatutFacture::PARTIELLEMENT_PAYE;
+            $this->datePaiement = null;
+            return;
+        }
+
+        $this->statut = StatutFacture::PAYE;
+        $this->datePaiement = new \DateTimeImmutable();
+        $this->resteAPayer = 0;
     }
 }

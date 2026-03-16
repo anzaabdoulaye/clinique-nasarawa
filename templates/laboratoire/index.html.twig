@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Laboratoire{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Laboratoire</h3>
+            <p class="text-muted mb-0">Examens de laboratoire payés, en cours et réalisés</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">À traiter</div>
+                    <div class="fs-3 fw-bold">{{ aTraiter|length }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">En cours</div>
+                    <div class="fs-3 fw-bold">{{ enCours|length }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Réalisés</div>
+                    <div class="fs-3 fw-bold">{{ realises|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="labTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-a-traiter" type="button">
+                À traiter
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-en-cours" type="button">
+                En cours
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-realises" type="button">
+                Réalisés
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content border border-top-0 rounded-bottom p-3">
+        <div class="tab-pane fade show active" id="pane-a-traiter">
+            {% include 'laboratoire/_table.html.twig' with {
+                prestations: aTraiter,
+                emptyMessage: 'Aucun examen payé en attente de prise en charge.'
+            } %}
+        </div>
+
+        <div class="tab-pane fade" id="pane-en-cours">
+            {% include 'laboratoire/_table.html.twig' with {
+                prestations: enCours,
+                emptyMessage: 'Aucun examen en cours.'
+            } %}
+        </div>
+
+        <div class="tab-pane fade" id="pane-realises">
+            {% include 'laboratoire/_table.html.twig' with {
+                prestations: realises,
+                emptyMessage: 'Aucun examen réalisé.'
+            } %}
+        </div>
+    </div>
+</div>
+{% endblock %}

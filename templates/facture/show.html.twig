@@ -69,8 +69,9 @@
 </style>
 
 {# ===== Helpers enum/string ===== #}
-{% set statut = facture.statutPaiement ? (facture.statutPaiement.value ?? facture.statutPaiement.name ?? facture.statutPaiement) : '—' %}
-{% set mode   = facture.modePaiement ? (facture.modePaiement.value ?? facture.modePaiement.name ?? facture.modePaiement) : '—' %}
+{% set statut = facture.statut.value ?? '' %}
+{% set dernierPaiement = facture.paiements|last %}
+{% set mode = dernierPaiement and dernierPaiement.mode ? dernierPaiement.mode.value : '' %}
 
 {% set statutClass =
   statut in ['PAYE','PAYEE','PAID'] ? 'badge-soft is-ok' :

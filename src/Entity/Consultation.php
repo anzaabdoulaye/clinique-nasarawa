@@ -28,7 +28,7 @@ class Consultation
     private ?DossierMedical $dossierMedical = null;
 
      #[ORM\OneToOne(inversedBy: 'consultation')]
-    #[ORM\JoinColumn(nullable: false, unique: true)]
+    #[ORM\JoinColumn(nullable: true, unique: true)]
     private ?RendezVous $rendezVous = null;
 
     #[ORM\Column(enumType: StatutConsultation::class)]
@@ -58,8 +58,10 @@ class Consultation
     #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: Prescription::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $prescriptions;
 
-    #[ORM\OneToOne(mappedBy: 'consultation', targetEntity: Facture::class)]
+    #[ORM\OneToOne(mappedBy: 'consultation', targetEntity: Facture::class, cascade: ['persist', 'remove'])]
     private ?Facture $facture = null;
+
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $histoire = null;
 
@@ -74,11 +76,8 @@ class Consultation
     #[ORM\JoinColumn(nullable: true)]
     private ?Cim10Code $cim10 = null;
 
-    #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: ExamenDemande::class, orphanRemoval: true, cascade: ['persist'])]
-    private Collection $examensDemandes;
-
-    #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: ActeRealise::class, orphanRemoval: true, cascade: ['persist'])]
-    private Collection $actesRealises;
+    #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: PrescriptionPrestation::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+  private Collection $prescriptionsPrestations;
 
     public function getHistoire(): ?string { return $this->histoire; }
     public function setHistoire(?string $histoire): self { $this->histoire = $histoire; return $this; }
@@ -92,55 +91,11 @@ class Consultation
     public function getCim10(): ?Cim10Code { return $this->cim10; }
     public function setCim10(?Cim10Code $cim10): self { $this->cim10 = $cim10; return $this; }
 
-    /** @return Collection<int, ExamenDemande> */
-    public function getExamensDemandes(): Collection { return $this->examensDemandes; }
-
-    public function addExamenDemande(ExamenDemande $examen): self
-    {
-        if (!$this->examensDemandes->contains($examen)) {
-            $this->examensDemandes->add($examen);
-            $examen->setConsultation($this);
-        }
-        return $this;
-    }
-
-    public function removeExamenDemande(ExamenDemande $examen): self
-    {
-        if ($this->examensDemandes->removeElement($examen)) {
-            if ($examen->getConsultation() === $this) {
-                $examen->setConsultation(null);
-            }
-        }
-        return $this;
-    }
-
-    /** @return Collection<int, ActeRealise> */
-    public function getActesRealises(): Collection { return $this->actesRealises; }
-
-    public function addActeRealise(ActeRealise $acte): self
-    {
-        if (!$this->actesRealises->contains($acte)) {
-            $this->actesRealises->add($acte);
-            $acte->setConsultation($this);
-        }
-        return $this;
-    }
-
-    public function removeActeRealise(ActeRealise $acte): self
-    {
-        if ($this->actesRealises->removeElement($acte)) {
-            if ($acte->getConsultation() === $this) {
-                $acte->setConsultation(null);
-            }
-        }
-        return $this;
-    }
 
     public function __construct()
     {
         $this->prescriptions = new ArrayCollection();
-        $this->examensDemandes = new ArrayCollection();
-        $this->actesRealises = new ArrayCollection();
+        $this->prescriptionsPrestations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -284,22 +239,48 @@ class Consultation
 
         return $this;
     }
+    public function getPrescriptionsPrestations(): Collection
+    {
+        return $this->prescriptionsPrestations;
+    }
+
+    public function addPrescriptionPrestation(PrescriptionPrestation $prescriptionPrestation): static
+    {
+        if (!$this->prescriptionsPrestations->contains($prescriptionPrestation)) {
+            $this->prescriptionsPrestations->add($prescriptionPrestation);
+            $prescriptionPrestation->setConsultation($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrescriptionPrestation(PrescriptionPrestation $prescriptionPrestation): static
+    {
+        if ($this->prescriptionsPrestations->removeElement($prescriptionPrestation)) {
+            if ($prescriptionPrestation->getConsultation() === $this) {
+                $prescriptionPrestation->setConsultation(null);
+            }
+        }
+
+        return $this;
+    }
 
     public function getFacture(): ?Facture
     {
         return $this->facture;
     }
 
-    public function setFacture(?Facture $facture): self
+    public function setFacture(?Facture $facture): static
     {
-        $this->facture = $facture;
-
         if ($facture !== null && $facture->getConsultation() !== $this) {
             $facture->setConsultation($this);
         }
 
+        $this->facture = $facture;
         return $this;
     }
+
+
     public function getRendezVous(): ?RendezVous
     {
         return $this->rendezVous;

@@ -56,14 +56,14 @@
         <a href="{{ path('home') }}" class="logo logo-light">
 
             <span class="logo-lg">
-                <img src="{{ asset('logo.png') }}" 
-                     alt="Clinique Mainassara"
+                <img src="{{ asset('logo.jpeg') }}" 
+                     alt="Clinique Nassarawa"
                      class="clinique-logo">
             </span>
 
             <span class="logo-sm">
-                <img src="{{ asset('logo.png') }}" 
-                     alt="Clinique Mainassara"
+                <img src="{{ asset('logo.jpeg') }}" 
+                     alt="Clinique Nassarawa"
                      class="clinique-logo">
             </span>
 
@@ -129,8 +129,8 @@
                 </li>
 
                  <li class="nav-item">
-                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_labo_bons' ? 'active' : '' }}"
-                       href="{{ path('app_labo_bons') }}">
+                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_laboratoire_index' ? 'active' : '' }}"
+                       href="{{ path('app_laboratoire_index') }}">
                         <i class="ri-health-book-line"></i>
                         <span>Laboratoire</span>
                     </a>
@@ -153,10 +153,10 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link menu-link"
-                       href="#">
+                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_perception_index' ? 'active' : '' }}"
+                       href="{{ path('app_perception_index') }}">
                         <i class="ri-folder-chart-line"></i>
-                        <span>Rapports</span>
+                        <span>Perception</span>
                     </a>
                 </li>
 

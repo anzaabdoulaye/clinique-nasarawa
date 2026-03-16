@@ -1,3 +1,4 @@
+{% extends 'base.html.twig' %}
 
 {% block title %}Saisie médicale — Consultation #{{ consultation.id }}{% endblock %}
 
@@ -9,136 +10,19 @@
             <h3 class="mb-1">Saisie médicale</h3>
             <div class="text-muted">
                 Consultation <span class="fw-semibold">#{{ consultation.id }}</span>
-                {% if consultation.rendezVous is defined and consultation.rendezVous %}
-                    — RDV #{{ consultation.rendezVous.id }}
-                    {% if consultation.rendezVous.dateHeure is defined %}
-                        ({{ consultation.rendezVous.dateHeure|date('Y-m-d H:i') }})
-                    {% endif %}
+                {% if consultation.rendezVous and consultation.rendezVous.dateHeure %}
+                    — RDV #{{ consultation.rendezVous.id }} ({{ consultation.rendezVous.dateHeure|date('Y-m-d H:i') }})
                 {% endif %}
             </div>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
+        <div>
             <a href="{{ path('app_consultation_show', {id: consultation.id}) }}" class="btn btn-outline-secondary">
                 <i class="fa fa-arrow-left me-1"></i> Retour
             </a>
-
-            <button form="medicalForm" type="submit" class="btn btn-primary">
-                <i class="fa fa-save me-1"></i> Enregistrer
-            </button>
         </div>
     </div>
 
-    {{ form_start(form, { attr: { id: 'medicalForm' } }) }}
-
-    <div class="row g-3">
-<div class="col-12">
-
-        <div class="accordion" id="accordionMedical">
-
-            {# ====== CONSTANCES ====== #}
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="headingConstantes">
-                    <button class="accordion-button" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#collapseConstantes"
-                            aria-expanded="true" aria-controls="collapseConstantes">
-                        Constantes vitales
-                    </button>
-                </h2>
-
-                <div id="collapseConstantes" class="accordion-collapse collapse show"
-                     aria-labelledby="headingConstantes" data-bs-parent="#accordionMedical">
-                    <div class="accordion-body">
-                        <div class="row g-2">
-                            <div class="col-12 col-md-6 col-xl-4">
-                                {{ form_row(form.poids) }}
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-4">
-                                {{ form_row(form.taille) }}
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-4">
-                                {{ form_row(form.temperature) }}
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-6">
-                                {{ form_row(form.tensionArterielle) }}
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-6">
-                                {{ form_row(form.frequenceCardiaque) }}
-                            </div>
-                        </div>
-
-                        <div class="mt-2 text-muted small">
-                            Astuce : “Tension artérielle” au format <span class="fw-semibold">120/80</span>.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {# ====== CLINIQUE ====== #}
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="headingClinique">
-                    <button class="accordion-button collapsed" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#collapseClinique"
-                            aria-expanded="false" aria-controls="collapseClinique">
-                        Clinique
-                    </button>
-                </h2>
-
-                <div id="collapseClinique" class="accordion-collapse collapse"
-                     aria-labelledby="headingClinique" data-bs-parent="#accordionMedical">
-                    <div class="accordion-body">
-
-                        <div class="mb-3">
-                            {{ form_row(form.motifs) }}
-                        </div>
-
-                        {% if form.histoire is defined %}
-                            <div class="mb-3">{{ form_row(form.histoire) }}</div>
-                        {% endif %}
-
-                        {% if form.examenClinique is defined %}
-                            <div class="mb-3">{{ form_row(form.examenClinique) }}</div>
-                        {% endif %}
-
-                        {% if form.diagnostic is defined %}
-                            <div class="mb-3">{{ form_row(form.diagnostic) }}</div>
-                        {% endif %}
-
-                        {% if form.cim10 is defined %}
-                            <div class="mb-3">{{ form_row(form.cim10) }}</div>
-                        {% endif %}
-
-                        {% if form.conduiteATenir is defined %}
-                            <div class="mb-0">{{ form_row(form.conduiteATenir) }}</div>
-                        {% endif %}
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-        {# ===================== FOOTER ===================== #}
-        <div class="col-12">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
-                <div class="text-muted small">
-                    Créée : {{ consultation.createdAt ? consultation.createdAt|date('Y-m-d H:i') : '-' }}
-                    — Modifiée : {{ consultation.modifiedAt ? consultation.modifiedAt|date('Y-m-d H:i') : '-' }}
-                </div>
-
-                <div class="d-flex gap-2">
-                    <a href="{{ path('app_consultation_show', {id: consultation.id}) }}" class="btn btn-outline-secondary">
-                        Annuler
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save me-1"></i> Enregistrer
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    {{ form_end(form, { render_rest: false }) }}
+    {% include 'consultation/_medical_form.html.twig' %}
 </div>
 {% endblock %}

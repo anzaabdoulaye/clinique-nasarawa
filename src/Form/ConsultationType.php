@@ -3,70 +3,151 @@
 namespace App\Form;
 
 use App\Entity\Consultation;
+use App\Entity\Cim10Code;
 use App\Entity\DossierMedical;
 use App\Entity\Facture;
 use App\Entity\RendezVous;
+use App\Entity\TarifPrestation;
 use App\Entity\Utilisateur;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class ConsultationType extends AbstractType
 {
-     public function buildForm(FormBuilderInterface $builder, array $options): void
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $context = $options['context']; // 'medical' | 'admin'
+        $context = $options['context'];
 
-        // ===== Champs Phase C (toujours) =====
-        $builder
-            ->add('poids', NumberType::class, ['required' => false, 'label' => 'Poids (kg)'])
-            ->add('taille', NumberType::class, ['required' => false, 'label' => 'Taille (cm)'])
-            ->add('temperature', NumberType::class, ['required' => false, 'label' => 'Température (°C)'])
-            ->add('tensionArterielle', null, ['required' => false, 'label' => 'Tension artérielle (ex: 120/80)'])
-            ->add('frequenceCardiaque', NumberType::class, ['required' => false, 'label' => 'Fréquence cardiaque (bpm)'])
+        if ($context === 'medical') {
+            $builder
+                ->add('poids', NumberType::class, [
+                    'required' => false,
+                    'label' => 'Poids (kg)',
+                    'scale' => 2,
+                ])
+                ->add('taille', NumberType::class, [
+                    'required' => false,
+                    'label' => 'Taille (cm)',
+                    'scale' => 2,
+                ])
+                ->add('temperature', NumberType::class, [
+                    'required' => false,
+                    'label' => 'Température (°C)',
+                    'scale' => 2,
+                ])
+                ->add('tensionArterielle', null, [
+                    'required' => false,
+                    'label' => 'Tension artérielle (ex: 120/80)',
+                ])
+                ->add('frequenceCardiaque', NumberType::class, [
+                    'required' => false,
+                    'label' => 'Fréquence cardiaque (bpm)',
+                    'scale' => 0,
+                ])
+                ->add('motifs', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Motif',
+                    'attr' => ['rows' => 3],
+                ])
+                ->add('histoire', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Histoire / Anamnèse',
+                    'attr' => ['rows' => 4],
+                ])
+                ->add('examenClinique', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Examen clinique',
+                    'attr' => ['rows' => 4],
+                ])
+                ->add('diagnostic', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Diagnostic',
+                    'attr' => ['rows' => 3],
+                ])
+                ->add('conduiteATenir', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Conduite à tenir',
+                    'attr' => ['rows' => 4],
+                ]);
 
-            ->add('motifs', TextareaType::class, ['required' => false, 'label' => 'Motif', 'attr' => ['rows' => 3]])
-            ->add('histoire', TextareaType::class, ['required' => false, 'label' => 'Histoire / Anamnèse', 'attr' => ['rows' => 4]])
-            ->add('examenClinique', TextareaType::class, ['required' => false, 'label' => 'Examen clinique', 'attr' => ['rows' => 4]])
-            ->add('diagnostic', TextareaType::class, ['required' => false, 'label' => 'Diagnostic', 'attr' => ['rows' => 3]])
-            ->add('conduiteATenir', TextareaType::class, ['required' => false, 'label' => 'Conduite à tenir', 'attr' => ['rows' => 4]])
-        ;
-
-        // CIM10 optionnel (si tu as l'entité)
-        if ($builder->getData() && property_exists($builder->getData(), 'cim10')) {
-            $builder->add('cim10', EntityType::class, [
-                'class' => \App\Entity\Cim10Code::class,
-                'required' => false,
-                'placeholder' => '— Aucun code CIM10 —',
-                'label' => 'Diagnostic CIM10 (optionnel)',
-                'choice_label' => fn($c) => $c->getCode().' - '.$c->getLibelle(),
-            ]);
+            if ($builder->getData() && property_exists($builder->getData(), 'cim10')) {
+                $builder->add('cim10', EntityType::class, [
+                    'class' => Cim10Code::class,
+                    'required' => false,
+                    'placeholder' => '— Aucun code CIM10 —',
+                    'label' => 'Diagnostic CIM10 (optionnel)',
+                    'choice_label' => fn (Cim10Code $c) => $c->getCode() . ' - ' . $c->getLibelle(),
+                ]);
+            }
         }
 
-        // ===== Champs structurels (uniquement admin/full) =====
         if ($context === 'admin') {
             $builder
                 ->add('medecin', EntityType::class, [
                     'class' => Utilisateur::class,
-                    'choice_label' => fn(Utilisateur $u) => $u->getNomComplet(),
+                    'choice_label' => fn (Utilisateur $u) => $u->getNomComplet(),
+                    'placeholder' => '— Choisir un médecin —',
+                    'label' => 'Médecin',
                 ])
                 ->add('dossierMedical', EntityType::class, [
                     'class' => DossierMedical::class,
-                    'choice_label' => 'id',
+                    'choice_label' => function (DossierMedical $dossier) {
+                        $patient = method_exists($dossier, 'getPatient') ? $dossier->getPatient() : null;
+                        $patientLabel = $patient
+                            ? trim(($patient->getCode() ?? '') . ' - ' . ($patient->getNom() ?? '') . ' ' . ($patient->getPrenom() ?? ''))
+                            : 'Sans patient';
+
+                        return ($dossier->getNumeroDossier() ?: ('#' . $dossier->getId())) . ' / ' . $patientLabel;
+                    },
+                    'placeholder' => '— Choisir un dossier médical —',
+                    'label' => 'Dossier médical',
                 ])
                 ->add('rendezVous', EntityType::class, [
                     'class' => RendezVous::class,
-                    'choice_label' => 'id',
-                ])
-                ->add('facture', EntityType::class, [
+                    'choice_label' => function (RendezVous $rdv) {
+                        $date = method_exists($rdv, 'getDateHeure') && $rdv->getDateHeure()
+                            ? $rdv->getDateHeure()->format('d/m/Y H:i')
+                            : 'Sans date';
+
+                        return 'RDV #' . $rdv->getId() . ' - ' . $date;
+                    },
+                    'required' => false,
+                    'placeholder' => '— Aucun rendez-vous —',
+                    'label' => 'Rendez-vous',
+                ]);
+
+            if ($builder->getData() && property_exists($builder->getData(), 'dateConsultation')) {
+                $builder->add('dateConsultation', DateTimeType::class, [
+                    'required' => false,
+                    'label' => 'Date de consultation',
+                    'widget' => 'single_text',
+                ]);
+            }
+
+            /* if ($builder->getData() && property_exists($builder->getData(), 'facture')) {
+                $builder->add('facture', EntityType::class, [
                     'class' => Facture::class,
                     'choice_label' => 'id',
                     'required' => false,
-                ])
-            ;
+                    'placeholder' => '— Aucune facture —',
+                    'label' => 'Facture',
+                ]);
+            } */
+
+            if ($builder->getData() && property_exists($builder->getData(), 'tarifPrestation')) {
+                $builder->add('tarifPrestation', EntityType::class, [
+                    'class' => TarifPrestation::class,
+                    'choice_label' => 'libelle',
+                    'required' => false,
+                    'placeholder' => 'Choisir un acte, examen ou consommable',
+                    'label' => 'Tarif / prestation',
+                ]);
+            }
         }
     }
 
@@ -74,7 +155,7 @@ class ConsultationType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Consultation::class,
-            'context' => 'medical', // par défaut : saisie médicale
+            'context' => 'medical',
         ]);
 
         $resolver->setAllowedValues('context', ['medical', 'admin']);

@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 class FactureLigne
 {
     use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -19,26 +20,33 @@ class FactureLigne
     #[ORM\JoinColumn(nullable: false)]
     private ?Facture $facture = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?PrescriptionPrestation $prescriptionPrestation = null;
+
     #[ORM\Column(length: 180)]
     private string $libelle;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private int $quantite = 1;
 
     #[ORM\Column(type: 'integer')]
-    private int $prixUnitaire = 0; // en FCFA (int)
+    private int $prixUnitaire = 0;
 
     #[ORM\Column(type: 'integer')]
     private int $total = 0;
 
     #[ORM\Column(length: 30, nullable: true)]
-    private ?string $type = null; // CONSULTATION/ACTE/EXAMEN
+    private ?string $type = null;
 
-    public function recalc(): void {
-        $this->total = $this->quantite * $this->prixUnitaire;
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function recalculerTotal(): void
+    {
+        $this->total = max(0, $this->quantite * $this->prixUnitaire);
     }
 
-   public function getId(): ?int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -48,10 +56,20 @@ class FactureLigne
         return $this->facture;
     }
 
-    public function setFacture(?Facture $facture): self
+    public function setFacture(?Facture $facture): static
     {
         $this->facture = $facture;
+        return $this;
+    }
 
+    public function getPrescriptionPrestation(): ?PrescriptionPrestation
+    {
+        return $this->prescriptionPrestation;
+    }
+
+    public function setPrescriptionPrestation(?PrescriptionPrestation $prescriptionPrestation): static
+    {
+        $this->prescriptionPrestation = $prescriptionPrestation;
         return $this;
     }
 
@@ -60,10 +78,9 @@ class FactureLigne
         return $this->libelle;
     }
 
-    public function setLibelle(string $libelle): self
+    public function setLibelle(string $libelle): static
     {
         $this->libelle = $libelle;
-
         return $this;
     }
 
@@ -72,10 +89,10 @@ class FactureLigne
         return $this->quantite;
     }
 
-    public function setQuantite(int $quantite): self
+    public function setQuantite(int $quantite): static
     {
-        $this->quantite = $quantite;
-
+        $this->quantite = max(1, $quantite);
+        $this->total = $this->quantite * $this->prixUnitaire;
         return $this;
     }
 
@@ -84,10 +101,10 @@ class FactureLigne
         return $this->prixUnitaire;
     }
 
-    public function setPrixUnitaire(int $prixUnitaire): self
+    public function setPrixUnitaire(int $prixUnitaire): static
     {
-        $this->prixUnitaire = $prixUnitaire;
-
+        $this->prixUnitaire = max(0, $prixUnitaire);
+        $this->total = $this->quantite * $this->prixUnitaire;
         return $this;
     }
 
@@ -96,10 +113,9 @@ class FactureLigne
         return $this->total;
     }
 
-    public function setTotal(int $total): self
+    public function setTotal(int $total): static
     {
-        $this->total = $total;
-
+        $this->total = max(0, $total);
         return $this;
     }
 
@@ -108,11 +124,9 @@ class FactureLigne
         return $this->type;
     }
 
-    public function setType(?string $type): self
+    public function setType(?string $type): static
     {
         $this->type = $type;
-
         return $this;
     }
-    
 }

@@ -43,9 +43,9 @@
 
             <tbody>
             {% for facture in factures %}
-              {% set statut = facture.statutPaiement is iterable ? (facture.statutPaiement.name ?? '') : (facture.statutPaiement.name ?? facture.statutPaiement ?? '') %}
-              {% set mode = facture.modePaiement is iterable ? (facture.modePaiement.name ?? '') : (facture.modePaiement.name ?? facture.modePaiement ?? '') %}
-
+             {% set statut = facture.statut.value ?? '' %}
+                {% set dernierPaiement = facture.paiements|last %}
+                {% set mode = dernierPaiement and dernierPaiement.mode ? dernierPaiement.mode.value : '' %}
               <tr>
                 <td class="text-nowrap">
                   <span class="badge bg-light text-dark border">#{{ facture.id }}</span>

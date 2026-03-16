@@ -28,6 +28,7 @@ final class FactureController extends AbstractController
     {
         return $this->render('facture/index.html.twig', [
             'factures' => $factureRepository->findAll(),
+            'factures' => $factureRepository->findAllWithRelations(),
         ]);
     }
 
