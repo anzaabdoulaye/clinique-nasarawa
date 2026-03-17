@@ -23,8 +23,11 @@ class VenteLigneType extends AbstractType
                 'choice_attr' => function (?Medicament $m) {
                     return $m ? ['data-price' => $m->getPrixUnitaire()] : [];
                 },
+                
+                'attr' => [
+                'class' => 'form-select medicament-select select2-enable',
                 'placeholder' => '— Choisir un médicament —',
-                'attr' => ['class' => 'form-select medicament-select'],
+                ],
             ])
             ->add('lot', EntityType::class, [
                 'class' => Lot::class,
@@ -38,7 +41,7 @@ class VenteLigneType extends AbstractType
                 },
                 'required' => false,
                 'placeholder' => '— Optionnel (choisir lot) —',
-                'attr' => ['class' => 'form-select'],
+                'attr' => ['class' => 'form-select lot-select select2-enable'],
             ])
             ->add('quantite', IntegerType::class, [
                 'attr' => ['min' => 1, 'class' => 'form-control'],

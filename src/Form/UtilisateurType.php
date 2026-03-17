@@ -103,11 +103,12 @@ final class UtilisateurType extends AbstractType
                 'class' => ServiceMedical::class,
                 'choice_label' => 'libelle', 
                 'label' => 'Service médical',
-                'placeholder' => 'Choisir...',
+                
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-select',
-                ],
+                    'class' => 'form-select select2-enable',
+                    'placeholder' => 'Choisir...',
+                    ],
             ])
         ;
     }

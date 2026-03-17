@@ -37,6 +37,9 @@ class EncaissementType extends AbstractType
                     ModePaiement::VIREMENT => 'Virement',
                 },
                 'placeholder' => 'Choisir un mode',
+                'attr' => [
+                    'class' => 'form-control' 
+                ],
             ])
         ;
     }

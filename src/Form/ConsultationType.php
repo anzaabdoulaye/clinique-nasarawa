@@ -82,6 +82,10 @@ class ConsultationType extends AbstractType
                     'placeholder' => '— Aucun code CIM10 —',
                     'label' => 'Diagnostic CIM10 (optionnel)',
                     'choice_label' => fn (Cim10Code $c) => $c->getCode() . ' - ' . $c->getLibelle(),
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Aucun code CIM10 —',
+                    ],
                 ]);
             }
         }
@@ -91,8 +95,11 @@ class ConsultationType extends AbstractType
                 ->add('medecin', EntityType::class, [
                     'class' => Utilisateur::class,
                     'choice_label' => fn (Utilisateur $u) => $u->getNomComplet(),
-                    'placeholder' => '— Choisir un médecin —',
                     'label' => 'Médecin',
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Choisir un médecin —',
+                    ],
                 ])
                 ->add('dossierMedical', EntityType::class, [
                     'class' => DossierMedical::class,
@@ -104,8 +111,12 @@ class ConsultationType extends AbstractType
 
                         return ($dossier->getNumeroDossier() ?: ('#' . $dossier->getId())) . ' / ' . $patientLabel;
                     },
-                    'placeholder' => '— Choisir un dossier médical —',
+
                     'label' => 'Dossier médical',
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Choisir un dossier médical —',
+                    ],
                 ])
                 ->add('rendezVous', EntityType::class, [
                     'class' => RendezVous::class,
@@ -117,8 +128,12 @@ class ConsultationType extends AbstractType
                         return 'RDV #' . $rdv->getId() . ' - ' . $date;
                     },
                     'required' => false,
-                    'placeholder' => '— Aucun rendez-vous —',
+                    
                     'label' => 'Rendez-vous',
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Aucun rendez-vous —', 
+                    ],
                 ]);
 
             if ($builder->getData() && property_exists($builder->getData(), 'dateConsultation')) {
@@ -134,8 +149,12 @@ class ConsultationType extends AbstractType
                     'class' => Facture::class,
                     'choice_label' => 'id',
                     'required' => false,
-                    'placeholder' => '— Aucune facture —',
+                    
                     'label' => 'Facture',
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Aucune facture —',
+                    ],
                 ]);
             } */
 
@@ -144,8 +163,12 @@ class ConsultationType extends AbstractType
                     'class' => TarifPrestation::class,
                     'choice_label' => 'libelle',
                     'required' => false,
-                    'placeholder' => 'Choisir un acte, examen ou consommable',
+                    
                     'label' => 'Tarif / prestation',
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => 'Choisir un acte, examen ou consommable', 
+                    ],
                 ]);
             }
         }

@@ -32,11 +32,27 @@
         <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
         <!-- Custom Css -->
         <link href="{{ asset('assets/css/custom.min.css') }}" rel="stylesheet" type="text/css" />
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <style>
+           
+            .select2-container--bootstrap-5 .select2-selection {
+                border-radius: 0.35rem ;
+                border: 1px solid #ced4da ;
+                min-height: 38px ; 
+                display: flex ;
+                align-items: center ;
+            }
+            .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+                color: #000000; 
+            }
+        </style>
+   
     {% endblock %}
 
     <!-- Layout config Js -->
     <script src="{{ asset('assets/js/layout.js') }}"></script>
 </head>
+
 
 <body>
     <!-- Begin page -->
@@ -90,6 +106,11 @@
 
     {% block javascripts %}
         <!-- JAVASCRIPT -->
+
+        <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- coreJS -->
         <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
         <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
         <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
@@ -104,9 +125,36 @@
         <script src="{{ asset('assets/libs/jsvectormap/maps/world-merc.js') }}"></script>
         <!-- Swiper slider js -->
         <script src="{{ asset('assets/libs/swiper/swiper-bundle.min.js') }}"></script>
-        
+         <!-- select2 -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <!-- App js -->
         <script src="{{ asset('assets/js/app.js') }}"></script>
+        <!--init select2 -->
+        <script>
+    $(document).ready(function () {
+        function initSelect2(container = 'body') {
+            $(container).find('.select2-enable').each(function() {
+               const dynamicPlaceholder = $(this).attr('placeholder') || $(this).data('placeholder') || "";
+
+                $(this).select2({
+                    theme: "bootstrap-5",
+                    width: '100%',
+                    placeholder: dynamicPlaceholder,
+                    allowClear: true,
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : $(document.body)
+                });
+            });
+        }
+
+        // Initialisation au chargement
+        initSelect2();
+
+        
+        $(document).on('shown.bs.modal', function (e) {
+            initSelect2(e.target);
+        });
+    });
+</script>
     {% endblock %}
 </body>
 </html>

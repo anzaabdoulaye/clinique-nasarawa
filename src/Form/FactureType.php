@@ -78,7 +78,6 @@ class FactureType extends AbstractType
             ->add('consultation', EntityType::class, [
                 'label' => 'Consultation',
                 'class' => Consultation::class,
-                'placeholder' => '— Sélectionner une consultation —',
                 'required' => true,
                 'choice_label' => function (Consultation $c) {
                     // Adaptation: à ajuster selon tes champs
@@ -102,9 +101,10 @@ class FactureType extends AbstractType
 
                     return implode(' | ', $parts);
                 },
-                'attr' => [
-                    'class' => 'form-select',
-                ],
+                    'attr' => [
+                        'class' => 'form-control select2-enable',
+                        'placeholder' => '— Sélectionner une consultation —',
+                    ],
             ])
         ;
     }

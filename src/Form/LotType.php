@@ -21,8 +21,11 @@ class LotType extends AbstractType
             ->add('medicament', EntityType::class, [
                 'class' => Medicament::class,
                 'choice_label' => 'nom',
-                'placeholder' => '— Choisir un médicament —',
-                'attr' => ['class' => 'form-select'],
+                
+                'attr' => [
+                    'class' => 'form-control select2-enable',
+                    'placeholder' => '— Choisir un médicament —', 
+                ],
             ])
             ->add('numeroLot', TextType::class, [
                 'required' => false,

@@ -68,8 +68,11 @@ class ConsultationMedicalType extends AbstractType
                 'class' => Cim10Code::class,
                 'required' => false,
                 'placeholder' => '— Aucun code CIM10 —',
-                'label' => 'Diagnostic CIM10 (optionnel)',
+            'label' => 'Diagnostic CIM10 (optionnel)',
                 'choice_label' => fn(Cim10Code $c) => $c->getCode().' - '.$c->getLibelle(),
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
             ->add('conduiteATenir', TextareaType::class, [
                 'required' => false,

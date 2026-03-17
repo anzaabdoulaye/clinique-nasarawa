@@ -32,18 +32,30 @@ class HospitalisationType extends AbstractType
             ->add('dossierMedical', EntityType::class, [
                 'class' => DossierMedical::class,
                 'choice_label' => 'id',
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
             ->add('medecinReferent', EntityType::class, [
                 'class' => Utilisateur::class,
                 'choice_label' => 'id',
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
             ->add('examenClinique', EntityType::class, [
                 'class' => ExamenClinique::class,
                 'choice_label' => 'id',
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
             ->add('examenNeurologique', EntityType::class, [
                 'class' => ExamenNeurologique::class,
                 'choice_label' => 'id',
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
         ;
     }
