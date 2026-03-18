@@ -26,6 +26,11 @@
                 <a href="{{ path('app_perception_facture_print', {id: facture.id}) }}"
                 target="_blank"
                 class="btn btn-outline-dark">
+                    <i class="ri-printer-line me-1"></i> Voir
+                </a>
+                <a href="{{ path('app_perception_facture_pdf', {id: facture.id}) }}"
+                target="_blank"
+                class="btn btn-outline-dark">
                     <i class="ri-printer-line me-1"></i> Imprimer
                 </a>
             {% endif %}

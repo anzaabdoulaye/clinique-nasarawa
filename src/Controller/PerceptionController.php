@@ -161,6 +161,7 @@ final class PerceptionController extends AbstractController
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'consultation' => $facture->getConsultation(),
         ]);
     }
 
@@ -181,11 +182,16 @@ final class PerceptionController extends AbstractController
 
         $code = 'FAC-' . $facture->getId();
 
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+
         $html = $this->renderView('perception/print.html.twig', [
             'facture' => $facture,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'consultation' => $facture->getConsultation(),
+            'logo_path' => $logoBase64,
         ]);
 
         $options = new Options();
@@ -194,8 +200,10 @@ final class PerceptionController extends AbstractController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A5', 'portrait');
         $dompdf->render();
+
+        
 
         $pdfOutput = $dompdf->output();
 

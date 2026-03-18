@@ -132,10 +132,14 @@ final class PharmacieController extends AbstractController
 
         $code = 'VTE-' . $vente->getId();
 
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+
         $html = $this->renderView('pharmacie/print_caisse.html.twig', [
             'vente' => $vente,
             'qr_data' => $dataUri,
             'code_qr' => $code,
+            'logo_path' => $logoBase64,
             'verifyUrl' => $verifyUrl,
         ]);
 
@@ -145,7 +149,7 @@ final class PharmacieController extends AbstractController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A5', 'portrait');
         $dompdf->render();
 
         $pdfOutput = $dompdf->output();

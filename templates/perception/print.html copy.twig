@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Fiche de consultation #{{ consultation.id }}</title>
-
     <style>
         @page {
             size: A5 portrait;
-            margin: 5mm;
+            margin: 6mm;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 9.5px;
+            font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
+            font-size: 10px;
             color: #1f2937;
         }
 
@@ -23,134 +26,105 @@
         }
 
         .top-bar {
-            height: 4px;
+            height: 5px;
             background: #0f4c81;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .header-table,
         .meta-table,
-        .data-table,
-        .footer-table,
-        .signature-table {
+        .signature-table,
+        .main-table {
             width: 100%;
             border-collapse: collapse;
         }
 
         .header-table td,
         .meta-table td,
-        .footer-table td,
         .signature-table td {
             vertical-align: top;
         }
 
-        .clinic-logo {
-            width: 24mm;
-            height: 24mm;
-            border: 1px solid #d1d5db;
-            padding: 2px;
-            background: #ffffff;
-            border-radius: 50%;
-        }
-
         .clinic h1 {
-            margin: 0 0 3px 0;
-            font-size: 13px;
-            font-weight: bold;
+            margin: 0 0 4px 0;
+            font-size: 15px;
             color: #0f4c81;
+            font-weight: bold;
             text-transform: uppercase;
+            line-height: 1.15;
         }
 
         .clinic .sub {
-            font-size: 8px;
-            line-height: 1.3;
             color: #6b7280;
+            line-height: 1.35;
+            font-size: 9px;
         }
 
         .qr-box {
-            width: 28mm;
+            width: 34mm;
             text-align: center;
             border: 1px solid #d1d5db;
-            padding: 3px;
+            padding: 4px;
             background: #f8fafc;
         }
 
         .qr-box img {
-            width: 20mm;
-            height: 20mm;
+            width: 24mm;
+            height: 24mm;
             border: 1px solid #e5e7eb;
             background: #fff;
             padding: 2px;
         }
 
         .qr-label {
-            margin-top: 2px;
-            font-size: 7px;
-            line-height: 1.2;
+            font-size: 8px;
+            margin-top: 3px;
             color: #6b7280;
+            line-height: 1.2;
         }
 
-        .title-box {
-            width: 32mm;
-            border: 1px solid #d1d5db;
-            padding: 5px;
+        .title {
             text-align: center;
-            background: #f8fafc;
-        }
-
-        .title-box .title {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
-            color: #0f4c81;
+            margin: 8px 0 10px 0;
             text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .title-box .ref {
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .separator {
-            border-bottom: 1px solid #d1d5db;
-            margin: 6px 0;
-        }
-
-        .meta-box,
-        .box,
-        .table-wrap {
-            border: 1px solid #d1d5db;
+            color: #111827;
+            letter-spacing: 0.3px;
         }
 
         .meta-box {
-            padding: 5px;
-            margin-bottom: 6px;
+            border: 1px solid #d1d5db;
+            padding: 7px;
+            margin-bottom: 8px;
         }
 
         .meta-table td {
             width: 50%;
-            padding: 2px;
+            padding: 2px 4px 2px 0;
             line-height: 1.3;
         }
 
         .section {
-            margin-top: 5px;
+            margin-top: 8px;
         }
 
         .section-title {
-            padding: 4px 6px;
-            font-size: 9px;
             font-weight: bold;
-            color: #0f4c81;
             background: #f8fafc;
             border: 1px solid #d1d5db;
-            border-bottom: none;
+            color: #0f4c81;
+            padding: 6px 8px;
+            margin-bottom: 0;
             text-transform: uppercase;
+            font-size: 10px;
         }
 
         .box {
-            padding: 5px 6px;
-            line-height: 1.3;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            padding: 8px;
+            line-height: 1.35;
         }
 
         .box strong {
@@ -158,140 +132,99 @@
         }
 
         .table-wrap {
+            border: 1px solid #d1d5db;
             border-top: none;
         }
 
-        .data-table th,
-        .data-table td {
-            border: 1px solid #e5e7eb;
-            padding: 4px;
-            font-size: 8.5px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        .data-table th {
-            color: #ffffff;
-            background: #0f4c81;
-            font-weight: bold;
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        .footer-block {
-            border-top: 1px dashed #d1d5db;
-            margin-top: 6px;
-            padding-top: 6px;
-        }
-
-        .footer-left {
-            font-size: 8px;
-            color: #6b7280;
-            line-height: 1.3;
-            padding-right: 6px;
-        }
-
-        .signature-table {
+        table.data-table {
             width: 100%;
-            margin-top: 10px;
             border-collapse: collapse;
+        }
+
+        table.data-table th,
+        table.data-table td {
+            border: 1px solid #e5e7eb;
+            padding: 5px 4px;
+            vertical-align: top;
+            font-size: 9px;
+        }
+
+        table.data-table th {
+            background: #0f4c81;
+            color: #fff;
+            text-align: left;
+            font-weight: bold;
         }
 
         .signature-block {
             text-align: center;
-            vertical-align: bottom;
-            height: 65px;
-            padding: 0 8px;
+            padding-top: 14px;
         }
 
         .line {
+            margin-top: 24px;
             border-top: 1px solid #000;
             padding-top: 4px;
-            font-size: 8px;
+            font-size: 9px;
             color: #6b7280;
         }
 
         .footer-note {
-            margin-top: 6px;
-            padding-top: 4px;
+            margin-top: 12px;
             text-align: center;
-            font-size: 9px;
             font-weight: bold;
+            font-size: 10px;
             color: #0f4c81;
             border-top: 1px dashed #d1d5db;
+            padding-top: 8px;
         }
     </style>
 </head>
 <body>
 
 {% set patient = consultation.rendezVous.patient ?? null %}
-{% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
 
 <div class="document">
     <div class="top-bar"></div>
 
     <table class="header-table">
         <tr>
-            <td style="width:18%;">
-                {% if logo_path is defined and logo_path %}
-                    <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
-                {% endif %}
-            </td>
-
-            <td style="width:52%;">
+            <td style="width:72%;">
                 <div class="clinic">
                     <h1>Clinique Nassarawa</h1>
                     <div class="sub">
                         Niamey - Niger<br>
-                        Tél : 20 75 51 02 / 88 05 22 20<br>
-                        Email : nassrawaclinique@gmail.com
+                        Tél : +227 XX XX XX XX
                     </div>
                 </div>
             </td>
-
-            <td style="width:30%; text-align:right;">
+            <td style="width:28%; text-align:right;">
                 <div class="qr-box">
+                    {% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
                     {% if _qr %}
                         <img src="{{ _qr }}" alt="QR Code fiche consultation">
                     {% endif %}
-
                     <div class="qr-label">QR Consultation</div>
-
                     {% if code_qr is defined and code_qr %}
                         <div class="qr-label">Code : {{ code_qr }}</div>
                     {% endif %}
-
                     <div class="qr-label">Scanner pour vérification</div>
                 </div>
             </td>
         </tr>
     </table>
 
-    <div class="separator"></div>
+    <div class="title">Fiche de consultation</div>
 
     <div class="meta-box">
         <table class="meta-table">
             <tr>
-                <td>
-                    <strong>N° fiche :</strong>
-                    {{ consultation.id }}
-                </td>
-                <td>
-                    <strong>N° consultation :</strong>
-                    {{ consultation.id }}
-                </td>
+                <td><strong>N° fiche :</strong> {{ consultation.id }}</td>
+                <td><strong>N° consultation :</strong> {{ consultation.id }}</td>
             </tr>
             <tr>
-                <td>
-                    <strong>Date :</strong>
-                    {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}
-                </td>
-                <td>
-                    <strong>Service médical :</strong>
-                    {{ consultation.serviceMedical.nom ?? '-' }}
-                </td>
+                <td><strong>Date :</strong> {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}</td>
+                <td><strong>Service médical :</strong> {{ consultation.serviceMedical.nom ?? '-' }}</td>
             </tr>
         </table>
     </div>
@@ -300,21 +233,16 @@
         <div class="section-title">Patient</div>
         <div class="box">
             <strong>Nom et prénom :</strong>
-            {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
-            <br>
+            {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}<br>
 
             <strong>Code patient :</strong>
-            {{ patient and patient.code is defined ? patient.code : '-' }}
-            <br>
+            {{ patient and patient.code ? patient.code : '-' }}<br>
 
             <strong>N° dossier médical :</strong>
-            {{ consultation.dossierMedical and consultation.dossierMedical.numeroDossier is defined
-                ? consultation.dossierMedical.numeroDossier
-                : '-' }}
-            <br>
+            {{ consultation.dossierMedical and consultation.dossierMedical.numeroDossier ? consultation.dossierMedical.numeroDossier : '-' }}<br>
 
             <strong>Téléphone :</strong>
-            {{ patient and patient.telephone is defined ? patient.telephone : '-' }}
+            {{ patient and patient.telephone ? patient.telephone : '-' }}
         </div>
     </div>
 
@@ -333,7 +261,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width:6%;" class="center">#</th>
+                        <th style="width:6%;">#</th>
                         <th style="width:42%;">Prestation</th>
                         <th style="width:20%;">Catégorie</th>
                         <th style="width:12%;">Qté</th>
@@ -343,7 +271,7 @@
                 <tbody>
                 {% for p in consultation.prescriptionsPrestations %}
                     <tr>
-                        <td class="center">{{ loop.index }}</td>
+                        <td>{{ loop.index }}</td>
                         <td>{{ p.tarifPrestation.libelle|default('-') }}</td>
                         <td>{{ p.tarifPrestation.categorie.value|default('-')|replace({'_':' '})|title }}</td>
                         <td>{{ p.quantite|default(1) }}</td>
@@ -351,7 +279,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="5" class="center">Aucune prestation prescrite</td>
+                        <td colspan="5">Aucune prestation prescrite</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -362,39 +290,18 @@
     <div class="section">
         <div class="section-title">Observations médicales</div>
         <div class="box">
-            <strong>Motif :</strong> {{ consultation.motifs ?: '-' }}
-            <br>
-
-            <strong>Diagnostic :</strong> {{ consultation.diagnostic ?: '-' }}
-            <br>
-
+            <strong>Motif :</strong> {{ consultation.motifs ?: '-' }}<br><br>
+            <strong>Diagnostic :</strong> {{ consultation.diagnostic ?: '-' }}<br><br>
             <strong>Conduite à tenir :</strong> {{ consultation.conduiteATenir ?: '-' }}
         </div>
     </div>
 
-    <div class="footer-block">
-        <table class="footer-table">
-            <tr>
-                <td class="footer-left">
-                    <div>
-                        <strong>Document :</strong>
-                        Fiche de consultation générée automatiquement par le système de gestion de la clinique.
-                    </div>
-                    <div>
-                        <strong>Référence :</strong>
-                        CONS-{{ consultation.id }}
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <table class="signature-table">
+    <table class="signature-table" style="margin-top:14px;">
         <tr>
-            <td class="signature-block" style="width:50%;">
+            <td style="width:50%;" class="signature-block">
                 <div class="line">Signature du médecin</div>
             </td>
-            <td class="signature-block" style="width:50%;">
+            <td style="width:50%;" class="signature-block">
                 <div class="line">Cachet du service</div>
             </td>
         </tr>

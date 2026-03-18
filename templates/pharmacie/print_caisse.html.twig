@@ -4,473 +4,400 @@
     <meta charset="UTF-8">
     <title>Facture #{{ vente.id }}</title>
     <style>
-        :root{
-            --primary:#0f4c81;
-            --dark:#1f2937;
-            --muted:#6b7280;
-            --line:#d1d5db;
-            --soft:#f8fafc;
-            --white:#ffffff;
+        @page {
+            size: A5 portrait;
+            margin: 5mm;
         }
 
-        *{
-            box-sizing:border-box;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 9.5px;
+            color: #1f2937;
         }
 
-        html, body{
-            margin:0;
-            padding:0;
-            font-family: "Segoe UI", Arial, sans-serif;
-            font-size:11px;
-            color:var(--dark);
-            background:#eef2f7;
+        .document {
+            width: 100%;
         }
 
-        .sheet{
-            width:148mm;
-            min-height:210mm;
-            margin:10px auto;
-            background:var(--white);
-            border:1px solid #e5e7eb;
-            box-shadow:0 6px 18px rgba(0,0,0,.08);
-            overflow:hidden;
+        .top-bar {
+            height: 4px;
+            background: #0f4c81;
+            margin-bottom: 6px;
         }
 
-        .top-bar{
-            height:6px;
-            background:linear-gradient(90deg, var(--primary), #1d7bb8);
+        .header-table,
+        .meta-table,
+        .bottom-table,
+        .footer-table,
+        .items-table,
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .page{
-            padding:10mm 9mm 8mm 9mm;
+        .header-table td,
+        .meta-table td,
+        .bottom-table td,
+        .footer-table td {
+            vertical-align: top;
         }
 
-        .header{
-            display:flex;
-            justify-content:space-between;
-            align-items:flex-start;
-            gap:10px;
-            border-bottom:1.5px solid var(--line);
-            padding-bottom:8px;
-            margin-bottom:8px;
+        .clinic-logo {
+            width: 24mm;
+            height: 24mm;
+            border: 1px solid #d1d5db;
+            padding: 2px;
+            background: #ffffff;
+            border-radius: 50%;
         }
 
-        .clinic{
-            flex:1;
+        .clinic h1 {
+            margin: 0 0 3px 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
         }
 
-        .clinic h1{
-            margin:0 0 4px 0;
-            font-size:16px;
-            line-height:1.15;
-            color:var(--primary);
-            font-weight:800;
-            text-transform:uppercase;
+        .clinic .sub {
+            color: #6b7280;
+            font-size: 8px;
+            line-height: 1.3;
+            margin-bottom: 3px;
         }
 
-        .clinic .sub{
-            font-size:10px;
-            color:var(--muted);
-            margin-bottom:4px;
+        .clinic div {
+            margin: 1px 0;
+            line-height: 1.3;
+            font-size: 8px;
         }
 
-        .clinic div{
-            margin:1px 0;
-            line-height:1.25;
+        .invoice-box {
+            width: 32mm;
+            border: 1px solid #d1d5db;
+            padding: 5px;
+            text-align: center;
+            background: #f8fafc;
         }
 
-        .invoice-box{
-            width:38mm;
-            border:1px solid var(--line);
-            border-radius:8px;
-            padding:6px;
-            text-align:center;
-            background:var(--soft);
+        .invoice-box .title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            margin-bottom: 3px;
         }
 
-        .invoice-box .title{
-            font-size:14px;
-            font-weight:800;
-            color:var(--primary);
-            margin-bottom:4px;
-            text-transform:uppercase;
+        .invoice-box .ref {
+            font-size: 10px;
+            font-weight: bold;
         }
 
-        .invoice-box .ref{
-            font-size:11px;
-            font-weight:700;
+        .separator {
+            border-bottom: 1px solid #d1d5db;
+            margin: 6px 0;
         }
 
-        .meta{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:8px;
-            margin-bottom:8px;
+        .meta-table td {
+            width: 50%;
+            padding-right: 4px;
         }
 
-        .box{
-            border:1px solid var(--line);
-            border-radius:8px;
-            padding:7px 8px;
-            background:#fff;
+        .box {
+            border: 1px solid #d1d5db;
+            padding: 5px 6px;
+            min-height: 66px;
         }
 
-        .box h3{
-            margin:0 0 5px 0;
-            font-size:11px;
-            color:var(--primary);
-            border-bottom:1px solid #e5e7eb;
-            padding-bottom:3px;
-            text-transform:uppercase;
+        .box h3,
+        .notes h3 {
+            margin: 0 0 4px 0;
+            font-size: 9px;
+            color: #0f4c81;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 2px;
         }
 
-        .box p{
-            margin:3px 0;
-            line-height:1.3;
+        .box p,
+        .notes p {
+            margin: 2px 0;
+            line-height: 1.3;
+            font-size: 8.5px;
         }
 
-        .label{
-            color:var(--muted);
-            font-weight:700;
+        .label {
+            color: #6b7280;
+            font-weight: bold;
         }
 
-        .table-wrap{
-            border:1px solid var(--line);
-            border-radius:8px;
-            overflow:hidden;
-            margin-bottom:8px;
+        .table-wrap {
+            margin-top: 6px;
+            margin-bottom: 6px;
+            border: 1px solid #d1d5db;
         }
 
-        table{
-            width:100%;
-            border-collapse:collapse;
+        .items-table th {
+            background: #0f4c81;
+            color: #ffffff;
+            padding: 4px;
+            font-size: 8.5px;
+            text-align: left;
         }
 
-        thead th{
-            background:var(--primary);
-            color:#fff;
-            font-size:10px;
-            font-weight:700;
-            padding:7px 5px;
-            text-align:left;
+        .items-table td {
+            padding: 4px;
+            border-top: 1px solid #e5e7eb;
+            vertical-align: top;
+            font-size: 8.5px;
         }
 
-        tbody td{
-            padding:6px 5px;
-            border-bottom:1px solid #e5e7eb;
-            vertical-align:top;
-            font-size:10.5px;
+        .center {
+            text-align: center;
         }
 
-        tbody tr:nth-child(even){
-            background:#fafafa;
+        .right {
+            text-align: right;
         }
 
-        tbody tr:last-child td{
-            border-bottom:none;
+        .notes {
+            border: 1px solid #d1d5db;
+            padding: 5px 6px;
+            min-height: 68px;
+            margin-right: 6px;
         }
 
-        .center{text-align:center;}
-        .right{text-align:right;}
-
-        .bottom{
-            display:grid;
-            grid-template-columns:1fr 42mm;
-            gap:8px;
-            align-items:start;
-            margin-bottom:8px;
+        .totals-box {
+            width: 100%;
+            border: 1px solid #d1d5db;
         }
 
-        .notes{
-            border:1px solid var(--line);
-            border-radius:8px;
-            padding:7px 8px;
-            min-height:60px;
-            background:#fcfcfc;
+        .totals-table th,
+        .totals-table td {
+            padding: 5px 6px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 8.5px;
         }
 
-        .notes h3{
-            margin:0 0 5px 0;
-            font-size:11px;
-            color:var(--primary);
-            text-transform:uppercase;
-        }
-
-        .notes p{
-            margin:3px 0;
-            line-height:1.35;
-            font-size:10px;
-        }
-
-        .totals{
-            border:1px solid var(--line);
-            border-radius:8px;
-            overflow:hidden;
-        }
-
-        .totals th,
-        .totals td{
-            padding:7px 8px;
-            border-bottom:1px solid #e5e7eb;
-            font-size:10.5px;
-        }
-
-        .totals tr:last-child th,
-        .totals tr:last-child td{
-            border-bottom:none;
+        .totals-table tr:first-child th,
+        .totals-table tr:first-child td {
+            border-top: none;
         }
 
         .grand-total th,
-        .grand-total td{
-            background:var(--primary);
-            color:#fff;
-            font-size:12px;
-            font-weight:800;
+        .grand-total td {
+            background: #0f4c81;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9.5px;
         }
 
-        .footer{
-            display:flex;
-            justify-content:space-between;
-            gap:10px;
-            align-items:flex-end;
-            border-top:1px dashed var(--line);
-            padding-top:8px;
+        .footer-block {
+            border-top: 1px dashed #d1d5db;
+            margin-top: 6px;
+            padding-top: 6px;
         }
 
-        .footer-left{
-            flex:1;
-            font-size:9.5px;
-            color:var(--muted);
-            line-height:1.35;
+        .footer-left {
+            font-size: 8px;
+            color: #6b7280;
+            line-height: 1.3;
+            padding-right: 6px;
         }
 
-        .footer-right{
-            display:flex;
-            align-items:flex-end;
-            gap:8px;
+        .qr {
+            text-align: center;
+            width: 28mm;
         }
 
-        .qr{
-            text-align:center;
-            width:32mm;
+        .qr img {
+            width: 20mm;
+            height: 20mm;
+            border: 1px solid #d1d5db;
+            padding: 2px;
+            background: #fff;
         }
 
-        .qr img{
-            width:28mm;
-            height:28mm;
-            object-fit:contain;
-            border:1px solid var(--line);
-            padding:2px;
-            border-radius:6px;
-            background:#fff;
+        .qr small {
+            display: block;
+            margin-top: 2px;
+            font-size: 7px;
+            color: #6b7280;
+            line-height: 1.2;
         }
 
-        .qr small{
-            display:block;
-            margin-top:3px;
-            font-size:8.5px;
-            color:var(--muted);
-            word-break:break-word;
-            line-height:1.2;
+        .sign {
+            width: 30mm;
+            text-align: center;
+            font-size: 8px;
+            color: #6b7280;
         }
 
-        .sign{
-            width:35mm;
-            text-align:center;
-            font-size:9px;
-            color:var(--muted);
-        }
-
-        .sign-line{
-            margin-top:20px;
-            border-top:1px solid #000;
-            padding-top:3px;
-        }
-
-        .print-actions{
-            text-align:center;
-            padding:8px 0 12px;
-            border-top:1px solid #e5e7eb;
-            background:#fafafa;
-        }
-
-        .btn-print{
-            border:none;
-            background:var(--primary);
-            color:#fff;
-            padding:8px 16px;
-            border-radius:7px;
-            font-size:11px;
-            font-weight:700;
-            cursor:pointer;
-        }
-
-        a{
-            color:var(--primary);
-            text-decoration:none;
-        }
-
-        @page{
-            size:A5 portrait;
-            margin:8mm;
-        }
-
-        @media print{
-            html, body{
-                background:#fff;
-            }
-
-            .sheet{
-                width:100%;
-                min-height:auto;
-                margin:0;
-                border:none;
-                box-shadow:none;
-            }
-
-            .page{
-                padding:0;
-            }
-
-            .print-actions{
-                display:none !important;
-            }
+        .sign-line {
+            margin-top: 18px;
+            border-top: 1px solid #000;
+            padding-top: 3px;
         }
     </style>
 </head>
 <body>
-
-<div class="sheet">
+<div class="document">
     <div class="top-bar"></div>
 
-    <div class="page">
-        <div class="header">
-            <div class="clinic">
-                <h1>Clinique Médicale Nassarawa</h1>
-                <div class="sub">Facturation / Caisse</div>
-                <div><strong>NIF :</strong> 120402/R</div>
-                <div><strong>RCCM :</strong> NE-NIM-01-2024-B12-00145</div>
-                <div><strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey</div>
-                <div><strong>Tél :</strong> 20 75 51 02 / 88 05 22 20</div>
-                <div><strong>BP :</strong> 2120 Niamey</div>
-                <div><strong>Email :</strong> nassrawaclinique@gmail.com</div>
-            </div>
-
-            <div class="invoice-box">
-                <div class="title">Facture</div>
-                <div class="ref">N° {{ vente.id }}</div>
-            </div>
-        </div>
-
-        <div class="meta">
-            <div class="box">
-                <h3>Informations</h3>
-                <p><span class="label">Référence :</span> FACT-{{ vente.id }}</p>
-                <p><span class="label">Date :</span> {{ vente.date ? vente.date|date('d/m/Y H:i') : '–' }}</p>
-                <p><span class="label">Vendeur :</span>
-                    {{ vente.vendeur ? vente.vendeur.nomComplet|default(vente.vendeur.getUserIdentifier ? vente.vendeur.getUserIdentifier() : '-') : '-' }}
-                </p>
-                <p><span class="label">Nature :</span> Vente pharmacie</p>
-            </div>
-
-            <div class="box">
-                <h3>Client / Patient</h3>
-                <p><span class="label">Nom :</span> {{ vente.patient.nomComplet ?? vente.patient.nom ?? 'Patient non renseigné' }}</p>
-                <p><span class="label">Téléphone :</span> {{ vente.patient.telephone ?? '–' }}</p>
-                <p><span class="label">Adresse :</span> {{ vente.patient.adresse ?? '–' }}</p>
-                <p><span class="label">Observation :</span> Achat de médicaments</p>
-            </div>
-        </div>
-
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:8%;">#</th>
-                        <th style="width:42%;">Produit</th>
-                        <th style="width:12%;" class="center">Qté</th>
-                        <th style="width:18%;" class="right">PU</th>
-                        <th style="width:20%;" class="right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for ligne in vente.lignes %}
-                    <tr>
-                        <td class="center">{{ loop.index }}</td>
-                        <td>
-                            {{ ligne.medicament.nom }}
-                            {% if ligne.medicament.codeBarre is defined and ligne.medicament.codeBarre %}
-                                <br><small style="color:#6b7280;">CB : {{ ligne.medicament.codeBarre }}</small>
-                            {% endif %}
-                        </td>
-                        <td class="center">{{ ligne.quantite }}</td>
-                        <td class="right">{{ ligne.prixUnitaire|number_format(0, ',', ' ') }}</td>
-                        <td class="right"><strong>{{ ligne.sousTotal|number_format(0, ',', ' ') }}</strong></td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="center">Aucune ligne enregistrée</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="bottom">
-            <div class="notes">
-                <h3>Notes</h3>
-                <p>Merci pour votre confiance.</p>
-                <p>Cette facture constitue une pièce justificative de vente.</p>
-                <p>Médicaments ni repris ni échangés après livraison, sauf disposition particulière.</p>
-            </div>
-
-            <div class="totals">
-                <table>
-                    <tr>
-                        <th>Sous-total</th>
-                        <td class="right">{{ vente.total|number_format(0, ',', ' ') }} FCFA</td>
-                    </tr>
-                    <tr>
-                        <th>Remise</th>
-                        <td class="right">0 FCFA</td>
-                    </tr>
-                    <tr class="grand-total">
-                        <th>Total</th>
-                        <td class="right">{{ vente.total|number_format(0, ',', ' ') }} FCFA</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        <div class="footer">
-            <div class="footer-left">
-                <div><strong>Montant arrêté à :</strong> {{ vente.total|number_format(0, ',', ' ') }} FCFA</div>
-                <div>Document généré automatiquement par le système de gestion de la Clinique Médicale Nassarawa.</div>
-            </div>
-
-            <div class="footer-right">
-                <div class="qr">
-                    {% set _qr = qr_data is defined ? qr_data : (verifyUrl is defined ? verifyUrl : null) %}
-                    {% if _qr %}
-                        <img src="{{ _qr }}" alt="QR Code">
+    <table class="header-table">
+        <tr>
+            <td style="width:18%;">
+                {% if logo_path is defined and logo_path %}
+                        <img src="{{ absolute_url(asset('logo.jpeg')) }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
                     {% endif %}
+            </td>
 
+            <td style="width:52%;">
+                <div class="clinic">
+                    <h1>Clinique Médicale Nassarawa</h1>
+                    <div class="sub">Facturation / Caisse</div>
+                    <div><strong>NIF :</strong> 120402/R</div>
+                    <div><strong>RCCM :</strong> NE-NIM-01-2024-B12-00145</div>
+                    <div><strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey</div>
+                    <div><strong>Tél :</strong> 20 75 51 02 / 88 05 22 20</div>
+                    <div><strong>BP :</strong> 2120 Niamey</div>
+                    <div><strong>Email :</strong> nassrawaclinique@gmail.com</div>
+                </div>
+            </td>
+
+            <td style="width:30%; text-align:right;">
+                <div class="invoice-box">
+                    <div class="title">Facture</div>
+                    <div class="ref">N° {{ vente.id }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="separator"></div>
+
+    <table class="meta-table">
+        <tr>
+            <td>
+                <div class="box">
+                    <h3>Informations</h3>
+                    <p><span class="label">Référence :</span> FACT-{{ vente.id }}</p>
+                    <p><span class="label">Date :</span> {{ vente.date ? vente.date|date('d/m/Y H:i') : '–' }}</p>
+                    <p>
+                        <span class="label">Vendeur :</span>
+                        {% if vente.vendeur %}
+                            {{ vente.vendeur.nomComplet ?? vente.vendeur.userIdentifier ?? '-' }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </p>
+                    <p><span class="label">Nature :</span> Vente pharmacie</p>
+                </div>
+            </td>
+            <td>
+                <div class="box">
+                    <h3>Client / Patient</h3>
+                    <p>
+                        <span class="label">Nom :</span>
+                        {{ vente.patient.nomComplet ?? vente.patient.nom ?? 'Patient non renseigné' }}
+                    </p>
+                    <p><span class="label">Téléphone :</span> {{ vente.patient.telephone ?? '–' }}</p>
+                    <p><span class="label">Adresse :</span> {{ vente.patient.adresse ?? '–' }}</p>
+                    <p><span class="label">Observation :</span> Achat de médicaments</p>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="table-wrap">
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width:8%;" class="center">#</th>
+                    <th style="width:42%;">Produit</th>
+                    <th style="width:12%;" class="center">Qté</th>
+                    <th style="width:18%;" class="right">PU</th>
+                    <th style="width:20%;" class="right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for ligne in vente.lignes %}
+                <tr>
+                    <td class="center">{{ loop.index }}</td>
+                    <td>
+                        {{ ligne.medicament.nom }}
+                        {% if ligne.medicament.codeBarre %}
+                            <br><span style="color:#6b7280; font-size:7px;">CB : {{ ligne.medicament.codeBarre }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">{{ ligne.quantite }}</td>
+                    <td class="right">{{ ligne.prixUnitaire|number_format(0, ',', ' ') }}</td>
+                    <td class="right"><strong>{{ ligne.sousTotal|number_format(0, ',', ' ') }}</strong></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="center">Aucune ligne enregistrée</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <table class="bottom-table">
+        <tr>
+            <td style="width:66%;">
+                <div class="notes">
+                    <h3>Notes</h3>
+                    <p>Merci pour votre confiance.</p>
+                    <p>Cette facture constitue une pièce justificative de vente.</p>
+                    <p>Médicaments ni repris ni échangés après livraison, sauf disposition particulière.</p>
+                </div>
+            </td>
+            <td style="width:34%;">
+                <div class="totals-box">
+                    <table class="totals-table">
+                        <tr>
+                            <th>Sous-total</th>
+                            <td class="right">{{ vente.total|number_format(0, ',', ' ') }} FCFA</td>
+                        </tr>
+                        <tr>
+                            <th>Remise</th>
+                            <td class="right">0 FCFA</td>
+                        </tr>
+                        <tr class="grand-total">
+                            <th>Total</th>
+                            <td class="right">{{ vente.total|number_format(0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer-block">
+        <table class="footer-table">
+            <tr>
+                <td style="width:58%;" class="footer-left">
+                    <div><strong>Montant arrêté à :</strong> {{ vente.total|number_format(0, ',', ' ') }} FCFA</div>
+                    <div>Document généré automatiquement par le système de gestion de la Clinique Médicale Nassarawa.</div>
+                </td>
+                <td style="width:18%;" class="qr">
+                    {% if qr_data is defined and qr_data %}
+                        <img src="{{ qr_data }}" alt="QR Code">
+                    {% endif %}
                     {% if code_qr is defined and code_qr %}
                         <small>Code : {{ code_qr }}</small>
                     {% endif %}
-
-                    {% if verifyUrl is defined and verifyUrl %}
-                        <small><a href="{{ verifyUrl }}">{{ verifyUrl }}</a></small>
-                    {% endif %}
-                </div>
-
-                <div class="sign">
+                    <small>Scanner pour vérification</small>
+                </td>
+                <td style="width:24%;" class="sign">
                     <div class="sign-line">Signature / Cachet</div>
-                </div>
-            </div>
-        </div>
+                </td>
+            </tr>
+        </table>
     </div>
 </div>
-
 </body>
 </html>

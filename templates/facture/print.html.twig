@@ -1,120 +1,485 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Facture #{{ facture.id }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Facture #{{ facture.id }}</title>
 
-  <style>
-    body { font-family: Arial, sans-serif; color:#111; }
-    .page { max-width: 800px; margin: 0 auto; padding: 24px; }
-    .row { display:flex; justify-content:space-between; gap:16px; }
-    .muted { color:#666; font-size: 12px; }
-    h1 { font-size: 18px; margin:0; }
-    h2 { font-size: 14px; margin: 18px 0 8px; }
-    table { width:100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; font-size: 13px; }
-    th { background:#f3f4f6; text-align:left; }
-    .right { text-align:right; }
-    .badge { display:inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; background:#f3f4f6; border:1px solid #ddd; }
-    .totalBox { margin-top: 12px; display:flex; justify-content:flex-end; }
-    .totalInner { min-width: 260px; border:1px solid #ddd; padding: 10px; }
-    .totalInner div { display:flex; justify-content:space-between; margin: 4px 0; }
-    .strong { font-weight:700; }
+    <style>
+        @page {
+            size: A5 portrait;
+            margin: 5mm;
+        }
 
-    @media print {
-      .no-print { display:none !important; }
-      body { margin:0; }
-      .page { padding: 0; }
-    }
-  </style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 9.5px;
+            color: #1f2937;
+        }
+
+        .document {
+            width: 100%;
+        }
+
+        .top-bar {
+            height: 4px;
+            background: #0f4c81;
+            margin-bottom: 6px;
+        }
+
+        .header-table,
+        .meta-table,
+        .data-table,
+        .totals-table,
+        .footer-table,
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td,
+        .meta-table td,
+        .footer-table td,
+        .signature-table td {
+            vertical-align: top;
+        }
+
+        .clinic-logo {
+            width: 24mm;
+            height: 24mm;
+            border: 1px solid #d1d5db;
+            padding: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .clinic h1 {
+            margin: 0 0 3px 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+        }
+
+        .clinic .sub {
+            font-size: 8px;
+            line-height: 1.3;
+            color: #6b7280;
+        }
+
+        .title-box {
+            width: 32mm;
+            border: 1px solid #d1d5db;
+            padding: 5px;
+            text-align: center;
+            background: #f8fafc;
+        }
+
+        .title-box .title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .title-box .ref {
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .separator {
+            border-bottom: 1px solid #d1d5db;
+            margin: 6px 0;
+        }
+
+        .meta-box,
+        .box,
+        .table-wrap,
+        .totals-box {
+            border: 1px solid #d1d5db;
+        }
+
+        .meta-box {
+            padding: 5px;
+            margin-bottom: 6px;
+        }
+
+        .meta-table td {
+            width: 50%;
+            padding: 2px;
+            line-height: 1.3;
+        }
+
+        .section {
+            margin-top: 5px;
+        }
+
+        .section-title {
+            padding: 4px 6px;
+            font-size: 9px;
+            font-weight: bold;
+            color: #0f4c81;
+            background: #f8fafc;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            text-transform: uppercase;
+        }
+
+        .box {
+            padding: 5px 6px;
+            line-height: 1.3;
+        }
+
+        .label {
+            color: #6b7280;
+            font-weight: bold;
+        }
+
+        .badges {
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            margin-right: 4px;
+            font-size: 7.5px;
+            border: 1px solid #d1d5db;
+            background: #f8fafc;
+            border-radius: 10px;
+            color: #374151;
+        }
+
+        .table-wrap {
+            border-top: none;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #e5e7eb;
+            padding: 4px;
+            font-size: 8.5px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            color: #ffffff;
+            background: #0f4c81;
+            font-weight: bold;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .totals-box {
+            margin-top: 6px;
+        }
+
+        .totals-table th,
+        .totals-table td {
+            padding: 5px 6px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 8.5px;
+        }
+
+        .totals-table tr:first-child th,
+        .totals-table tr:first-child td {
+            border-top: none;
+        }
+
+        .grand-total th,
+        .grand-total td {
+            background: #0f4c81;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9.5px;
+        }
+
+        .footer-block {
+            border-top: 1px dashed #d1d5db;
+            margin-top: 6px;
+            padding-top: 6px;
+        }
+
+        .footer-left {
+            font-size: 8px;
+            color: #6b7280;
+            line-height: 1.3;
+            padding-right: 6px;
+        }
+
+        .qr {
+            text-align: center;
+            width: 28mm;
+        }
+
+        .qr img {
+            width: 20mm;
+            height: 20mm;
+            border: 1px solid #d1d5db;
+            padding: 2px;
+            background: #fff;
+        }
+
+        .qr small {
+            display: block;
+            margin-top: 2px;
+            font-size: 7px;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+
+        .signature-block {
+            text-align: center;
+            vertical-align: bottom;
+            height: 65px;
+            padding: 0 8px;
+        }
+
+        .line {
+            border-top: 1px solid #000;
+            padding-top: 4px;
+            font-size: 8px;
+            color: #6b7280;
+        }
+
+        .footer-note {
+            margin-top: 6px;
+            padding-top: 4px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: bold;
+            color: #0f4c81;
+            border-top: 1px dashed #d1d5db;
+        }
+
+        .no-print {
+            display: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
-
 <body>
-<div class="page">
+    {% set consultation = consultation ?? (facture.consultation ?? null) %}
+    {% set patient = patient ?? (consultation and consultation.rendezVous ? consultation.rendezVous.patient : null) %}
 
-  <div class="row">
-    <div>
-      <h1>Facture #{{ facture.id }}</h1>
-      <div class="muted">Émise le {{ facture.dateEmission|date('d/m/Y H:i') }}</div>
-      <div style="margin-top:6px;">
-        <span class="badge">{{ facture.statutPaiement.value }}</span>
-        {% if facture.modePaiement %}
-          <span class="badge">{{ facture.modePaiement.value }}</span>
-        {% endif %}
-      </div>
+    <div class="document">
+        <div class="top-bar"></div>
+
+        <table class="header-table">
+            <tr>
+                <td style="width:18%;">
+                    {% if logo_path is defined and logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo Clinique Mainassara" class="clinic-logo">
+                    {% endif %}
+                </td>
+
+                <td style="width:52%;">
+                    <div class="clinic">
+                        <h1>Clinique Mainassara</h1>
+                        <div class="sub">
+                            Niamey - Niger<br>
+                            Tél : 20 75 51 02 / 88 05 22 20<br>
+                            Email : contact@clinique-mainassara.ne
+                        </div>
+                    </div>
+                </td>
+
+                <td style="width:30%; text-align:right;">
+                    <div class="title-box">
+                        <div class="title">Facture</div>
+                        <div class="ref">N° {{ facture.id }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="separator"></div>
+
+        <div class="meta-box">
+            <table class="meta-table">
+                <tr>
+                    <td>
+                        <strong>Date d’émission :</strong>
+                        {{ facture.dateEmission ? facture.dateEmission|date('d/m/Y H:i') : '-' }}
+                    </td>
+                    <td>
+                        <strong>Consultation :</strong>
+                        {{ consultation ? ('#' ~ consultation.id) : '-' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Statut :</strong>
+                        {{ facture.statutPaiement.value ?? facture.statut.value ?? '-' }}
+                    </td>
+                    
+                </tr>
+            </table>
+
+            <div class="badges">
+                {% if facture.statut %}
+                    <span class="badge">{{ facture.statut.value }}</span>
+                {% elseif facture.statut %}
+                    <span class="badge">{{ facture.statut.value }}</span>
+                {% endif %}
+
+                
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Patient</div>
+            <div class="box">
+                <strong>Nom et prénom :</strong>
+                {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
+                <br>
+
+                <strong>Dossier :</strong>
+                {{ patient and patient.code ? patient.code : '—' }}
+                <br>
+
+                {% if consultation and consultation.rendezVous %}
+                    <strong>Rendez-vous :</strong> #{{ consultation.rendezVous.id }}
+                    <br>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Détails de facturation</div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:18%;">Type</th>
+                            <th style="width:34%;">Libellé</th>
+                            <th style="width:12%;" class="right">Qté</th>
+                            <th style="width:18%;" class="right">PU</th>
+                            <th style="width:18%;" class="right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in facture.lignes %}
+                            <tr>
+                                <td>{{ l.type }}</td>
+                                <td>{{ l.libelle }}</td>
+                                <td class="right">{{ l.quantite }}</td>
+                                <td class="right">{{ l.prixUnitaire|number_format(0, '.', ' ') }}</td>
+                                <td class="right">{{ l.total|number_format(0, '.', ' ') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="center">Aucune ligne.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="totals-box">
+            <table class="totals-table">
+                <tr>
+                    <th>Total facture</th>
+                    <td class="right">
+                        <strong>
+                            {{ (facture.montantTotal ?? facture.montant ?? 0)|number_format(0, '.', ' ') }} FCFA
+                        </strong>
+                    </td>
+                </tr>
+
+                {% if facture.montantPaye is defined %}
+                    <tr>
+                        <th>Montant payé</th>
+                        <td class="right">{{ facture.montantPaye|number_format(0, '.', ' ') }} FCFA</td>
+                    </tr>
+                {% endif %}
+
+                {% if facture.resteAPayer is defined %}
+                    <tr>
+                        <th>Reste à payer</th>
+                        <td class="right">{{ facture.resteAPayer|number_format(0, '.', ' ') }} FCFA</td>
+                    </tr>
+                {% endif %}
+
+                {% if facture.datePaiement %}
+                    <tr class="grand-total">
+                        <th>Payée le</th>
+                        <td class="right">{{ facture.datePaiement|date('d/m/Y H:i') }}</td>
+                    </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="footer-block">
+            <table class="footer-table">
+                <tr>
+                    <td style="width:58%;" class="footer-left">
+                        <div>
+                            <strong>Document :</strong>
+                            Facture générée automatiquement par le système de gestion de la clinique.
+                        </div>
+                        <div>
+                            <strong>Référence :</strong>
+                            FAC-{{ facture.id }}
+                        </div>
+                    </td>
+
+                    <td style="width:18%;" class="qr">
+                        {% if qr_data is defined and qr_data %}
+                            <img src="{{ qr_data }}" alt="QR Code">
+                        {% endif %}
+
+                        {% if code_qr is defined and code_qr %}
+                            <small>Code : {{ code_qr }}</small>
+                        {% endif %}
+
+                        <small>Scanner pour vérification</small>
+                    </td>
+
+                    <td style="width:24%;"></td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="signature-table">
+            <tr>
+                <td class="signature-block" style="width:50%;">
+                    <div class="line">Signature / Cachet</div>
+                </td>
+                <td class="signature-block" style="width:50%;">
+                    <div class="line">Cachet du service</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="footer-note">
+            Merci pour votre confiance
+        </div>
+
+        <div class="no-print" style="margin-top:12px; text-align:right;">
+            <button onclick="window.print()">Imprimer</button>
+        </div>
     </div>
-
-    <div style="text-align:right;">
-      <div class="strong">Clinique Mainassara</div>
-      <div class="muted">Niamey</div>
-      <div class="muted">Téléphone: ...</div>
-    </div>
-  </div>
-
-  <h2>Patient</h2>
-  <div class="row">
-    <div>
-      <div><span class="muted">Nom:</span> <span class="strong">{{ patient.nom ?? '' }} {{ patient.prenom ?? '' }}</span></div>
-      <div><span class="muted">Dossier:</span> {{ patient.code ?? '—' }}</div>
-    </div>
-    <div style="text-align:right;">
-      <div><span class="muted">Consultation:</span> #{{ consultation.id }}</div>
-      {% if consultation.rendezVous is defined and consultation.rendezVous %}
-        <div><span class="muted">Rendez-vous:</span> #{{ consultation.rendezVous.id }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  <h2>Détails</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Libellé</th>
-        <th class="right">Qté</th>
-        <th class="right">PU</th>
-        <th class="right">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for l in facture.lignes %}
-        <tr>
-          <td>{{ l.type }}</td>
-          <td>{{ l.libelle }}</td>
-          <td class="right">{{ l.quantite }}</td>
-          <td class="right">{{ l.prixUnitaire|number_format(0, '.', ' ') }}</td>
-          <td class="right">{{ l.total|number_format(0, '.', ' ') }}</td>
-        </tr>
-      {% else %}
-        <tr>
-          <td colspan="5" class="muted">Aucune ligne.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div class="totalBox">
-    <div class="totalInner">
-      <div><span>Total</span><span class="strong">{{ facture.montant|number_format(0, '.', ' ') }} FCFA</span></div>
-      {% if facture.datePaiement %}
-        <div><span>Payée le</span><span>{{ facture.datePaiement|date('d/m/Y H:i') }}</span></div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="no-print" style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px;">
-    <button onclick="window.print()">Imprimer</button>
-    <button onclick="window.close()">Fermer</button>
-  </div>
-
-</div>
-
-<script>
-  // Auto print à l’ouverture (optionnel)
-  window.addEventListener('load', () => {
-    window.print();
-  });
-</script>
 </body>
 </html>

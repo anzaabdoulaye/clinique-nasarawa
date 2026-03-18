@@ -19,6 +19,9 @@ use Endroid\QrCode\Writer\PngWriter;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use setasign\Fpdi\Fpdi;
 
 #[Route('/facture')]
 final class FactureController extends AbstractController
@@ -127,15 +130,7 @@ final class FactureController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-    #[Route('/facture/{id}/print', name: 'app_facture_print', methods: ['GET'])]
-    public function print(Facture $facture): Response
-    {
-        return $this->render('facture/print.html.twig', [
-            'facture' => $facture,
-            'consultation' => $facture->getConsultation(),
-            'patient' => $facture->getConsultation()->getRendezVous()->getPatient(), // adapte si besoin
-        ]);
-    }
+   
 
 #[Route('/facture/{id}/qr', name: 'app_facture_qr', methods: ['GET'])]
 public function qrFacture(Facture $facture, BuilderInterface $builder): Response
@@ -157,4 +152,106 @@ public function qrFacture(Facture $facture, BuilderInterface $builder): Response
         'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
     ]);
 }
+
+#[Route('/{id}/print', name: 'app_facture_print', methods: ['GET'])]
+    public function print(Facture $facture): Response
+    {
+        $consultation = $facture->getConsultation();
+        $patient = $consultation?->getRendezVous()?->getPatient();
+
+        $verifyUrl = $this->generateUrl(
+            'app_facture_print',
+            ['id' => $facture->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 240,
+            margin: 8
+        );
+
+        $png = (new PngWriter())->write($qrCode)->getString();
+        $qrData = 'data:image/png;base64,' . base64_encode($png);
+
+        $codeQr = 'FAC-' . $facture->getId();
+
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        return $this->render('facture/print.html.twig', [
+            'facture' => $facture,
+            'consultation' => $consultation,
+            'patient' => $patient,
+            'qr_data' => $qrData,
+            'code_qr' => $codeQr,
+            'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
+        ]);
+    }
+
+    #[Route('/{id}/pdf', name: 'app_facture_pdf', methods: ['GET'])]
+    public function printPdf(Facture $facture): Response
+    {
+        $consultation = $facture->getConsultation();
+        $patient = $consultation?->getRendezVous()?->getPatient();
+
+        $verifyUrl = $this->generateUrl(
+            'app_facture_print',
+            ['id' => $facture->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 240,
+            margin: 8
+        );
+
+        $png = (new PngWriter())->write($qrCode)->getString();
+        $qrData = 'data:image/png;base64,' . base64_encode($png);
+
+        $codeQr = 'FAC-' . $facture->getId();
+
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        $html = $this->renderView('facture/print.html.twig', [
+            'facture' => $facture,
+            'consultation' => $consultation,
+            'patient' => $patient,
+            'qr_data' => $qrData,
+            'code_qr' => $codeQr,
+            'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->render();
+
+        $pdfOutput = $dompdf->output();
+
+        return new Response($pdfOutput, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="facture-%d.pdf"', $facture->getId()),
+        ]);
+    }
+
 }

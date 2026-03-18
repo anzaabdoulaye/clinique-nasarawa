@@ -2,357 +2,404 @@
 
 {% block body %}
 <style>
-  :root{
-    --ink:#111827;
-    --muted:#6b7280;
-    --line:#e5e7eb;
-    --card:#ffffff;
-    --bg:#f9fafb;
-  }
+    @page {
+        size: A5 portrait;
+        margin: 5mm;
+    }
 
-  body{ background: var(--bg); }
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: DejaVu Sans, Arial, sans-serif;
+        font-size: 9.5px;
+        color: #1f2937;
+        background: #ffffff;
+    }
 
-  @media print {
-    @page { size: A4; margin: 12mm; }
-    body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .no-print { display: none !important; }
-    .sheet { box-shadow: none !important; }
-  }
+    .document {
+        width: 100%;
+    }
 
-  .wrap{
-    max-width: 920px;
-    margin: 24px auto;
-    padding: 0 12px;
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    color: var(--ink);
-  }
+    .top-bar {
+        height: 4px;
+        background: #0f4c81;
+        margin-bottom: 6px;
+    }
 
-  .sheet{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,.06);
-    overflow: hidden;
-  }
+    .header-table,
+    .meta-table,
+    .footer-table,
+    .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-  /* Header clinic */
-  .clinic-head{
-    padding: 18px 20px;
-    border-bottom: 1px solid var(--line);
-    display:flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
-  }
+    .header-table td,
+    .meta-table td,
+    .footer-table td,
+    .signature-table td {
+        vertical-align: top;
+    }
 
-  .clinic-left{
-    display:flex;
-    gap: 14px;
-    align-items: center;
-    min-width: 0;
-  }
+    .clinic-logo {
+        width: 24mm;
+        height: 24mm;
+        border: 1px solid #d1d5db;
+        padding: 2px;
+        background: #ffffff;
+        border-radius: 50%;
+    }
 
-  .logo{
-    width: 56px;
-    height: 56px;
-    border-radius: 999px;
-    border: 2px solid var(--line);
-    overflow: hidden;
-    flex: 0 0 auto;
-    background: #fff;
-  }
-  .logo img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display:block;
-  }
+    .clinic h1 {
+        margin: 0 0 3px 0;
+        font-size: 13px;
+        font-weight: bold;
+        color: #0f4c81;
+        text-transform: uppercase;
+        line-height: 1.2;
+    }
 
-  .clinic-meta{
-    min-width: 0;
-  }
-  .clinic-name{
-    margin: 0;
-    font-weight: 900;
-    font-size: 16px;
-    letter-spacing: .2px;
-  }
-  .clinic-sub{
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 12.5px;
-    line-height: 1.35;
-  }
+    .clinic .sub {
+        font-size: 8px;
+        line-height: 1.35;
+        color: #6b7280;
+    }
 
-  .actions{
-    display:flex;
-    gap: 10px;
-    align-items: center;
-    flex: 0 0 auto;
-  }
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 8px;
+        font-weight: bold;
+        border: 1px solid #d1d5db;
+        background: #f8fafc;
+        color: #374151;
+    }
 
-  /* Title bar */
-  .doc-head{
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--line);
-    display:flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    background: #fcfcfd;
-  }
-  .doc-title{
-    margin: 0;
-    font-size: 16px;
-    font-weight: 900;
-  }
-  .doc-kpis{
-    display:flex;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    color: var(--muted);
-    font-size: 12.5px;
-  }
-  .doc-kpis b{ color: var(--ink); }
+    .separator {
+        border-bottom: 1px solid #d1d5db;
+        margin: 6px 0;
+    }
 
-  .badge{
-    display:inline-flex;
-    align-items:center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 900;
-    border: 1px solid var(--line);
-  }
-  .dot{ width: 8px; height: 8px; border-radius: 999px; background: #9ca3af; }
+    .title-box {
+        text-align: center;
+        margin-bottom: 6px;
+    }
 
-  .is-ok{ background: #ecfdf5; border-color:#a7f3d0; color:#065f46; }
-  .is-ok .dot{ background:#10b981; }
+    .title-box .title {
+        font-size: 12px;
+        font-weight: bold;
+        color: #0f4c81;
+        text-transform: uppercase;
+    }
 
-  .is-warn{ background:#fffbeb; border-color:#fde68a; color:#92400e; }
-  .is-warn .dot{ background:#f59e0b; }
+    .title-box .subtitle {
+        margin-top: 2px;
+        font-size: 7px;
+        color: #6b7280;
+    }
 
-  .is-bad{ background:#fef2f2; border-color:#fecaca; color:#991b1b; }
-  .is-bad .dot{ background:#ef4444; }
+    .meta-box,
+    .box {
+        border: 1px solid #d1d5db;
+    }
 
-  /* Body */
-  .content{ padding: 18px 20px 8px 20px; }
+    .meta-box {
+        padding: 5px;
+        margin-bottom: 6px;
+    }
 
-  .grid{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px 16px;
-  }
+    .meta-table td {
+        width: 50%;
+        padding: 2px 4px;
+        line-height: 1.3;
+    }
 
-  .field{
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-  .field.full{ grid-column: 1 / -1; }
+    .section {
+        margin-top: 5px;
+    }
 
-  .label{
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    margin-bottom: 6px;
-  }
-  .value{
-    font-size: 14px;
-    font-weight: 650;
-    line-height: 1.35;
-    word-break: break-word;
-  }
+    .section-title {
+        padding: 4px 6px;
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f4c81;
+        background: #f8fafc;
+        border: 1px solid #d1d5db;
+        border-bottom: none;
+        text-transform: uppercase;
+    }
 
-  .notes{
-    min-height: 92px;
-    border: 1px dashed var(--line);
-    border-radius: 12px;
-    padding: 12px;
-    color: #374151;
-    background: #fff;
-  }
+    .box {
+        padding: 6px;
+        line-height: 1.35;
+    }
 
-  .bottom{
-    padding: 12px 20px 18px 20px;
-    border-top: 1px dashed var(--line);
-    display:flex;
-    justify-content: space-between;
-    align-items:flex-end;
-    gap: 16px;
-  }
+    .notes-box {
+        min-height: 70px;
+    }
 
-  .sig{
-    width: 58%;
-    min-height: 82px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px;
-  }
-  .sig .label{ margin-bottom: 8px; }
+    .footer-block {
+        border-top: 1px dashed #d1d5db;
+        margin-top: 6px;
+        padding-top: 6px;
+    }
 
-  .qr{
-    width: 42%;
-    display:flex;
-    gap: 12px;
-    align-items:center;
-    justify-content:flex-end;
-    text-align:right;
-  }
-  .qr img{
-    width: 88px;
-    height: 88px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 6px;
-    background: #fff;
-  }
-  .qr small{ color: var(--muted); display:block; line-height:1.35; }
+    .footer-left {
+        font-size: 8px;
+        color: #6b7280;
+        line-height: 1.3;
+        padding-right: 6px;
+    }
 
-  .btn{ border-radius: 10px; }
+    .qr-box {
+        width: 28mm;
+        text-align: center;
+        border: 1px solid #d1d5db;
+        padding: 3px;
+        background: #f8fafc;
+    }
+
+    .qr-box img {
+        width: 20mm;
+        height: 20mm;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        padding: 2px;
+    }
+
+    .qr-label {
+        margin-top: 2px;
+        font-size: 7px;
+        line-height: 1.2;
+        color: #6b7280;
+        word-break: break-word;
+    }
+
+    .signature-table {
+        margin-top: 10px;
+    }
+
+    .signature-block {
+        text-align: center;
+        vertical-align: bottom;
+        height: 65px;
+        padding: 0 8px;
+    }
+
+    .line {
+        border-top: 1px solid #000;
+        padding-top: 4px;
+        font-size: 8px;
+        color: #6b7280;
+    }
+
+    .footer-note {
+        margin-top: 6px;
+        padding-top: 4px;
+        text-align: center;
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f4c81;
+        border-top: 1px dashed #d1d5db;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    @media screen {
+        body {
+            background: #f9fafb;
+        }
+
+        .document {
+            max-width: 148mm;
+            margin: 12px auto;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,.06);
+        }
+
+        .no-print {
+            display: block;
+            margin-bottom: 10px;
+            text-align: right;
+        }
+
+        .btn-print,
+        .btn-back {
+            display: inline-block;
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            text-decoration: none;
+            font-size: 11px;
+            cursor: pointer;
+            background: #fff;
+            color: #111827;
+            margin-left: 8px;
+        }
+
+        .btn-primary {
+            background: #0f4c81;
+            color: #fff;
+            border-color: #0f4c81;
+        }
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
 </style>
 
-{# ==== Data safe ==== #}
-{% set clinic_name = 'Clinique Nasarawa' %}
-{% set clinic_addr = 'Niamey, Niger — Quartier …' %}
-{% set clinic_phone = '+227 … … … …' %}
-{% set clinic_email = 'contact@clinique.tld' %}
+{# ===== Données clinique ===== #}
+{% set clinic_name = 'CLINIQUE MÉDICALE NASSARAWA' %}
+{% set clinic_nif = '120402/R' %}
+{% set clinic_rccm = 'NE-NIM-01-2024-B12-00145' %}
+{% set clinic_addr = 'Yantala Haut, Avenue du Daoura YN 187, Niamey - Niger' %}
+{% set clinic_phone = '20 75 51 02 / 88 05 22 20' %}
+{% set clinic_bp = 'BP : 2120 Niamey' %}
+{% set clinic_email = 'nassrawaclinique@gmail.com' %}
 
-{% set patientNom = (rendez_vous.patient ? (rendez_vous.patient.nom ~ ' ' ~ (rendez_vous.patient.prenom ?? '')) : '—') %}
-{% set medecinNom = (rendez_vous.medecin ? (rendez_vous.medecin.nomComplet ?? (rendez_vous.medecin.nom ~ ' ' ~ (rendez_vous.medecin.prenom ?? ''))) : '—') %}
-{% set dt = (rendez_vous.dateheure ? rendez_vous.dateheure|date('d/m/Y H:i') : '—') %}
+{# ===== Données rendez-vous ===== #}
+{% set patientNom = rendez_vous.patient ? ((rendez_vous.patient.nom ?? '') ~ ' ' ~ (rendez_vous.patient.prenom ?? ''))|trim : '—' %}
+{% set medecinNom = rendez_vous.medecin ? (rendez_vous.medecin.nomComplet ?? ((rendez_vous.medecin.nom ?? '') ~ ' ' ~ (rendez_vous.medecin.prenom ?? ''))|trim) : '—' %}
+{% set dt = rendez_vous.dateheure ? rendez_vous.dateheure|date('d/m/Y H:i') : '—' %}
 {% set statut = rendez_vous.statut ? rendez_vous.statut.value : '—' %}
-{% set motif = (rendez_vous.motif ?: '—') %}
+{% set motif = rendez_vous.motif ?: '—' %}
 {% set dossier = (rendez_vous.patient and rendez_vous.patient.dossierMedical)
-  ? (rendez_vous.patient.dossierMedical.numeroDossier ?? ('#' ~ rendez_vous.patient.dossierMedical.id))
-  : '—'
+    ? (rendez_vous.patient.dossierMedical.numeroDossier ?? ('#' ~ rendez_vous.patient.dossierMedical.id))
+    : '—'
 %}
+{% set telephone = rendez_vous.patient and rendez_vous.patient.telephone is defined ? rendez_vous.patient.telephone : '—' %}
+{% set sexe = rendez_vous.patient and rendez_vous.patient.sexe is defined ? rendez_vous.patient.sexe : '—' %}
+{% set age = rendez_vous.patient and rendez_vous.patient.age is defined ? rendez_vous.patient.age ~ ' ans' : '—' %}
 
-{# Badge mapping (adapte selon tes statuts exacts) #}
-{% set badgeClass = 'badge' %}
-{% if statut in ['PAYE','CONFIRME','TERMINE','VALIDE'] %}
-  {% set badgeClass = badgeClass ~ ' is-ok' %}
-{% elseif statut in ['EN_ATTENTE','PLANIFIE','EN_COURS'] %}
-  {% set badgeClass = badgeClass ~ ' is-warn' %}
-{% elseif statut in ['ANNULE','REFUSE','ABSENT'] %}
-  {% set badgeClass = badgeClass ~ ' is-bad' %}
-{% endif %}
-
-{# QR: prefer provided data-uri (qr_data) else fallback to google chart URL #}
+{% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
 {% set showUrl = verifyUrl is defined ? verifyUrl : absolute_url(path('app_rendez_vous_show', {'id': rendez_vous.id})) %}
-{% set _qr = qr_data is defined ? qr_data : ('https://chart.googleapis.com/chart?cht=qr&chs=200x200&chld=M|0&chl=' ~ showUrl|url_encode) %}
 
-<div class="wrap">
-  <div class="sheet">
+<div class="document">
 
-    {# ===== Clinic header ===== #}
-    <div class="clinic-head">
-      <div class="clinic-left">
-        <div class="logo">
-          <img src="{{ asset('logo.png') }}" alt="Logo">
-        </div>
-
-        <div class="clinic-meta">
-          <h2 class="clinic-name">{{ clinic_name }}</h2>
-          <div class="clinic-sub">
-            {{ clinic_addr }}<br>
-            Tél : {{ clinic_phone }} — Email : {{ clinic_email }}
-          </div>
-        </div>
-      </div>
-
-      <div class="actions no-print">
-        <a href="{{ path('app_rendez_vous_show', {'id': rendez_vous.id}) }}" class="btn btn-light border">
-          Retour
-        </a>
-        <button type="button" onclick="window.print()" class="btn btn-primary">
-          Imprimer
-        </button>
-      </div>
+    <div class="no-print">
+        <a href="{{ path('app_rendez_vous_show', {'id': rendez_vous.id}) }}" class="btn-back">Retour</a>
+        <button type="button" onclick="window.print()" class="btn-print btn-primary">Imprimer</button>
     </div>
 
-    {# ===== Document title / meta ===== #}
-    <div class="doc-head">
-      <div>
-        <h1 class="doc-title">Fiche de rendez-vous</h1>
-        <div class="doc-kpis">
-          <div><b>ID :</b> {{ rendez_vous.id }}</div>
-          <div><b>Généré le :</b> {{ "now"|date('d/m/Y H:i') }}</div>
-        </div>
-      </div>
+    <div class="top-bar"></div>
 
-      <div>
-        <span class="{{ badgeClass }}">
-          <span class="dot"></span>
-          {{ statut }}
-        </span>
-      </div>
+    <table class="header-table">
+        <tr>
+            <td style="width:18%;">
+                {% if logo_path is defined and logo_path %}
+                    <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
+                {% endif %}
+            </td>
+
+            <td style="width:58%;">
+                <div class="clinic">
+                    <h1>{{ clinic_name }}</h1>
+                    <div class="sub">
+                        <strong>NIF :</strong> {{ clinic_nif }}<br>
+                        <strong>RCCM :</strong> {{ clinic_rccm }}<br>
+                        <strong>Adresse :</strong> {{ clinic_addr }}<br>
+                        <strong>Tél :</strong> {{ clinic_phone }}<br>
+                        <strong>{{ clinic_bp }}</strong><br>
+                        <strong>Email :</strong> {{ clinic_email }}
+                    </div>
+                </div>
+            </td>
+
+            <td style="width:24%; text-align:right;">
+                <span class="badge">{{ statut }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="separator"></div>
+
+    <div class="title-box">
+        <div class="title">Fiche de rendez-vous</div>
+        <div class="subtitle">
+            Référence : RDV-{{ rendez_vous.id }} — Généré le {{ "now"|date('d/m/Y H:i') }}
+        </div>
     </div>
 
-    {# ===== Content ===== #}
-    <div class="content">
-      <div class="grid">
-        <div class="field">
-          <div class="label">Patient</div>
-          <div class="value">{{ patientNom|trim ?: '—' }}</div>
-        </div>
+    <div class="meta-box">
+        <table class="meta-table">
+            <tr>
+                <td><strong>Patient :</strong> {{ patientNom }}</td>
+                <td><strong>Dossier médical :</strong> {{ dossier }}</td>
+            </tr>
+            <tr>
+                <td><strong>Médecin :</strong> {{ medecinNom }}</td>
+                <td><strong>Date & heure :</strong> {{ dt }}</td>
+            </tr>
+            <tr>
+                <td><strong>Téléphone :</strong> {{ telephone }}</td>
+                <td><strong>Statut :</strong> {{ statut }}</td>
+            </tr>
+            <tr>
+                <td><strong>Sexe :</strong> {{ sexe }}</td>
+                <td><strong>Âge :</strong> {{ age }}</td>
+            </tr>
+        </table>
+    </div>
 
-        <div class="field">
-          <div class="label">Dossier médical</div>
-          <div class="value">{{ dossier }}</div>
+    <div class="section">
+        <div class="section-title">Motif du rendez-vous</div>
+        <div class="box">
+            {{ motif }}
         </div>
+    </div>
 
-        <div class="field">
-          <div class="label">Médecin</div>
-          <div class="value">{{ medecinNom|trim ?: '—' }}</div>
-        </div>
-
-        <div class="field">
-          <div class="label">Date & heure</div>
-          <div class="value">{{ dt }}</div>
-        </div>
-
-        <div class="field full">
-          <div class="label">Motif</div>
-          <div class="value">{{ motif }}</div>
-        </div>
-
-        <div class="field full">
-          <div class="label">Observations / Notes</div>
-          <div class="notes">
-            {# si tu as un champ notes, remplace par rendez_vous.notes #}
+    <div class="section">
+        <div class="section-title">Observations / Notes</div>
+        <div class="box notes-box">
             —
-          </div>
         </div>
-      </div>
     </div>
 
-    {# ===== Bottom: signature + QR ===== #}
-    <div class="bottom">
-      <div class="sig">
-        <div class="label">Signature / Cachet</div>
-        <div style="color: var(--muted); font-size: 12.5px;">
-          Le : ____ / ____ / ______ &nbsp;&nbsp;&nbsp; Signature : ______________________
-        </div>
-      </div>
+    <div class="footer-block">
+        <table class="footer-table">
+            <tr>
+                <td style="width:60%;" class="footer-left">
+                    <div><strong>Document :</strong> Fiche de rendez-vous générée automatiquement par le système de gestion de la clinique.</div>
+                    <div><strong>Référence :</strong> RDV-{{ rendez_vous.id }}</div>
+                    <div><strong>Vérification :</strong> Scanner le QR code ci-contre.</div>
+                </td>
 
-      <div class="qr">
-        <div>
-          <small><b>QR Code</b></small>
-          <small>Vérifier le rendez-vous</small>
-          <small style="word-break:break-all;">{{ showUrl }}</small>
-          {% if code_qr is defined and code_qr %}
-            <div><small><b>Code :</b> {{ code_qr }}</small></div>
-          {% endif %}
-        </div>
-        <img src="{{ _qr }}" alt="QR Code">
-      </div>
+                <td style="width:40%; text-align:right;">
+                    <div class="qr-box" style="float:right;">
+                        {% if _qr %}
+                            <img src="{{ _qr }}" alt="QR Code">
+                        {% endif %}
+                        <div class="qr-label">Vérifier le rendez-vous</div>
+                        {% if code_qr is defined and code_qr %}
+                            <div class="qr-label">Code : {{ code_qr }}</div>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-  </div>
+    <table class="signature-table">
+        <tr>
+            <td class="signature-block" style="width:50%;">
+                <div class="line">Signature / Cachet</div>
+            </td>
+            <td class="signature-block" style="width:50%;">
+                <div class="line">Visa / Accueil</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer-note">
+        Merci de conserver cette fiche et de la présenter en cas de besoin
+    </div>
 </div>
 {% endblock %}
