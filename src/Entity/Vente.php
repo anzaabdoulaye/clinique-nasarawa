@@ -31,10 +31,14 @@ class Vente
     #[ORM\OneToMany(mappedBy: 'vente', targetEntity: VenteLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $lignes;
 
+    #[ORM\OneToMany(mappedBy: 'vente', targetEntity: BonMatiere::class)]
+    private Collection $bonsMatiere;
+
     public function __construct()
     {
         $this->lignes = new ArrayCollection();
         $this->date = new \DateTimeImmutable();
+        $this->bonsMatiere = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -75,5 +79,13 @@ class Vente
             $sum += $l->getSousTotal();
         }
         $this->total = $sum;
+    }
+
+        /**
+     * @return Collection<int, BonMatiere>
+     */
+    public function getBonsMatiere(): Collection
+    {
+        return $this->bonsMatiere;
     }
 }

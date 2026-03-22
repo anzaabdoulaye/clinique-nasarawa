@@ -55,6 +55,14 @@
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ label == 'danger' ? 'danger' : (label == 'error' ? 'danger' : label) }} alert-dismissible fade show mx-3 mt-3" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
                     {% block body %}
                     {% endblock %}
                 </div>

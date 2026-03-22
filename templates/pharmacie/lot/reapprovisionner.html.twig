@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Réapprovisionner un lot{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-add-circle-line me-2 text-success"></i>
+                Réapprovisionner le lot
+            </h2>
+            <p class="text-muted mb-0">
+                {{ lot.medicament.nom }} — {{ lot.numeroLot ?: ('Lot #' ~ lot.id) }}
+            </p>
+        </div>
+
+        <a href="{{ path('app_lot_show', {'id': lot.id}) }}" class="btn btn-outline-secondary">
+            <i class="ri-arrow-left-line me-1"></i>
+            Retour
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            {{ form_start(form) }}
+
+                {{ form_errors(form) }}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form_label(form.quantite) }}
+                        {{ form_widget(form.quantite) }}
+                        {{ form_errors(form.quantite) }}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form_label(form.prixAchat) }}
+                        {{ form_widget(form.prixAchat) }}
+                        {{ form_errors(form.prixAchat) }}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form_label(form.reference) }}
+                        {{ form_widget(form.reference) }}
+                        {{ form_errors(form.reference) }}
+                    </div>
+
+                    <div class="col-12">
+                        {{ form_label(form.observation) }}
+                        {{ form_widget(form.observation) }}
+                        {{ form_errors(form.observation) }}
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <a href="{{ path('app_lot_show', {'id': lot.id}) }}" class="btn btn-light">
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="ri-check-line me-1"></i>
+                        Valider le réapprovisionnement
+                    </button>
+                </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+{% endblock %}

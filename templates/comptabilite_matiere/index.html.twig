@@ -1,0 +1,311 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Comptabilité matière - Bons{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# ===== En-tête de page ===== #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-archive-drawer-line me-2 text-primary"></i>
+                Comptabilité matière
+            </h2>
+            <p class="text-muted mb-0">
+                Consultez et suivez les bons d’entrée, de sortie définitive et de sortie provisoire.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary shadow-sm" href="{{ path('app_comptabilite_matiere_dashboard') }}">
+                <i class="ri-bar-chart-box-line me-1"></i>
+                Tableau de bord
+            </a>
+            <button class="btn btn-primary shadow-sm"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#newBonMatiereModal">
+    <i class="ri-add-line me-1"></i>
+    Nouveau bon
+</button>
+        </div>
+    </div>
+
+    {# ===== Cartes synthèse ===== #}
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block mb-1">Total des bons</small>
+                            <h3 class="fw-bold mb-0 text-dark">{{ bons|length }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
+                             style="width: 52px; height: 52px;">
+                            <i class="ri-file-list-3-line fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% set entrees = 0 %}
+        {% set sortiesDef = 0 %}
+        {% set sortiesProv = 0 %}
+
+        {% for bon in bons %}
+            {% if bon.type.value == 'ENTREE' %}
+                {% set entrees = entrees + 1 %}
+            {% elseif bon.type.value == 'SORTIE_DEFINITIVE' %}
+                {% set sortiesDef = sortiesDef + 1 %}
+            {% elseif bon.type.value == 'SORTIE_PROVISOIRE' %}
+                {% set sortiesProv = sortiesProv + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block mb-1">Entrées</small>
+                            <h3 class="fw-bold mb-0 text-success">{{ entrees }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-success-subtle text-success d-flex justify-content-center align-items-center"
+                             style="width: 52px; height: 52px;">
+                            <i class="ri-arrow-left-down-line fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block mb-1">Sorties définitives</small>
+                            <h3 class="fw-bold mb-0 text-danger">{{ sortiesDef }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-danger-subtle text-danger d-flex justify-content-center align-items-center"
+                             style="width: 52px; height: 52px;">
+                            <i class="ri-arrow-right-up-line fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block mb-1">Sorties provisoires</small>
+                            <h3 class="fw-bold mb-0 text-warning">{{ sortiesProv }}</h3>
+                        </div>
+                        <div class="rounded-circle bg-warning-subtle text-warning d-flex justify-content-center align-items-center"
+                             style="width: 52px; height: 52px;">
+                            <i class="ri-external-link-line fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ===== Carte principale ===== #}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <h5 class="mb-1 fw-semibold text-dark">Liste des bons matière</h5>
+                    <small class="text-muted">
+                        Total : <span class="fw-semibold">{{ bons|length }}</span> bon(s)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body px-4 pb-4">
+            {% if bons|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-semibold text-dark">N° bon</th>
+                                <th class="fw-semibold text-dark">Date</th>
+                                <th class="fw-semibold text-dark">Type</th>
+                                <th class="fw-semibold text-dark">Motif</th>
+                                <th class="fw-semibold text-dark">Référence</th>
+                                <th class="fw-semibold text-dark">Statut</th>
+                                <th class="fw-semibold text-dark">Lignes</th>
+                                <th class="fw-semibold text-dark">Quantité totale</th>
+                                <th class="fw-semibold text-dark">Créé par</th>
+                                <th class="fw-semibold text-dark text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bon in bons %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="badge bg-light text-dark border px-3 py-2 align-self-start">
+                                                {{ bon.numero }}
+                                            </span>
+                                            {% if bon.vente %}
+                                                <small class="text-muted mt-1">Vente #{{ bon.vente.id }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {% if bon.dateBon %}
+                                            <div class="fw-semibold text-dark">{{ bon.dateBon|date('d/m/Y') }}</div>
+                                            <small class="text-muted">{{ bon.dateBon|date('H:i') }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Non définie</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if bon.type.value == 'ENTREE' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                <i class="ri-arrow-left-down-line me-1"></i>
+                                                Entrée
+                                            </span>
+                                        {% elseif bon.type.value == 'SORTIE_DEFINITIVE' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                                <i class="ri-arrow-right-up-line me-1"></i>
+                                                Sortie définitive
+                                            </span>
+                                        {% elseif bon.type.value == 'SORTIE_PROVISOIRE' %}
+                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-2">
+                                                <i class="ri-external-link-line me-1"></i>
+                                                Sortie provisoire
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-2">
+                                                {{ bon.type.value }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-semibold text-dark">
+                                            {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if bon.referenceExterne %}
+                                            <span class="text-dark">{{ bon.referenceExterne }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if bon.statut.value == 'BROUILLON' %}
+                                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-2">
+                                                Brouillon
+                                            </span>
+                                        {% elseif bon.statut.value == 'VALIDE' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                Validé
+                                            </span>
+                                        {% elseif bon.statut.value == 'ANNULE' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                                Annulé
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border px-3 py-2">
+                                                {{ bon.statut.value }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-semibold text-dark">{{ bon.totalLignes }}</span>
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold text-primary">{{ bon.quantiteTotale }}</span>
+                                    </td>
+
+                                    <td>
+                                        {% if bon.creePar %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
+                                                     style="width: 38px; height: 38px; font-weight: 700;">
+                                                    {{ bon.creePar.getNomComplet()|slice(0, 1)|upper }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ bon.creePar.getNomComplet() }}</div>
+                                                    <small class="text-muted">Utilisateur</small>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Non renseigné</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                            <a class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                               href="{{ path('app_comptabilite_matiere_show', {'id': bon.id}) }}">
+                                                <i class="ri-eye-line me-1"></i>
+                                                Voir
+                                            </a>
+
+                                            <a class="btn btn-sm btn-primary rounded-pill px-3"
+                                               href="{{ path('app_comptabilite_matiere_print', {'id': bon.id}) }}"
+                                               target="_blank">
+                                                <i class="ri-printer-line me-1"></i>
+                                                Imprimer
+                                            </a>
+
+                                            {% if bon.statut.value == 'BROUILLON' %}
+                                                <form method="post"
+                                                      action="{{ path('app_comptabilite_matiere_valider', {'id': bon.id}) }}"
+                                                      onsubmit="return confirm('Confirmer la validation de ce bon ?');"
+                                                      class="d-inline">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('valider_bon_' ~ bon.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                                        <i class="ri-check-line me-1"></i>
+                                                        Valider
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center"
+                             style="width: 70px; height: 70px;">
+                            <i class="ri-archive-line fs-2 text-muted"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Aucun bon matière enregistré</h5>
+                    <p class="text-muted mb-4">
+                        Commencez par créer un bon d’entrée, de sortie définitive ou de sortie provisoire.
+                    </p>
+                    <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_comptabilite_matiere_new') }}">
+                        <i class="ri-add-line me-1"></i>
+                        Nouveau bon
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

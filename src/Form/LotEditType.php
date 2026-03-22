@@ -7,13 +7,12 @@ use App\Entity\Medicament;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class LotType extends AbstractType
+class LotEditType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -34,14 +33,6 @@ class LotType extends AbstractType
                 'required' => false,
                 'label' => 'Date de péremption',
                 'attr' => ['class' => 'form-control'],
-            ])
-            ->add('quantite', IntegerType::class, [
-                'label' => 'Quantité initiale',
-                'attr' => [
-                    'class' => 'form-control',
-                    'min' => 0,
-                ],
-                'help' => 'Cette quantité initiale générera automatiquement un bon d’entrée en comptabilité matière.',
             ])
             ->add('prixAchat', NumberType::class, [
                 'required' => false,
