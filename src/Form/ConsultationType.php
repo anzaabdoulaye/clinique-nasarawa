@@ -9,6 +9,10 @@ use App\Entity\Facture;
 use App\Entity\RendezVous;
 use App\Entity\TarifPrestation;
 use App\Entity\Utilisateur;
+use App\Enum\StatutRendezVous;
+use App\Repository\DossierMedicalRepository;
+use App\Repository\RendezVousRepository;
+use App\Repository\UtilisateurRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -19,6 +23,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class ConsultationType extends AbstractType
 {
+    public function __construct(
+        private readonly UtilisateurRepository $utilisateurRepository,
+    ) {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $context = $options['context'];
@@ -87,15 +96,27 @@ class ConsultationType extends AbstractType
         }
 
         if ($context === 'admin') {
+            $currentRendezVous = $builder->getData()?->getRendezVous();
+            $doctorChoices = array_values(array_filter(
+                $this->utilisateurRepository->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']),
+                static fn (Utilisateur $utilisateur) => in_array('ROLE_MEDECIN', $utilisateur->getRoles(), true)
+            ));
+
             $builder
                 ->add('medecin', EntityType::class, [
                     'class' => Utilisateur::class,
+                    'choices' => $doctorChoices,
                     'choice_label' => fn (Utilisateur $u) => $u->getNomComplet(),
                     'placeholder' => '— Choisir un médecin —',
                     'label' => 'Médecin',
                 ])
                 ->add('dossierMedical', EntityType::class, [
                     'class' => DossierMedical::class,
+                    'query_builder' => static function (DossierMedicalRepository $repository) {
+                        return $repository->createQueryBuilder('d')
+                            ->orderBy('d.createdAt', 'DESC')
+                            ->addOrderBy('d.id', 'DESC');
+                    },
                     'choice_label' => function (DossierMedical $dossier) {
                         $patient = method_exists($dossier, 'getPatient') ? $dossier->getPatient() : null;
                         $patientLabel = $patient
@@ -109,6 +130,25 @@ class ConsultationType extends AbstractType
                 ])
                 ->add('rendezVous', EntityType::class, [
                     'class' => RendezVous::class,
+                    'query_builder' => static function (RendezVousRepository $repository) use ($currentRendezVous) {
+                        $queryBuilder = $repository->createQueryBuilder('r')
+                            ->where('r.dateHeure >= :now')
+                            ->andWhere('r.statut NOT IN (:excludedStatuses)')
+                            ->setParameter('now', new \DateTimeImmutable())
+                            ->setParameter('excludedStatuses', [
+                                StatutRendezVous::ANNULE,
+                                StatutRendezVous::TERMINE,
+                            ])
+                            ->orderBy('r.dateHeure', 'ASC');
+
+                        if ($currentRendezVous?->getId()) {
+                            $queryBuilder
+                                ->orWhere('r.id = :currentRendezVousId')
+                                ->setParameter('currentRendezVousId', $currentRendezVous->getId());
+                        }
+
+                        return $queryBuilder;
+                    },
                     'choice_label' => function (RendezVous $rdv) {
                         $date = method_exists($rdv, 'getDateHeure') && $rdv->getDateHeure()
                             ? $rdv->getDateHeure()->format('d/m/Y H:i')

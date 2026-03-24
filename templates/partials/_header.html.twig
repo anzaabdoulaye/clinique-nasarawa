@@ -29,13 +29,158 @@
                         <span></span>
                     </span>
                 </button>
-                <form class="app-search d-none d-md-block">
+                <div class="app-search d-none d-md-block">
                     <div class="position-relative">
-                        <input type="text" class="form-control" placeholder="Rechercher..." autocomplete="off" id="search-options" value="">
+                        <input type="text" class="form-control" placeholder="Rechercher un module..." autocomplete="off" id="app-quick-search" value="">
                         <span class="mdi mdi-magnify search-widget-icon"></span>
-                        <span class="mdi mdi-close-circle search-widget-icon search-widget-icon-close d-none" id="search-close-options"></span>
+                        <button type="button" class="btn btn-link p-0 border-0 search-widget-icon search-widget-icon-close d-none" id="app-quick-search-clear" aria-label="Effacer la recherche">
+                            <span class="mdi mdi-close-circle"></span>
+                        </button>
+
+                        <div class="dropdown-menu dropdown-menu-lg w-100 p-2" id="app-quick-search-menu">
+                            <div class="px-2 pt-1 pb-2 border-bottom">
+                                <div class="fw-semibold text-dark small">Acces rapide</div>
+                                <div class="text-muted small">Filtrez puis appuyez sur Entree pour ouvrir le premier resultat.</div>
+                            </div>
+
+                            <div class="py-2" data-search-items>
+                                <a href="{{ path('home') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="tableau de bord accueil home dashboard">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary">General</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Tableau de bord</div>
+                                            <div class="text-muted small">Vue d'ensemble de l'activite</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_patient_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="patients patient dossier medical">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-info-subtle text-info">Patients</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Patients</div>
+                                            <div class="text-muted small">Liste et gestion des patients</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_consultation_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="consultations consultation rendez-vous medecin">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-success-subtle text-success">Consultation</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Consultations</div>
+                                            <div class="text-muted small">Suivi des consultations medicales</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_laboratoire_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="laboratoire labo analyse examen">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-warning-subtle text-warning">Laboratoire</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Laboratoire</div>
+                                            <div class="text-muted small">Examens et analyses</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_rendez_vous_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="rendez-vous rendez vous agenda calendrier">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-secondary-subtle text-secondary">Agenda</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Rendez-vous</div>
+                                            <div class="text-muted small">Planning et organisation</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_facture_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="factures facture paiement caisse finances">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-danger-subtle text-danger">Facturation</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Factures</div>
+                                            <div class="text-muted small">Emissions et suivi des factures</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_perception_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="perception paiement encaissement recettes">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-dark-subtle text-dark">Perception</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Perception</div>
+                                            <div class="text-muted small">Encaissements et recettes</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_hospitalisation_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="hospitalisation chambre admission sejour">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary">Hospitalisation</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Hospitalisation</div>
+                                            <div class="text-muted small">Admissions et suivi des sejours</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_pharmacie_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="pharmacie medicament stock ordonnance">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-success-subtle text-success">Pharmacie</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Pharmacie</div>
+                                            <div class="text-muted small">Stocks, ventes et prescriptions</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_caisse_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="caisse ventes ticket pharmacie comptoir">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-success-subtle text-success">Caisse</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Caisse - Ventes</div>
+                                            <div class="text-muted small">Historique des ventes pharmacie</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_caisse_new') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="nouvelle vente caisse vente pharmacie ticket creation">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-success-subtle text-success">Action</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Nouvelle vente</div>
+                                            <div class="text-muted small">Creer rapidement une vente</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_utilisateur_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="utilisateurs utilisateur comptes acces">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-info-subtle text-info">Administration</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Utilisateurs</div>
+                                            <div class="text-muted small">Gestion des comptes</div>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{{ path('app_utilisateur_param') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="parametres configuration reglages settings">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-secondary-subtle text-secondary">Configuration</span>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Parametres</div>
+                                            <div class="text-muted small">Configuration de l'application</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="px-2 pt-2 pb-1 text-muted small d-none" id="app-quick-search-empty">
+                                Aucun resultat pour cette recherche.
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
 
             <div class="d-flex align-items-center">
@@ -97,3 +242,91 @@
         </div>
     </div>
 </header>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('app-quick-search');
+    const clearButton = document.getElementById('app-quick-search-clear');
+    const menu = document.getElementById('app-quick-search-menu');
+    const emptyState = document.getElementById('app-quick-search-empty');
+
+    if (!input || !clearButton || !menu || !emptyState) {
+        return;
+    }
+
+    const items = Array.from(menu.querySelectorAll('.search-shortcut-item'));
+
+    function getVisibleItems() {
+        return items.filter((item) => item.style.display !== 'none');
+    }
+
+    function closeMenu() {
+        menu.classList.remove('show');
+    }
+
+    function openMenu() {
+        menu.classList.add('show');
+    }
+
+    function filterItems() {
+        const query = input.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        items.forEach((item) => {
+            const text = (item.dataset.searchText || item.textContent || '').toLowerCase();
+            const isVisible = query === '' || text.includes(query);
+
+            item.style.display = isVisible ? '' : 'none';
+            if (isVisible) {
+                visibleCount += 1;
+            }
+        });
+
+        clearButton.classList.toggle('d-none', query === '');
+        emptyState.classList.toggle('d-none', visibleCount > 0);
+
+        if (document.activeElement === input || query !== '') {
+            openMenu();
+        }
+    }
+
+    input.addEventListener('focus', function () {
+        filterItems();
+        openMenu();
+    });
+
+    input.addEventListener('input', filterItems);
+
+    input.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            input.value = '';
+            filterItems();
+            closeMenu();
+            input.blur();
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            const [firstVisibleItem] = getVisibleItems();
+            if (firstVisibleItem) {
+                event.preventDefault();
+                firstVisibleItem.click();
+            }
+        }
+    });
+
+    clearButton.addEventListener('click', function () {
+        input.value = '';
+        filterItems();
+        input.focus();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (event.target === input || menu.contains(event.target)) {
+            return;
+        }
+
+        closeMenu();
+    });
+});
+</script>

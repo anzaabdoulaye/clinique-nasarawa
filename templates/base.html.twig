@@ -32,6 +32,9 @@
         <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
         <!-- Custom Css -->
         <link href="{{ asset('assets/css/custom.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- DataTables CSS  -->
+        <link href="{{ asset('assets/libs/datatables/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/libs/datatables/buttons/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
     {% endblock %}
 
     <!-- Layout config Js -->
@@ -90,6 +93,8 @@
 
     {% block javascripts %}
         <!-- JAVASCRIPT -->
+        <!-- jQuery  -->
+        <script src="{{ asset('assets/libs/datatables/jquery-3.6.4.min.js') }}"></script>
         <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
         <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
         <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
@@ -107,6 +112,233 @@
         
         <!-- App js -->
         <script src="{{ asset('assets/js/app.js') }}"></script>
+        <!-- DataTables JS -->
+        <script src="{{ asset('assets/libs/datatables/jquery.dataTables.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/datatables/buttons/dataTables.buttons.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/jszip/jszip.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/pdfmake/pdfmake.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/pdfmake/vfs_fonts.js') }}"></script>
+        <script src="{{ asset('assets/libs/datatables/buttons/buttons.html5.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/datatables/buttons/buttons.print.min.js') }}"></script>
+
+        <script>
+        (function () {
+            if (typeof $ === 'undefined' || !$.fn || !$.fn.DataTable) {
+                return;
+            }
+
+            var frenchLanguage = {
+                processing: "Traitement en cours...",
+                search: "Rechercher :",
+                lengthMenu: "Afficher _MENU_ éléments",
+                info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+                infoEmpty: "Aucun élément à afficher",
+                infoFiltered: "(filtré de _MAX_ éléments au total)",
+                loadingRecords: "Chargement...",
+                zeroRecords: "Aucun résultat trouvé",
+                emptyTable: "Aucune donnée disponible",
+                paginate: {
+                    first: "Premier",
+                    previous: "Précédent",
+                    next: "Suivant",
+                    last: "Dernier"
+                },
+                buttons: {
+                    copy: "Copier",
+                    csv: "CSV",
+                    excel: "Excel",
+                    pdf: "PDF",
+                    print: "Imprimer"
+                }
+            };
+
+            function buildExportButtons(exportTitle) {
+                return [
+                    {
+                        extend: 'copyHtml5',
+                        text: '<i class="ri-file-copy-line me-1"></i> Copier',
+                        className: 'btn btn-light btn-sm',
+                        title: exportTitle,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        text: '<i class="ri-file-text-line me-1"></i> CSV',
+                        className: 'btn btn-info btn-sm',
+                        title: exportTitle,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)'
+                        }
+                    },
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="ri-file-excel-2-line me-1"></i> Excel',
+                        className: 'btn btn-success btn-sm',
+                        title: exportTitle,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: '<i class="ri-file-pdf-line me-1"></i> PDF',
+                        className: 'btn btn-danger btn-sm',
+                        title: exportTitle,
+                        orientation: 'landscape',
+                        pageSize: 'A4',
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)'
+                        },
+                        customize: function (doc) {
+                            if (doc.content[1] && doc.content[1].table) {
+                                doc.content[1].table.widths = Array(doc.content[1].table.body[0].length).fill('*');
+                            }
+                            doc.styles.tableHeader.alignment = 'center';
+                            doc.styles.tableHeader.fontSize = 10;
+                            doc.defaultStyle.fontSize = 9;
+                            doc.pageMargins = [20, 20, 20, 20];
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        text: '<i class="ri-printer-line me-1"></i> Imprimer',
+                        className: 'btn btn-secondary btn-sm',
+                        title: exportTitle,
+                        exportOptions: {
+                            columns: ':visible:not(.no-export)'
+                        }
+                    }
+                ];
+            }
+
+            function buildDatatableOptions($table, overrides) {
+                var exportTitle = $table.data('exportTitle') || document.title || 'export_donnees';
+
+                return $.extend(true, {
+                    pageLength: 10,
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    searching: true,
+                    ordering: true,
+                    responsive: true,
+                    deferRender: true,
+                    language: frenchLanguage,
+                    columnDefs: [
+                        {
+                            targets: 'no-sort',
+                            orderable: false
+                        },
+                        {
+                            targets: 'text-center',
+                            className: 'text-center'
+                        }
+                    ],
+                    dom:
+                        "<'row mb-3 align-items-center'<'col-md-8 dt-buttons-wrapper'B><'col-md-4 text-md-end'f>>" +
+                        "<'row'<'col-12'tr>>" +
+                        "<'row mt-3'<'col-md-5'i><'col-md-7'p>>",
+                    buttons: buildExportButtons(exportTitle)
+                }, overrides || {});
+            }
+
+            $(function () {
+                $('.datatable').each(function () {
+                    if ($.fn.dataTable.isDataTable(this)) {
+                        return;
+                    }
+
+                    $(this).DataTable(buildDatatableOptions($(this), {
+                        order: [[0, 'desc']]
+                    }));
+                });
+
+                $('.datatable-a').each(function () {
+                    if ($.fn.dataTable.isDataTable(this)) {
+                        return;
+                    }
+
+                    $(this).DataTable(buildDatatableOptions($(this), {
+                        lengthMenu: [10, 25, 50, 100],
+                        autoWidth: false,
+                        processing: true,
+                        order: []
+                    }));
+                });
+            });
+        })();
+        </script>
+
+
+      
+
+<script>
+(function(){
+    if (typeof $ !== 'undefined' && $.fn && $.fn.DataTable) {
+
+        $(document).ready(function(){
+
+            $('.datatable-mi').DataTable({
+
+                // 🔹 Pagination
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50, 100],
+
+                // 🔹 Recherche
+                searching: true,
+
+                // 🔹 Tri
+                ordering: true,
+
+                // 🔹 Responsive
+                responsive: true,
+
+                // 🔹 Performance (très important)
+                deferRender: true,
+
+                // 🔹 Langue FR (adapté Niger)
+                language: {
+                    processing: "Traitement en cours...",
+                    search: "Rechercher :",
+                    lengthMenu: "Afficher _MENU_ éléments",
+                    info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+                    infoEmpty: "Aucun élément à afficher",
+                    infoFiltered: "(filtré de _MAX_ éléments au total)",
+                    loadingRecords: "Chargement...",
+                    zeroRecords: "Aucun résultat trouvé",
+                    emptyTable: "Aucune donnée disponible",
+                    paginate: {
+                        first: "Premier",
+                        previous: "Précédent",
+                        next: "Suivant",
+                        last: "Dernier"
+                    }
+                },
+
+                // 🔹 Colonnes (optionnel mais puissant)
+                columnDefs: [
+                    {
+                        targets: 'no-sort',
+                        orderable: false
+                    },
+                    {
+                        targets: 'text-center',
+                        className: 'text-center'
+                    }
+                ],
+
+                // 🔹 Tri par défaut (ex: date desc)
+                order: [[0, 'desc']],
+
+                // 🔹 Boutons (si tu veux exporter plus tard)
+                dom: '<"d-flex justify-content-between align-items-center mb-2"lf>rt<"d-flex justify-content-between mt-2"ip>',
+
+            });
+
+        });
+    }
+})();
+</script>
     {% endblock %}
 </body>
 </html>

@@ -16,6 +16,43 @@ class PatientRepository extends ServiceEntityRepository
         parent::__construct($registry, Patient::class);
     }
 
+    /**
+     * @return Patient[]
+     */
+    public function searchDashboardPatients(string $query, int $limit = 10): array
+    {
+        $normalizedQuery = trim((string) preg_replace('/\s+/', ' ', $query));
+
+        if ($normalizedQuery == '') {
+            return [];
+        }
+
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->leftJoin('p.dossierMedical', 'dm')
+            ->addSelect('dm')
+            ->orderBy('p.nom', 'ASC')
+            ->addOrderBy('p.prenom', 'ASC')
+            ->setMaxResults($limit);
+
+        $terms = array_values(array_filter(explode(' ', mb_strtolower($normalizedQuery))));
+
+        foreach ($terms as $index => $term) {
+            $termParam = 'term_' . $index;
+            $queryBuilder
+                ->andWhere(
+                    $queryBuilder->expr()->orX(
+                        'LOWER(p.nom) LIKE :' . $termParam,
+                        'LOWER(p.prenom) LIKE :' . $termParam,
+                        'LOWER(dm.numeroDossier) LIKE :' . $termParam,
+                        'p.telephone LIKE :' . $termParam
+                    )
+                )
+                ->setParameter($termParam, '%' . $term . '%');
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
     //    /**
     //     * @return Patient[] Returns an array of Patient objects
     //     */

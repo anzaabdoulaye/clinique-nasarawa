@@ -1,54 +1,189 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Utilisateur{% endblock %}
+{% block title %}Détail utilisateur{% endblock %}
 
 {% block body %}
-    <h1>Utilisateur</h1>
+<div class="container-fluid py-4">
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ utilisateur.id }}</td>
-            </tr>
-            <tr>
-                <th>Nom</th>
-                <td>{{ utilisateur.nom }}</td>
-            </tr>
-            <tr>
-                <th>Prenom</th>
-                <td>{{ utilisateur.prenom }}</td>
-            </tr>
-            <tr>
-                <th>Username</th>
-                <td>{{ utilisateur.username }}</td>
-            </tr>
-            <tr>
-                <th>HashPassword</th>
-                <td>{{ utilisateur.hashPassword }}</td>
-            </tr>
-            <tr>
-                <th>Statut</th>
-                <td>{{ utilisateur.statut ? 'Yes' : 'No' }}</td>
-            </tr>
-            <tr>
-                <th>Roles</th>
-                <td>{{ utilisateur.roles ? utilisateur.roles|json_encode : '' }}</td>
-            </tr>
-            <tr>
-                <th>CreatedAt</th>
-                <td>{{ utilisateur.createdAt ? utilisateur.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-            <tr>
-                <th>ModifiedAt</th>
-                <td>{{ utilisateur.modifiedAt ? utilisateur.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {# ===== En-tête ===== #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-user-line me-2 text-primary"></i>
+                Détail de l'utilisateur
+            </h2>
+            <p class="text-muted mb-0">
+                Consultez les informations complètes du compte utilisateur.
+            </p>
+        </div>
 
-    <a href="{{ path('app_utilisateur_index') }}">back to list</a>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_utilisateur_index') }}" class="btn btn-light border rounded-pill px-4">
+                <i class="ri-arrow-left-line me-1"></i>
+                Retour à la liste
+            </a>
 
-    <a href="{{ path('app_utilisateur_edit', {'id': utilisateur.id}) }}">edit</a>
+            <a href="{{ path('app_utilisateur_edit', {'id': utilisateur.id}) }}" class="btn btn-primary rounded-pill px-4">
+                <i class="ri-edit-line me-1"></i>
+                Modifier
+            </a>
+        </div>
+    </div>
 
-    {{ include('utilisateur/_delete_form.html.twig') }}
+    <div class="row g-4">
+
+        {# ===== Carte profil ===== #}
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center p-4">
+
+                    <div class="mx-auto mb-3 rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center"
+                         style="width: 90px; height: 90px; font-size: 28px; font-weight: 700;">
+                        {{ (utilisateur.nom|default('U')|slice(0,1) ~ utilisateur.prenom|default('')|slice(0,1))|upper }}
+                    </div>
+
+                    <h4 class="fw-bold text-dark mb-1">
+                        {{ utilisateur.nom }} {{ utilisateur.prenom }}
+                    </h4>
+
+                    <p class="text-muted mb-3">
+                        @{{ utilisateur.username }}
+                    </p>
+
+                    <div class="mb-3">
+                        {% if utilisateur.statut %}
+                            <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2">
+                                <i class="ri-checkbox-circle-line me-1"></i>
+                                Actif
+                            </span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2">
+                                <i class="ri-close-circle-line me-1"></i>
+                                Inactif
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <div class="text-start">
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Identifiant</small>
+                            <div class="fw-semibold text-dark">#{{ utilisateur.id }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1">Nom d'utilisateur</small>
+                            <div class="fw-semibold text-dark">{{ utilisateur.username }}</div>
+                        </div>
+
+                        <div class="mb-0">
+                            <small class="text-muted d-block mb-1">Mot de passe</small>
+                            <div class="fw-semibold text-dark">••••••••••••••••</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        {# ===== Carte détails ===== #}
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-1 fw-semibold text-dark">Informations détaillées</h5>
+                    <small class="text-muted">Données générales et techniques du compte</small>
+                </div>
+
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-4">
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Nom</label>
+                            <div class="fw-semibold text-dark">{{ utilisateur.nom ?: '-' }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Prénom</label>
+                            <div class="fw-semibold text-dark">{{ utilisateur.prenom ?: '-' }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Nom d'utilisateur</label>
+                            <div class="fw-semibold text-dark">{{ utilisateur.username ?: '-' }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Statut</label>
+                            <div>
+                                {% if utilisateur.statut %}
+                                    <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2">Actif</span>
+                                {% else %}
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2">Inactif</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="text-muted small mb-2 d-block">Rôles</label>
+                            {% if utilisateur.roles and utilisateur.roles|length > 0 %}
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for role in utilisateur.roles %}
+                                        <span class="badge rounded-pill bg-light text-dark border px-3 py-2">
+                                            {{ role }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-muted">Aucun rôle attribué</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Créé le</label>
+                            <div class="fw-semibold text-dark">
+                                {{ utilisateur.createdAt ? utilisateur.createdAt|date('d/m/Y H:i') : '-' }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1 d-block">Dernière modification</label>
+                            <div class="fw-semibold text-dark">
+                                {{ utilisateur.modifiedAt ? utilisateur.modifiedAt|date('d/m/Y H:i') : '-' }}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {# ===== Bloc actions ===== #}
+            <div class="card border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-body px-4 py-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark">Actions</h6>
+                            <small class="text-muted">
+                                Modifiez ou supprimez ce compte utilisateur si nécessaire.
+                            </small>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ path('app_utilisateur_edit', {'id': utilisateur.id}) }}"
+                               class="btn btn-primary rounded-pill px-4">
+                                <i class="ri-edit-line me-1"></i>
+                                Modifier
+                            </a>
+
+                            <div>
+                                {{ include('utilisateur/_delete_form.html.twig') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}

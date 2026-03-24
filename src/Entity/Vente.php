@@ -13,6 +13,9 @@ class Vente
 {
     use TimestampableTrait;
 
+    private const SEUIL_TIMBRE = 5000;
+    private const MONTANT_TIMBRE = 200;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -21,14 +24,19 @@ class Vente
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $date;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'float')]
     private float $total = 0.0;
 
     #[ORM\ManyToOne(inversedBy: 'ventes')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Utilisateur $vendeur = null;
 
-    #[ORM\OneToMany(mappedBy: 'vente', targetEntity: VenteLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(
+        mappedBy: 'vente',
+        targetEntity: VenteLigne::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
     private Collection $lignes;
 
     public function __construct()
@@ -37,19 +45,51 @@ class Vente
         $this->date = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int { return $this->id; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
-    public function getDate(): \DateTimeImmutable { return $this->date; }
-    public function setDate(\DateTimeImmutable $date): self { $this->date = $date; return $this; }
+    public function getDate(): \DateTimeImmutable
+    {
+        return $this->date;
+    }
 
-    public function getTotal(): float { return $this->total; }
-    public function setTotal(float $total): self { $this->total = $total; return $this; }
+    public function setDate(\DateTimeImmutable $date): self
+    {
+        $this->date = $date;
+        return $this;
+    }
 
-    public function getVendeur(): ?Utilisateur { return $this->vendeur; }
-    public function setVendeur(?Utilisateur $vendeur): self { $this->vendeur = $vendeur; return $this; }
+    public function getTotal(): float
+    {
+        return $this->getBaseTotal() + $this->getTimbreAmount();
+    }
 
-    /** @return Collection<int, VenteLigne> */
-    public function getLignes(): Collection { return $this->lignes; }
+    public function setTotal(float $total): self
+    {
+        $this->total = $total;
+        return $this;
+    }
+
+    public function getVendeur(): ?Utilisateur
+    {
+        return $this->vendeur;
+    }
+
+    public function setVendeur(?Utilisateur $vendeur): self
+    {
+        $this->vendeur = $vendeur;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VenteLigne>
+     */
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
 
     public function addLigne(VenteLigne $ligne): self
     {
@@ -58,22 +98,47 @@ class Vente
             $ligne->setVente($this);
             $this->recalcTotal();
         }
+
         return $this;
     }
 
     public function removeLigne(VenteLigne $ligne): self
     {
-        $this->lignes->removeElement($ligne);
-        $this->recalcTotal();
+        if ($this->lignes->removeElement($ligne)) {
+            if ($ligne->getVente() === $this) {
+                $ligne->setVente(null);
+            }
+            $this->recalcTotal();
+        }
+
         return $this;
     }
 
     public function recalcTotal(): void
     {
+        $this->total = $this->getBaseTotal() + $this->getTimbreAmount();
+    }
+
+    public function getBaseTotal(): float
+    {
         $sum = 0.0;
-        foreach ($this->lignes as $l) {
-            $sum += $l->getSousTotal();
+
+        foreach ($this->lignes as $ligne) {
+            $sum += $ligne->getSousTotal();
         }
-        $this->total = $sum;
+
+        return $sum;
+    }
+
+    public function getTimbreAmount(): float
+    {
+        return $this->getBaseTotal() >= self::SEUIL_TIMBRE ? self::MONTANT_TIMBRE : 0.0;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function updateComputedTotal(): void
+    {
+        $this->recalcTotal();
     }
 }

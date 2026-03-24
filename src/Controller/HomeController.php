@@ -15,15 +15,26 @@ use App\Enum\StatutConsultation;
 use App\Enum\StatutFacture;
 use App\Enum\StatutHospitalisation;
 use App\Enum\StatutPaiement;
+use App\Repository\PatientRepository;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
+use Symfony\Component\HttpFoundation\Request;
 use App\Service\TreatmentAlertService;
 
 class HomeController extends AbstractController
 {
     #[Route('/', name: 'home')]
-    public function index(ManagerRegistry $doctrine, TreatmentAlertService $treatmentAlertService): Response
+    public function index(
+        Request $request,
+        ManagerRegistry $doctrine,
+        PatientRepository $patientRepository,
+        TreatmentAlertService $treatmentAlertService
+    ): Response
     {
         $em = $doctrine->getManager();
+        $patientSearch = trim((string) $request->query->get('patient_search', ''));
+        $patientSearchResults = $patientSearch !== ''
+            ? $patientRepository->searchDashboardPatients($patientSearch, 12)
+            : [];
 
         $today = new \DateTimeImmutable('today');
         $tomorrow = $today->modify('+1 day');
@@ -221,6 +232,8 @@ $unpaidTotal = (float) $em->createQueryBuilder()
         $treatmentAlerts = $treatmentAlertService->getDashboardAlerts();
 
         return $this->render('pages/index.html.twig', [
+            'patient_search' => $patientSearch,
+            'patient_search_results' => $patientSearchResults,
             'consultations_today' => $consultationsToday,
             'new_patients_today' => $newPatientsToday,
             'urgences_today' => $urgencesToday,
