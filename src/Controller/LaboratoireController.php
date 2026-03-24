@@ -22,10 +22,16 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/laboratoire')]
 final class LaboratoireController extends AbstractController
 {
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
 public function index(
     Request $request,
@@ -45,6 +51,9 @@ public function index(
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/prestation/{id}', name: 'app_laboratoire_show', methods: ['GET'])]
     public function show(PrescriptionPrestation $prestation): Response
     {
@@ -55,6 +64,9 @@ public function index(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
+))]
     #[Route('/prestation/{id}/prendre-en-charge', name: 'app_laboratoire_prendre_en_charge', methods: ['POST'])]
     public function prendreEnCharge(
         PrescriptionPrestation $prestation,
@@ -72,6 +84,9 @@ public function index(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
+))]
     #[Route('/prestation/{id}/realiser', name: 'app_laboratoire_realiser', methods: ['POST'])]
     public function realiser(
         PrescriptionPrestation $prestation,
@@ -101,6 +116,9 @@ public function index(
         }
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/bon/consultation/{id}', name: 'app_laboratoire_bon_show', methods: ['GET'])]
     public function bonShow(
         Consultation $consultation,
@@ -119,6 +137,9 @@ public function index(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/bon/consultation/{id}/print', name: 'app_laboratoire_bon_print', methods: ['GET'])]
     public function bonPrint(
         Consultation $consultation,
@@ -136,6 +157,9 @@ public function index(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
+))]
     #[Route('/prestation/{id}/resultat', name: 'app_laboratoire_resultat_edit', methods: ['GET', 'POST'])]
 public function saisirResultat(
     Request $request,
@@ -225,6 +249,9 @@ public function saisirResultat(
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/prestation/{id}/resultat/print', name: 'app_laboratoire_resultat_print', methods: ['GET'])]
     public function imprimerResultat(PrescriptionPrestation $prestation): Response
     {
@@ -256,6 +283,9 @@ public function saisirResultat(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/prestation/{id}/resultat/pdf', name: 'app_laboratoire_resultat_pdf', methods: ['GET'])]
     public function imprimerResultatPdf(PrescriptionPrestation $prestation): Response
     {

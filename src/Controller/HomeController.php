@@ -17,9 +17,11 @@ use App\Enum\StatutHospitalisation;
 use App\Enum\StatutPaiement;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 use App\Service\TreatmentAlertService;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class HomeController extends AbstractController
 {
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/', name: 'home')]
     public function index(ManagerRegistry $doctrine, TreatmentAlertService $treatmentAlertService): Response
     {

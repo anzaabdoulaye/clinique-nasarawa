@@ -16,6 +16,7 @@ use App\Service\ComptabiliteMatiereService;
 use App\Service\PharmacyService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -25,10 +26,15 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/comptabilite-matiere')]
 final class BonMatiereController extends AbstractController
 {
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('', name: 'app_comptabilite_matiere_index', methods: ['GET'])]
     public function index(
         BonMatiereRepository $bonMatiereRepository,
@@ -44,6 +50,9 @@ final class BonMatiereController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('/dashboard', name: 'app_comptabilite_matiere_dashboard', methods: ['GET'])]
     public function dashboard(
         BonMatiereRepository $bonMatiereRepository,
@@ -90,6 +99,9 @@ final class BonMatiereController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('/new', name: 'app_comptabilite_matiere_new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
@@ -227,6 +239,9 @@ final class BonMatiereController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('/{id}', name: 'app_comptabilite_matiere_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(BonMatiere $bon): Response
     {
@@ -235,6 +250,9 @@ final class BonMatiereController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('/{id}/print', name: 'app_comptabilite_matiere_print', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function print(BonMatiere $bon): Response
     {
@@ -243,6 +261,9 @@ final class BonMatiereController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
+))]
     #[Route('/{id}/valider', name: 'app_comptabilite_matiere_valider', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function valider(
         Request $request,
