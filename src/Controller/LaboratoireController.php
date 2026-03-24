@@ -237,9 +237,13 @@ public function saisirResultat(
 
         $verifyUrl = $this->generateUrl('app_laboratoire_resultat_print', ['id' => $prestation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $qrCode = new QrCode($verifyUrl);
-        $qrCode->setSize(220);
-        $qrCode->setMargin(8);
+        
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 200,
+            margin: 6
+        );
 
         $png2 = (new PngWriter())->write($qrCode)->getString();
         $dataUri2 = 'data:image/png;base64,' . base64_encode($png2);
@@ -268,9 +272,12 @@ public function saisirResultat(
 
         $verifyUrl = $this->generateUrl('app_laboratoire_resultat_print', ['id' => $prestation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $qrCode = new QrCode($verifyUrl);
-        $qrCode->setSize(220);
-        $qrCode->setMargin(8);
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 200,
+            margin: 6
+        );
 
         $png2 = (new PngWriter())->write($qrCode)->getString();
         $dataUri2 = 'data:image/png;base64,' . base64_encode($png2);

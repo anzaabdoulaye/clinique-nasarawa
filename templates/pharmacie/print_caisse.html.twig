@@ -360,11 +360,11 @@
                     <table class="totals-table">
                         <tr>
                             <th>Sous-total</th>
-                            <td class="right">{{ vente.total|number_format(0, ',', ' ') }} FCFA</td>
+                            <td class="right">{{ vente.getBaseTotal()|number_format(0, ',', ' ') }} FCFA</td>
                         </tr>
                         <tr>
-                            <th>Remise</th>
-                            <td class="right">0 FCFA</td>
+                            <th>Timbre</th>
+                            <td class="right">{{ vente.getTimbreAmount()|number_format(0, ',', ' ') }} FCFA</td>
                         </tr>
                         <tr class="grand-total">
                             <th>Total</th>

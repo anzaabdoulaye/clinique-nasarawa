@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Utilisateur;
 use App\Entity\Vente;
+use App\Entity\VenteLigne;
 use App\Form\VenteType;
 use App\Repository\LotRepository;
 use App\Repository\MedicamentRepository;
@@ -38,6 +39,11 @@ final class CaisseController extends AbstractController
         ComptabiliteMatiereService $comptabiliteMatiereService
     ): Response {
         $vente = new Vente();
+
+        if ($vente->getLignes()->isEmpty()) {
+            $vente->addLigne(new VenteLigne());
+        }
+
         $form = $this->createForm(VenteType::class, $vente);
         $form->handleRequest($request);
 
@@ -166,6 +172,15 @@ final class CaisseController extends AbstractController
                     'quantite' => $qty,
                 ];
             }
+
+            $results[] = [
+                'id' => $medicament->getId(),
+                'nom' => $medicament->getNom(),
+                'codeBarre' => $medicament->getCodeBarre(),
+                'sku' => $medicament->getSku(),
+                'prixUnitaire' => $medicament->getPrixUnitaire(),
+                'quantite' => (int) ($row['stockQty'] ?? 0),
+            ];
         }
 
         return $this->json($results);
