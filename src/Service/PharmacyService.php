@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Lot;
+use App\Entity\Medicament;
 use App\Entity\Vente;
 use App\Entity\VenteLigne;
 use App\Repository\LotRepository;
@@ -10,104 +11,157 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class PharmacyService
 {
-    public function __construct(private EntityManagerInterface $em, private LotRepository $lotRepo)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private LotRepository $lotRepo
+    ) {
     }
 
     /**
-     * Décrémente le stock en utilisant la stratégie FIFO par date de péremption (plus proche d'abord).
-     * Met à jour les lots concernés et persiste les changements.
+     * Retourne les lots disponibles d'un médicament,
+     * triés par date de péremption croissante (FEFO).
+     *
+     * @return Lot[]
      */
-    public function decrementStockFromVente(Vente $vente): void
+    public function getAvailableLots(Medicament $medicament): array
     {
-        foreach ($vente->getLignes() as $ligne) {
-            $this->decrementStockForLine($ligne);
-        }
-        $this->em->flush();
-    }
-
-    /**
-     * Décrémente le stock d'une ligne: si un lot est fourni, on l'utilise;
-     * sinon on prélève sur les lots disponibles par date de péremption asc.
-     */
-    public function decrementStockForLine(VenteLigne $ligne): void
-    {
-        $qtyToRemove = $ligne->getQuantite();
-        $med = $ligne->getMedicament();
-
-        if ($qtyToRemove <= 0) {
-            return;
-        }
-
-        // Si lot explicitement choisi
-        $lot = $ligne->getLot();
-        if ($lot) {
-            $lot->setQuantite(max(0, $lot->getQuantite() - $qtyToRemove));
-            $this->em->persist($lot);
-            return;
-        }
-
-        // Récupère les lots disponibles pour ce médicament, triés par date de péremption
-        $qb = $this->lotRepo->createQueryBuilder('l')
+        return $this->lotRepo->createQueryBuilder('l')
             ->andWhere('l.medicament = :m')
             ->andWhere('l.quantite > 0')
-            ->setParameter('m', $med)
+            ->setParameter('m', $medicament)
             ->orderBy('l.datePeremption', 'ASC')
-        ;
-
-        $lots = $qb->getQuery()->getResult();
-
-        foreach ($lots as $l) {
-            if ($qtyToRemove <= 0) break;
-            $available = $l->getQuantite();
-            if ($available <= 0) continue;
-            $take = min($available, $qtyToRemove);
-            $l->setQuantite($available - $take);
-            $qtyToRemove -= $take;
-            $this->em->persist($l);
-        }
-
-        // Si on ne peut pas satisfaire la totalité, on laisse les quantités à 0 (backorder non géré ici)
+            ->addOrderBy('l.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**
-     * Retourne les lots proches de péremption (en jours), utile pour alertes.
-     * @param int $days seuil en jours
+     * Retourne la quantité totale disponible pour un médicament.
+     */
+    public function getAvailableQuantity(Medicament $medicament): int
+    {
+        $res = $this->lotRepo->createQueryBuilder('l')
+            ->select('COALESCE(SUM(l.quantite), 0)')
+            ->andWhere('l.medicament = :m')
+            ->setParameter('m', $medicament)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $res;
+    }
+
+    /**
+     * Vérifie si une ligne de vente est satisfaisable
+     * sans modifier le stock.
+     */
+    public function canSatisfyLine(VenteLigne $ligne): bool
+    {
+        $quantite = $ligne->getQuantite();
+        $medicament = $ligne->getMedicament();
+
+        if ($quantite <= 0 || !$medicament) {
+            return false;
+        }
+
+        $lot = $ligne->getLot();
+
+        if ($lot) {
+            return $lot->getQuantite() >= $quantite;
+        }
+
+        return $this->getAvailableQuantity($medicament) >= $quantite;
+    }
+
+    /**
+     * Vérifie si toute la vente est satisfaisable
+     * sans modifier le stock.
+     */
+    public function canSatisfyVente(Vente $vente): bool
+    {
+        foreach ($vente->getLignes() as $ligne) {
+            if (!$this->canSatisfyLine($ligne)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Retourne un plan théorique de prélèvement FEFO
+     * sans modifier le stock.
+     *
+     * Exemple de retour :
+     * [
+     *   ['lot' => Lot, 'quantite' => 3],
+     *   ['lot' => Lot, 'quantite' => 2],
+     * ]
+     *
+     * @return array<int, array{lot: Lot, quantite: int}>
+     */
+    public function buildFefoAllocationPlan(Medicament $medicament, int $requestedQty): array
+    {
+        if ($requestedQty <= 0) {
+            return [];
+        }
+
+        $lots = $this->getAvailableLots($medicament);
+        $remaining = $requestedQty;
+        $plan = [];
+
+        foreach ($lots as $lot) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $available = $lot->getQuantite();
+            if ($available <= 0) {
+                continue;
+            }
+
+            $take = min($available, $remaining);
+
+            $plan[] = [
+                'lot' => $lot,
+                'quantite' => $take,
+            ];
+
+            $remaining -= $take;
+        }
+
+        return $remaining > 0 ? [] : $plan;
+    }
+
+    /**
+     * Retourne les lots proches de péremption.
+     *
      * @return Lot[]
      */
     public function getLotsNearExpiration(int $days = 30): array
     {
-        $limit = new \DateTimeImmutable(sprintf('+%d days', $days));
+        $today = new \DateTimeImmutable('today');
+        $limit = $today->modify(sprintf('+%d days', $days));
 
-        $qb = $this->lotRepo->createQueryBuilder('l')
+        return $this->lotRepo->createQueryBuilder('l')
             ->andWhere('l.datePeremption IS NOT NULL')
             ->andWhere('l.datePeremption <= :limit')
             ->andWhere('l.quantite > 0')
             ->setParameter('limit', $limit)
             ->orderBy('l.datePeremption', 'ASC')
-        ;
-
-        return $qb->getQuery()->getResult();
+            ->addOrderBy('l.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**
-     * Retourne la quantité totale disponible pour un médicament (somme des lots).
+     * Retourne les médicaments dont le stock total est faible.
+     *
+     * @return array<int, array{nom: string, quantite: int, medicament: Medicament}>
      */
-    public function getAvailableQuantity(object $medicament): int
-    {
-        $qb = $this->lotRepo->createQueryBuilder('l')
-            ->select('SUM(l.quantite) as qty')
-            ->andWhere('l.medicament = :m')
-            ->setParameter('m', $medicament)
-        ;
-
-        $res = $qb->getQuery()->getSingleScalarResult();
-        return (int) $res;
-    }
-
     public function getMedicamentsLowStock(int $threshold = 10): array
     {
-        $medicaments = $this->em->getRepository(\App\Entity\Medicament::class)->findAll();
+        /** @var Medicament[] $medicaments */
+        $medicaments = $this->em->getRepository(Medicament::class)->findAll();
         $result = [];
 
         foreach ($medicaments as $medicament) {
@@ -122,7 +176,7 @@ class PharmacyService
             }
         }
 
-        usort($result, fn ($a, $b) => $a['quantite'] <=> $b['quantite']);
+        usort($result, fn (array $a, array $b) => $a['quantite'] <=> $b['quantite']);
 
         return $result;
     }

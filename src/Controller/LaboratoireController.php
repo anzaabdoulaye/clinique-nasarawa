@@ -27,18 +27,23 @@ use setasign\Fpdi\Fpdi;
 final class LaboratoireController extends AbstractController
 {
     #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
-    public function index(PrescriptionPrestationRepository $repository): Response
-    {
-        $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
-        $enCours = $repository->findExamensLaboEnCours();
-        $realises = $repository->findExamensLaboRealises();
+public function index(
+    Request $request,
+    PrescriptionPrestationRepository $repository
+): Response {
+    $search = $request->query->get('search');
 
-        return $this->render('laboratoire/index.html.twig', [
-            'aTraiter' => $aTraiter,
-            'enCours' => $enCours,
-            'realises' => $realises,
-        ]);
-    }
+    $aTraiter = $repository->findExamensLaboAPrendreEnCharge($search);
+    $enCours = $repository->findExamensLaboEnCours($search);
+    $realises = $repository->findExamensLaboRealises($search);
+
+    return $this->render('laboratoire/index.html.twig', [
+        'aTraiter' => $aTraiter,
+        'enCours' => $enCours,
+        'realises' => $realises,
+        'search' => $search,
+    ]);
+}
 
     #[Route('/prestation/{id}', name: 'app_laboratoire_show', methods: ['GET'])]
     public function show(PrescriptionPrestation $prestation): Response

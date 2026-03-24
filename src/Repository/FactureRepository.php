@@ -41,6 +41,31 @@ class FactureRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+     public function search(?string $term): array
+    {
+        $qb = $this->createQueryBuilder('f')
+            ->leftJoin('f.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
+            ->leftJoin('f.lignes', 'l')->addSelect('l')
+            ->leftJoin('f.paiements', 'pa')->addSelect('pa');
+
+        if ($term && trim($term) !== '') {
+            $term = mb_strtolower(trim($term));
+
+            $qb->andWhere(
+                'LOWER(dm.numeroDossier) LIKE :term
+                 OR LOWER(p.code) LIKE :term
+                 OR LOWER(p.telephone) LIKE :term'
+            )
+            ->setParameter('term', '%' . $term . '%');
+        }
+
+        return $qb->orderBy('f.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 
     //    /**
     //     * @return Facture[] Returns an array of Facture objects

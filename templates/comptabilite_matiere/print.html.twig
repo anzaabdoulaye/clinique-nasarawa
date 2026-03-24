@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bon matière {{ bon.numero }}</title>
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 24px;
+            color: #111;
+            font-size: 13px;
+        }
+        .header{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            margin-bottom:20px;
+            border-bottom:2px solid #111;
+            padding-bottom:12px;
+        }
+        .title{
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:8px;
+        }
+        .muted{ color:#666; }
+        .badge{
+            display:inline-block;
+            padding:4px 10px;
+            border:1px solid #aaa;
+            border-radius:20px;
+            font-size:12px;
+            margin-right:6px;
+        }
+        .section{
+            margin-top:20px;
+        }
+        .section h3{
+            font-size:16px;
+            margin-bottom:10px;
+            border-bottom:1px solid #ddd;
+            padding-bottom:6px;
+        }
+        .grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px 24px;
+        }
+        .item-label{
+            font-size:12px;
+            color:#666;
+            margin-bottom:2px;
+        }
+        .item-value{
+            font-weight:bold;
+        }
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:10px;
+        }
+        th, td{
+            border:1px solid #ccc;
+            padding:8px;
+            text-align:left;
+            vertical-align:top;
+        }
+        th{
+            background:#f5f5f5;
+        }
+        .text-right{
+            text-align:right;
+        }
+        .footer{
+            margin-top:30px;
+            display:flex;
+            justify-content:space-between;
+            gap:30px;
+        }
+        .signature{
+            flex:1;
+            text-align:center;
+            margin-top:40px;
+        }
+        @media print {
+            body{ margin: 10mm; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="header">
+        <div>
+            <div class="title">BON DE COMPTABILITÉ MATIÈRE</div>
+            <div class="muted">Clinique Nassarawa</div>
+            <div class="muted">Document de traçabilité des mouvements de stock</div>
+        </div>
+        <div style="text-align:right;">
+            <div><strong>N° :</strong> {{ bon.numero }}</div>
+            <div><strong>Date :</strong> {{ bon.dateBon ? bon.dateBon|date('d/m/Y H:i') : '—' }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="grid">
+            <div>
+                <div class="item-label">Type</div>
+                <div class="item-value">{{ bon.type.label() }}</div>
+            </div>
+            <div>
+                <div class="item-label">Motif</div>
+                <div class="item-value">{{ bon.motif.label() }}</div>
+            </div>
+            <div>
+                <div class="item-label">Statut</div>
+                <div class="item-value">{{ bon.statut.label() }}</div>
+            </div>
+            <div>
+                <div class="item-label">Impact stock</div>
+                <div class="item-value">{{ bon.impactStock ? 'Oui' : 'Non' }}</div>
+            </div>
+            <div>
+                <div class="item-label">Créé par</div>
+                <div class="item-value">{{ bon.creePar ? bon.creePar.getNomComplet() : 'Non renseigné' }}</div>
+            </div>
+            <div>
+                <div class="item-label">Ordonnateur</div>
+                <div class="item-value">{{ bon.ordonnateur ? bon.ordonnateur.getNomComplet() : 'Non renseigné' }}</div>
+            </div>
+            <div>
+                <div class="item-label">Référence externe</div>
+                <div class="item-value">{{ bon.referenceExterne ?: '—' }}</div>
+            </div>
+            <div>
+                <div class="item-label">Vente liée</div>
+                <div class="item-value">{{ bon.vente ? ('Vente #' ~ bon.vente.id) : '—' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Lignes du bon</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Médicament</th>
+                    <th>Lot</th>
+                    <th>Péremption</th>
+                    <th>Quantité</th>
+                    <th>Prix unitaire</th>
+                    <th>Montant</th>
+                    <th>Observation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set montantTotal = 0 %}
+                {% for ligne in bon.lignes %}
+                    {% set montantTotal = montantTotal + ligne.montantLigne %}
+                    <tr>
+                        <td>{{ ligne.medicament ? ligne.medicament.nom : '—' }}</td>
+                        <td>{{ ligne.lot ? (ligne.lot.numeroLot ?: ('Lot #' ~ ligne.lot.id)) : '—' }}</td>
+                        <td>{{ ligne.lot and ligne.lot.datePeremption ? ligne.lot.datePeremption|date('d/m/Y') : '—' }}</td>
+                        <td>{{ ligne.quantite }}</td>
+                        <td>{{ ligne.prixUnitaire is not null ? ligne.prixUnitaire|number_format(0, ',', ' ') ~ ' FCFA' : '—' }}</td>
+                        <td>{{ ligne.montantLigne|number_format(0, ',', ' ') }} FCFA</td>
+                        <td>{{ ligne.observation ?: '—' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-right">Totaux</th>
+                    <th>{{ bon.quantiteTotale }}</th>
+                    <th></th>
+                    <th>{{ montantTotal|number_format(0, ',', ' ') }} FCFA</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if bon.observation %}
+        <div class="section">
+            <h3>Observation générale</h3>
+            <div>{{ bon.observation }}</div>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        <div class="signature">
+            <strong>Le comptable des matières</strong>
+            <div style="margin-top:60px;">____________________________</div>
+        </div>
+        <div class="signature">
+            <strong>L’ordonnateur des matières</strong>
+            <div style="margin-top:60px;">____________________________</div>
+        </div>
+    </div>
+
+</body>
+</html>

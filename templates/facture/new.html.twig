@@ -58,10 +58,10 @@
 
       {# Montant #}
       <div class="col-12 col-md-6">
-        {{ form_label(form.montant, 'Montant', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.montant, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 15000'}}) }}
+        {{ form_label(form.montantTotal, 'Montant', {'label_attr': {'class': 'form-label required'}}) }}
+        {{ form_widget(form.montantTotal, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 15000'}}) }}
         <div class="help-text">Montant total de la facture.</div>
-        {% if form_errors(form.montant) %}<div class="error">{{ form_errors(form.montant) }}</div>{% endif %}
+        {% if form_errors(form.montantTotal) %}<div class="error">{{ form_errors(form.montantTotal) }}</div>{% endif %}
       </div>
 
       {# Consultation #}
@@ -81,9 +81,9 @@
 
       {# Statut paiement #}
       <div class="col-12 col-md-6">
-        {{ form_label(form.statutPaiement, 'Statut de paiement', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.statutPaiement, {'attr': {'class': 'form-select'}}) }}
-        {% if form_errors(form.statutPaiement) %}<div class="error">{{ form_errors(form.statutPaiement) }}</div>{% endif %}
+        {{ form_label(form.statut, 'Statut de paiement', {'label_attr': {'class': 'form-label required'}}) }}
+        {{ form_widget(form.statut, {'attr': {'class': 'form-select'}}) }}
+        {% if form_errors(form.statut) %}<div class="error">{{ form_errors(form.statut) }}</div>{% endif %}
       </div>
 
       {# Date paiement #}

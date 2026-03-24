@@ -8,44 +8,75 @@
 
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white border-0 py-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <div>
-            <h5 class="mb-0 fw-semibold">
-              <i class="fa fa-procedures me-2 text-primary"></i> Hospitalisations
-            </h5>
-            <div class="text-muted small">Suivi des admissions, évolutions et sorties</div>
-          </div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h5 class="mb-0 fw-semibold">
+        <i class="fa fa-procedures me-2 text-primary"></i> Hospitalisations
+      </h5>
+      <div class="text-muted small">Suivi des admissions et sorties</div>
+    </div>
 
-          <button type="button"
-                  class="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addHospitalisationModal">
-            <i class="fa fa-plus me-1"></i> Nouvelle hospitalisation
-          </button>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <form method="get" action="{{ path('app_hospitalisation_index') }}" class="app-search d-flex align-items-center gap-2">
+        <div class="position-relative">
+          <input
+            type="text"
+            id="hospitalisationSearchInput"
+            name="search"
+            class="form-control ps-4"
+            placeholder="Code patient, N° dossier ou téléphone"
+            value="{{ search|default('') }}"
+            autocomplete="off"
+            style="min-width: 360px;"
+          >
+          <span class="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted">
+            <i class="fa fa-search"></i>
+          </span>
         </div>
-      </div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="fa fa-search me-1"></i> Rechercher
+        </button>
+
+        {% if search %}
+          <a href="{{ path('app_hospitalisation_index') }}" class="btn btn-light border">
+            Réinitialiser
+          </a>
+        {% endif %}
+      </form>
+
+      <button type="button"
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#addHospitalisationModal">
+        <i class="fa fa-plus me-1"></i> Nouvelle hospitalisation
+      </button>
+    </div>
+  </div>
+</div>
 
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0 datatable">
-            <thead class="table-light">
-              <tr class="text-nowrap">
-                <th class="text-uppercase small text-muted">Admission</th>
-                <th class="text-uppercase small text-muted">Sortie</th>
-                <th class="text-uppercase small text-muted">Motif</th>
-                <th class="text-uppercase small text-muted">Histoire</th>
-                <th class="text-uppercase small text-muted">Évolution</th>
-                <th class="text-uppercase small text-muted">Conclusion</th>
-                <th class="text-uppercase small text-muted">Statut</th>
-                <th class="text-uppercase small text-muted">Créé</th>
-                <th class="text-uppercase small text-muted">Modifié</th>
-                <th class="text-uppercase small text-muted text-end" style="width: 210px;">Actions</th>
-              </tr>
-            </thead>
+          <table class="table table-hover align-middle mb-0">
+           <thead class="table-light">
+            <tr class="text-nowrap">
+              <th class="text-uppercase small text-muted">Admission</th>
+              <th class="text-uppercase small text-muted">Sortie</th>
+              <th class="text-uppercase small text-muted">Motif</th>
+              <th class="text-uppercase small text-muted">Dossier / Patient</th>
+              <th class="text-uppercase small text-muted">Statut</th>
+              <th class="text-uppercase small text-muted">Créé</th>
+              <th class="text-uppercase small text-muted">Modifié</th>
+              <th class="text-uppercase small text-muted text-end" style="width: 210px;">Actions</th>
+            </tr>
+          </thead>
 
             <tbody>
             {% for hospitalisation in hospitalisations %}
-              {% set statut = hospitalisation.statut.value ?? hospitalisation.statut.name ?? hospitalisation.statut ?? '' %}
+                {% set statut = hospitalisation.statut.value ?? hospitalisation.statut.name ?? hospitalisation.statut ?? '' %}
+                {% set dossier = hospitalisation.dossierMedical ?? null %}
+                {% set patient = dossier ? dossier.patient : null %}
+                {% set statut = hospitalisation.statut.value ?? hospitalisation.statut.name ?? hospitalisation.statut ?? '' %}
               <tr>
                 <td class="text-nowrap">
                   {% if hospitalisation.dateAdmission %}
@@ -68,18 +99,24 @@
                 <td class="text-start" style="min-width: 180px;">
                   {{ hospitalisation.motifAdmission ?: '—' }}
                 </td>
+                <td style="min-width: 260px;">
+                {% if patient %}
+                  <div class="fw-semibold">
+                    <i class="fa fa-folder-open me-1 text-muted"></i>
+                    {{ dossier.numeroDossier ?? '—' }}
+                  </div>
 
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.histoireMaladie ? hospitalisation.histoireMaladie|u.truncate(70, '…', false) : '—' }}
-                </td>
+                  <div class="small text-muted">
+                    {{ patient.nom }} {{ patient.prenom ?? '' }}
+                  </div>
 
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.evolution ? hospitalisation.evolution|u.truncate(70, '…', false) : '—' }}
-                </td>
-
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.conclusion ? hospitalisation.conclusion|u.truncate(70, '…', false) : '—' }}
-                </td>
+                  <div class="small text-muted">
+                    {{ patient.telephone ?? '—' }}
+                  </div>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
 
                 <td class="text-nowrap">
                   {% if statut %}
@@ -143,7 +180,7 @@
               </tr>
             {% else %}
               <tr>
-                <td colspan="10">
+                <td colspan="8">
                   <div class="py-5 text-center">
                     <div class="mb-2">
                       <i class="fa fa-info-circle text-muted" style="font-size:28px;"></i>
@@ -469,4 +506,29 @@
       });
     })();
   </script>
+  <script>
+  (function () {
+    const input = document.getElementById('hospitalisationSearchInput');
+    if (!input) return;
+
+    let timer = null;
+
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        const value = input.value.trim();
+        const url = new URL(window.location.href);
+
+        if (value !== '') {
+          url.searchParams.set('search', value);
+        } else {
+          url.searchParams.delete('search');
+        }
+
+        window.location.href = url.toString();
+      }, 300);
+    });
+  })();
+</script>
 {% endblock %}

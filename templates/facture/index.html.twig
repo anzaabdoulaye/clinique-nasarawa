@@ -8,20 +8,45 @@
 
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white border-0 py-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
             <h5 class="mb-0 fw-semibold">
-              <i class="fa fa-file-invoice-dollar me-2 text-primary"></i> Factures
+              <i class="fa fa-stethoscope me-2 text-primary"></i> Factures
             </h5>
             <div class="text-muted small">Suivi des factures et des paiements</div>
           </div>
 
-          <button type="button"
-                  class="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addFactureModal">
-            <i class="fa fa-plus me-1"></i> Nouvelle facture
-          </button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <form method="get" action="{{ path('app_facture_index') }}" class="app-search d-flex">
+             <div class="position-relative">
+              <input
+                type="text"
+                id="factureSearchInput"
+                name="search"
+                class="form-control"
+                placeholder="Code patient, N° dossier ou téléphone"
+                autocomplete="off"
+                value="{{ search|default('') }}"
+                style="min-width: 360px;"
+              >
+             <span class="mdi mdi-magnify search-widget-icon">
+             </span>
+              </div>
+               <button type="submit" class="btn btn-primary ms-2"> 
+               <i class="fa fa-search me-1"> </i> Rechercher 
+               </button>
+
+            {% if search is defined and search %}
+              <a href="{{ path('app_facture_index') }}" class="btn btn-light border">
+                Réinitialiser
+              </a>
+            {% endif %}
+            </form>
+
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFactureModal">
+              <i class="fa fa-plus me-1"></i> Nouvelle facture
+            </button>
+          </div>
         </div>
       </div>
 
@@ -353,4 +378,15 @@
       });
     })();
   </script>
+    <script>
+        document.getElementById('factureSearchInput')?.addEventListener('input', function(e) {
+            clearTimeout(this.delay);
+            this.delay = setTimeout(function() {
+                if (e.target.value.length >= 2 || e.target.value.length === 0) {
+                    e.target.closest('form').submit();
+                }
+            }, 800);
+        });
+    </script>
+
 {% endblock %}

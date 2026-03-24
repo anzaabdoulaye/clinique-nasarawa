@@ -14,29 +14,32 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/patient')]
 final class PatientController extends AbstractController
 {
-     #[Route(name: 'app_patient_index', methods: ['GET', 'POST'])]
-    public function index(
-        Request $request,
-        PatientRepository $patientRepository,
-        EntityManagerInterface $em
-    ): Response {
-        $patient = new Patient();
+    #[Route(name: 'app_patient_index', methods: ['GET', 'POST'])]
+public function index(
+    Request $request,
+    PatientRepository $patientRepository,
+    EntityManagerInterface $em
+): Response {
+    $patient = new Patient();
 
-        $form = $this->createForm(PatientType::class, $patient);
-        $form->handleRequest($request);
+    $form = $this->createForm(PatientType::class, $patient);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($patient);
-            $em->flush();
+    if ($form->isSubmitted() && $form->isValid()) {
+        $em->persist($patient);
+        $em->flush();
 
-            return $this->redirectToRoute('app_patient_index');
-        }
-
-        return $this->render('patient/index.html.twig', [
-            'patients' => $patientRepository->findAll(),
-            'form' => $form->createView(),
-        ]);
+        return $this->redirectToRoute('app_patient_index');
     }
+
+    $search = $request->query->get('search');
+
+    return $this->render('patient/index.html.twig', [
+        'patients' => $patientRepository->findBySearchTerm($search),
+        'form' => $form->createView(),
+        'search' => $search,
+    ]);
+}
 
     #[Route('/new', name: 'app_patient_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response

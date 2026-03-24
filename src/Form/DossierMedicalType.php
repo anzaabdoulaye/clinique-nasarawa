@@ -19,6 +19,9 @@ class DossierMedicalType extends AbstractType
             ->add('patient', EntityType::class, [
                 'class' => Patient::class,
                 'choice_label' => 'id',
+                'attr' => [
+                    'class' => 'form-control select2-enable' 
+                ],
             ])
         ;
     }

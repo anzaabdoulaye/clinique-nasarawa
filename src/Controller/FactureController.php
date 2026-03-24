@@ -27,11 +27,21 @@ use setasign\Fpdi\Fpdi;
 final class FactureController extends AbstractController
 {
     #[Route(name: 'app_facture_index', methods: ['GET'])]
-    public function index(FactureRepository $factureRepository): Response
+   public function index(Request $request, FactureRepository $factureRepository): Response
     {
+        
+        $search = $request->query->get('search');
+
+        // Si une recherche est lancée, on utilise la nouvelle méthode
+        if ($search) {
+            $factures = $factureRepository->search($search);
+        } else {
+            $factures = $factureRepository->findAllWithRelations();
+        }
+
         return $this->render('facture/index.html.twig', [
-            'factures' => $factureRepository->findAll(),
-            'factures' => $factureRepository->findAllWithRelations(),
+            'factures' => $factures,
+            'search' => $search, // On renvoie la valeur pour l'afficher dans l'input
         ]);
     }
 

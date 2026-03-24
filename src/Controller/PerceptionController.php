@@ -23,51 +23,65 @@ use setasign\Fpdi\Fpdi;
 #[Route('/perception')]
 final class PerceptionController extends AbstractController
 {
-    #[Route('', name: 'app_perception_index', methods: ['GET'])]
-    public function index(FactureRepository $factureRepository): Response
-    {
-        $factures = $factureRepository->createQueryBuilder('f')
-            ->leftJoin('f.consultation', 'c')->addSelect('c')
-            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-            ->leftJoin('r.patient', 'p')->addSelect('p')
-            ->leftJoin('f.paiements', 'pa')->addSelect('pa')
-            ->orderBy('f.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+#[Route('', name: 'app_perception_index', methods: ['GET'])]
+public function index(Request $request, FactureRepository $factureRepository): Response
+{
+    $search = trim((string) $request->query->get('search', ''));
 
-        $nbNonPayees = 0;
-        $nbPartielles = 0;
-        $nbPayees = 0;
-        $totalEncaisseJour = 0;
+    $qb = $factureRepository->createQueryBuilder('f')
+        ->leftJoin('f.consultation', 'c')->addSelect('c')
+        ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+        ->leftJoin('r.patient', 'p')->addSelect('p')
+        ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
+        ->leftJoin('f.paiements', 'pa')->addSelect('pa');
 
-        $today = (new \DateTimeImmutable())->format('Y-m-d');
+    if ($search !== '') {
+        $qb->andWhere(
+            'LOWER(p.code) LIKE :search
+             OR LOWER(p.telephone) LIKE :search
+             OR LOWER(dm.numeroDossier) LIKE :search'
+        )
+        ->setParameter('search', '%' . mb_strtolower($search) . '%');
+    }
 
-        foreach ($factures as $facture) {
-            $statut = $facture->getStatut()->value;
+    $factures = $qb->orderBy('f.createdAt', 'DESC')
+        ->getQuery()
+        ->getResult();
 
-            if ($statut === 'non_paye') {
-                $nbNonPayees++;
-            } elseif ($statut === 'partiellement_paye') {
-                $nbPartielles++;
-            } elseif ($statut === 'paye') {
-                $nbPayees++;
-            }
+    $nbNonPayees = 0;
+    $nbPartielles = 0;
+    $nbPayees = 0;
+    $totalEncaisseJour = 0;
 
-            foreach ($facture->getPaiements() as $paiement) {
-                if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
-                    $totalEncaisseJour += $paiement->getMontant();
-                }
-            }
+    $today = (new \DateTimeImmutable())->format('Y-m-d');
+
+    foreach ($factures as $facture) {
+        $statut = $facture->getStatut()->value;
+
+        if ($statut === 'non_paye') {
+            $nbNonPayees++;
+        } elseif ($statut === 'partiellement_paye') {
+            $nbPartielles++;
+        } elseif ($statut === 'paye') {
+            $nbPayees++;
         }
 
-        return $this->render('perception/index.html.twig', [
-            'factures' => $factures,
-            'nbNonPayees' => $nbNonPayees,
-            'nbPartielles' => $nbPartielles,
-            'nbPayees' => $nbPayees,
-            'totalEncaisseJour' => $totalEncaisseJour,
-        ]);
+        foreach ($facture->getPaiements() as $paiement) {
+            if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
+                $totalEncaisseJour += $paiement->getMontant();
+            }
+        }
     }
+
+    return $this->render('perception/index.html.twig', [
+        'factures' => $factures,
+        'nbNonPayees' => $nbNonPayees,
+        'nbPartielles' => $nbPartielles,
+        'nbPayees' => $nbPayees,
+        'totalEncaisseJour' => $totalEncaisseJour,
+        'search' => $search,
+    ]);
+}
 
     #[Route('/facture/{id}', name: 'app_perception_facture_show', methods: ['GET'])]
     public function show(Facture $facture): Response

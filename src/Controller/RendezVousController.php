@@ -26,36 +26,36 @@ use Endroid\QrCode\Encoding\Encoding;
 final class RendezVousController extends AbstractController
 {
    #[Route(name: 'app_rendez_vous_index', methods: ['GET', 'POST'])]
-    public function index(
-        Request $request,
-        RendezVousRepository $rendezVousRepository,
-        EntityManagerInterface $em
-    ): Response {
-        $rv = new RendezVous();
-        $form = $this->createForm(RendezVousType::class, $rv);
-        $form->handleRequest($request);
+public function index(
+    Request $request,
+    RendezVousRepository $rendezVousRepository,
+    EntityManagerInterface $em
+): Response {
+    $rv = new RendezVous();
+    $form = $this->createForm(RendezVousType::class, $rv);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+    if ($form->isSubmitted() && $form->isValid()) {
+        $rv->setConsultation(null);
 
-    // consultation non obligatoire à la création
-    $rv->setConsultation(null);
+        if (!$rv->getStatut()) {
+            $rv->setStatut(StatutRendezVous::EN_ATTENTE);
+        }
 
-    // statut par défaut si vide
-    if (!$rv->getStatut()) {
-        $rv->setStatut(StatutRendezVous::EN_ATTENTE);
+        $em->persist($rv);
+        $em->flush();
+
+        return $this->redirectToRoute('app_rendez_vous_index');
     }
 
-    $em->persist($rv);
-    $em->flush();
+    $search = $request->query->get('search');
 
-    return $this->redirectToRoute('app_rendez_vous_index');
+    return $this->render('rendez_vous/index.html.twig', [
+        'rendezVous' => $rendezVousRepository->findBySearchTerm($search),
+        'form' => $form->createView(),
+        'search' => $search,
+    ]);
 }
-
-        return $this->render('rendez_vous/index.html.twig', [
-            'rendezVous' => $rendezVousRepository->findAll(),  
-            'form' => $form->createView(),
-        ]);
-    }
 
     #[Route('/{id}', name: 'app_rendez_vous_show', methods: ['GET'])]
     public function show(RendezVous $rendezVou): Response

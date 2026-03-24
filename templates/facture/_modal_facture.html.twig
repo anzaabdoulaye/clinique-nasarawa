@@ -13,8 +13,8 @@
 <div class="modal-body">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <span class="badge {{ facture.statutPaiement.value == 'PAYE' ? 'bg-success' : 'bg-warning text-dark' }}">
-        {{ facture.statutPaiement.value }}
+      <span class="badge {{ facture.statut.value == 'PAYE' ? 'bg-success' : 'bg-warning text-dark' }}">
+        {{ facture.statut.value }}
       </span>
       {% if facture.modePaiement %}
         <span class="badge bg-secondary ms-2">{{ facture.modePaiement.value }}</span>
@@ -23,7 +23,7 @@
 
     <div class="text-end">
       <div class="text-muted small">Total</div>
-      <div class="fs-4 fw-semibold">{{ facture.montant|number_format(0, '.', ' ') }} FCFA</div>
+      <div class="fs-4 fw-semibold">{{ facture.montantTotal|number_format(0, '.', ' ') }} FCFA</div>
     </div>
   </div>
 
@@ -91,7 +91,7 @@
 <div class="modal-footer">
   <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
 
-  {% if facture.statutPaiement.value != 'PAYE' %}
+  {% if facture.statut.value != 'PAYE' %}
     <div class="d-flex gap-2 align-items-center">
       <select class="form-select form-select-sm" id="modePaiementSelect" style="min-width: 180px;">
         <option value="">Mode de paiement...</option>
@@ -100,7 +100,7 @@
         {% endfor %}
       </select>
 
-     {% set total = facture.montant ?? 0 %}
+     {% set total = facture.montantTotal ?? 0 %}
 <button type="button"
         class="btn btn-success btn-sm js-payer-facture"
         data-url="{{ path('app_facture_payer', {id: facture.id}) }}"

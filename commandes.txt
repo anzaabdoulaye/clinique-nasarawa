@@ -1,0 +1,8 @@
+composer require --dev orm-fixtures
+
+php bin/console doctrine:fixtures:load --append
+
+
+UPDATE tarif_prestation
+SET service_execution = 'laboratoire'
+WHERE categorie = 'examen_biologique';

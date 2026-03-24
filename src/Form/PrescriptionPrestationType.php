@@ -25,7 +25,7 @@ class PrescriptionPrestationType extends AbstractType
             ->add('tarifPrestation', EntityType::class, [
                 'class' => TarifPrestation::class,
                 'label' => 'Acte / examen / consommable',
-                'placeholder' => 'Choisir une prestation',
+                
                 'choice_label' => function (TarifPrestation $tarif) {
                     return $tarif->getLibelle();
                 },
@@ -35,6 +35,10 @@ class PrescriptionPrestationType extends AbstractType
                         ->setParameter('actif', true)
                         ->orderBy('t.libelle', 'ASC');
                 },
+                'attr' => [
+                    'class' => 'form-control select2-enable',
+                    'placeholder' => 'Choisir une prestation',
+                ],
             ])
             ->add('quantite', IntegerType::class, [
                 'label' => 'Quantité',

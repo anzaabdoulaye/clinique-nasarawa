@@ -64,63 +64,88 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-     public function findExamensLaboAPrendreEnCharge(): array
+    private function applyLaboratoireSearch($qb, ?string $search): void
     {
-        return $this->createQueryBuilder('pp')
+        if ($search && trim($search) !== '') {
+            $search = mb_strtolower(trim($search));
+
+            $qb->andWhere(
+                'LOWER(p.code) LIKE :search
+                 OR LOWER(p.telephone) LIKE :search
+                 OR LOWER(dm.numeroDossier) LIKE :search'
+            )
+            ->setParameter('search', '%' . $search . '%');
+        }
+    }
+
+    /**
+     * @return PrescriptionPrestation[]
+     */
+    public function findExamensLaboAPrendreEnCharge(?string $search = null): array
+    {
+        $qb = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
             ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
             ->andWhere('tp.serviceExecution = :service')
             ->setParameter('statut', StatutPrescriptionPrestation::PAYE)
-            ->setParameter('service', 'laboratoire')
-            ->orderBy('pp.createdAt', 'DESC')
+            ->setParameter('service', 'laboratoire');
+
+        $this->applyLaboratoireSearch($qb, $search);
+
+        return $qb->orderBy('pp.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Examens labo en cours
-     *
      * @return PrescriptionPrestation[]
      */
-    public function findExamensLaboEnCours(): array
+    public function findExamensLaboEnCours(?string $search = null): array
     {
-        return $this->createQueryBuilder('pp')
+        $qb = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
             ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
             ->andWhere('tp.serviceExecution = :service')
             ->setParameter('statut', StatutPrescriptionPrestation::EN_COURS)
-            ->setParameter('service', 'laboratoire')
-            ->orderBy('pp.modifiedAt', 'DESC')
+            ->setParameter('service', 'laboratoire');
+
+        $this->applyLaboratoireSearch($qb, $search);
+
+        return $qb->orderBy('pp.modifiedAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Examens labo réalisés
-     *
      * @return PrescriptionPrestation[]
      */
-    public function findExamensLaboRealises(): array
+    public function findExamensLaboRealises(?string $search = null): array
     {
-        return $this->createQueryBuilder('pp')
+        $qb = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
             ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
             ->andWhere('tp.serviceExecution = :service')
             ->setParameter('statut', StatutPrescriptionPrestation::REALISE)
-            ->setParameter('service', 'laboratoire')
-            ->orderBy('pp.modifiedAt', 'DESC')
+            ->setParameter('service', 'laboratoire');
+
+        $this->applyLaboratoireSearch($qb, $search);
+
+        return $qb->orderBy('pp.modifiedAt', 'DESC')
             ->getQuery()
             ->getResult();
     }

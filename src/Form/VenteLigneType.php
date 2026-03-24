@@ -35,23 +35,16 @@ class VenteLigneType extends AbstractType
         }
 
         $builder
-            ->add('medicamentSearch', TextType::class, [
-                'mapped' => false,
-                'required' => false,
-                'data' => $medicamentLabel,
+            ->add('medicament', EntityType::class, [
+                'class' => Medicament::class,
+                'choice_label' => 'nom',
+                'choice_attr' => function (?Medicament $m) {
+                    return $m ? ['data-price' => $m->getPrixUnitaire()] : [];
+                },
+                
                 'attr' => [
-                    'class' => 'form-control medicament-search-input',
-                    'placeholder' => 'Rechercher par nom ou code-barres...',
-                    'autocomplete' => 'off',
-                    'data-search-url' => '/caisse/medicament/search',
-                    'data-initial-label' => $medicamentLabel ?? '',
-                    'data-initial-price' => $medicament ? (string) $medicament->getPrixUnitaire() : '',
-                    'data-initial-id' => $medicament ? (string) $medicament->getId() : '',
-                ],
-            ])
-            ->add('medicament', HiddenType::class, [
-                'attr' => [
-                    'class' => 'medicament-id-input',
+                'class' => 'form-select medicament-select select2-enable',
+                'placeholder' => '— Choisir un médicament —',
                 ],
             ])
             ->add('lot', EntityType::class, [
@@ -69,7 +62,7 @@ class VenteLigneType extends AbstractType
                 },
                 'required' => false,
                 'placeholder' => '— Optionnel (choisir lot) —',
-                'attr' => ['class' => 'form-select'],
+                'attr' => ['class' => 'form-select lot-select select2-enable'],
             ])
             ->add('quantite', IntegerType::class, [
                 'attr' => [

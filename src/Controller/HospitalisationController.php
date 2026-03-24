@@ -19,13 +19,12 @@ use Dompdf\Options;
 #[Route('/hospitalisation')]
 final class HospitalisationController extends AbstractController
 {
-    #[Route(name: 'app_hospitalisation_index', methods: ['GET','POST'])]
+ #[Route(name: 'app_hospitalisation_index', methods: ['GET','POST'])]
     public function index(
         Request $request,
         HospitalisationRepository $repository,
         EntityManagerInterface $em
     ): Response {
-
         $hospitalisation = new Hospitalisation();
         $form = $this->createForm(HospitalisationType::class, $hospitalisation);
         $form->handleRequest($request);
@@ -37,9 +36,12 @@ final class HospitalisationController extends AbstractController
             return $this->redirectToRoute('app_hospitalisation_index');
         }
 
+        $search = $request->query->get('search');
+
         return $this->render('hospitalisation/index.html.twig', [
-            'hospitalisations' => $repository->findBy([], ['id' => 'DESC']),
-            'form' => $form->createView(), // ✅ IMPORTANT
+            'hospitalisations' => $repository->findBySearchTerm($search),
+            'form' => $form->createView(),
+            'search' => $search,
         ]);
     }
 

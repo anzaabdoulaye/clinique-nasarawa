@@ -16,12 +16,42 @@
             <div class="text-muted small">Gestion des rendez-vous et démarrage des consultations</div>
           </div>
 
-          <button type="button"
-                  class="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addRendezVousModal">
-            <i class="fa fa-plus me-1"></i> Nouveau rendez-vous
-          </button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <form method="get" action="{{ path('app_rendez_vous_index') }}" class="app-search d-flex align-items-center gap-2">
+              <div class="position-relative">
+                <input
+                  type="text"
+                  id="rendezVousSearchInput"
+                  name="search"
+                  class="form-control ps-4"
+                  placeholder="Code patient, N° dossier ou téléphone"
+                  autocomplete="off"
+                  value="{{ search|default('') }}"
+                  style="min-width: 360px;"
+                >
+                <span class="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted">
+                  <i class="fa fa-search"></i>
+                </span>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-search me-1"></i> Rechercher
+              </button>
+
+              {% if search is defined and search %}
+                <a href="{{ path('app_rendez_vous_index') }}" class="btn btn-light border">
+                  Réinitialiser
+                </a>
+              {% endif %}
+            </form>
+
+            <button type="button"
+                    class="btn btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addRendezVousModal">
+              <i class="fa fa-plus me-1"></i> Nouveau rendez-vous
+            </button>
+          </div>
         </div>
       </div>
 
@@ -33,7 +63,7 @@
                 <th class="text-uppercase small text-muted">Date / Heure</th>
                 <th class="text-uppercase small text-muted">Statut</th>
                 <th class="text-uppercase small text-muted">Motif</th>
-                <th class="text-uppercase small text-muted">Patient</th>
+                <th class="text-uppercase small text-muted">Dossier / Patient</th>
                 <th class="text-uppercase small text-muted">Médecin</th>
                 <th class="text-uppercase small text-muted">Consultation</th>
                 <th class="text-uppercase small text-muted">Créé le</th>
@@ -44,6 +74,8 @@
             <tbody>
             {% for rv in rendezVous %}
               {% set statut = rv.statut.name ?? '' %}
+              {% set patient = rv.patient ?? null %}
+              {% set dossier = patient and patient.dossierMedical ? patient.dossierMedical : null %}
 
               <tr>
                 <td class="text-nowrap">
@@ -75,12 +107,20 @@
                   {{ rv.motif ? rv.motif|u.truncate(70, '…', false) : '—' }}
                 </td>
 
-                <td class="text-nowrap">
-                  {% if rv.patient %}
-                    <span class="badge bg-light text-dark border">
-                      <i class="fa fa-user me-1 text-muted"></i>
-                      {{ rv.patient.nom }} {{ rv.patient.prenom ?? '' }}
-                    </span>
+                <td style="min-width: 260px;">
+                  {% if patient %}
+                    <div class="fw-semibold">
+                      <i class="fa fa-folder-open me-1 text-muted"></i>
+                      {{ dossier ? dossier.numeroDossier : '—' }}
+                    </div>
+
+                    <div class="small text-muted">
+                      Patient : {{ patient.nom }} {{ patient.prenom ?? '' }}
+                    </div>
+
+                    <div class="small text-muted">
+                      Contact : {{ patient.telephone ?? '—' }}
+                    </div>
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
@@ -302,7 +342,6 @@
       }
 
       function bindEditSubmit() {
-        // ⚠️ ton template edit doit sortir un form avec id="RdvEditForm"
         const form = body.querySelector('#RdvEditForm') || body.querySelector('form');
         if (!form) return;
 
@@ -341,7 +380,6 @@
               }
             }
 
-            // erreurs => HTML
             body.innerHTML = await resp.text();
             focusFirstField();
             bindEditSubmit();
@@ -356,7 +394,6 @@
         });
       }
 
-      // Délégation => pas besoin de querySelectorAll
       document.addEventListener('click', (e) => {
         const btn = e.target.closest('.js-edit-rdv');
         if (!btn) return;
@@ -370,6 +407,30 @@
       modalEl?.addEventListener('hidden.bs.modal', () => {
         currentUrl = null;
         setLoading();
+      });
+    })();
+
+    (function () {
+      const input = document.getElementById('rendezVousSearchInput');
+      if (!input) return;
+
+      let timer = null;
+
+      input.addEventListener('input', function () {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+          const value = input.value.trim();
+          const url = new URL(window.location.href);
+
+          if (value !== '') {
+            url.searchParams.set('search', value);
+          } else {
+            url.searchParams.delete('search');
+          }
+
+          window.location.href = url.toString();
+        }, 300);
       });
     })();
   </script>

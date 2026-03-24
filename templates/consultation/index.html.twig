@@ -18,28 +18,29 @@
 
           <div class="d-flex flex-wrap align-items-center gap-2">
             <form method="get" action="{{ path('app_consultation_index') }}" class="app-search d-flex">
-              <div class="position-relative">
-                <input
-                  type="text"
-                  name="q"
-                  class="form-control"
-                  placeholder="N° dossier ou code patient"
-                  autocomplete="off"
-                  value="{{ app.request.query.get('q') }}"
-                  style="min-width: 280px;"
-                >
-                <span class="mdi mdi-magnify search-widget-icon"></span>
+             <div class="position-relative">
+              <input
+                type="text"
+                id="consultationSearchInput"
+                name="search"
+                class="form-control"
+                placeholder="Code patient, N° dossier ou téléphone"
+                autocomplete="off"
+                value="{{ search|default('') }}"
+                style="min-width: 360px;"
+              >
+             <span class="mdi mdi-magnify search-widget-icon">
+             </span>
               </div>
+               <button type="submit" class="btn btn-primary ms-2"> 
+               <i class="fa fa-search me-1"> </i> Rechercher 
+               </button>
 
-              <button type="submit" class="btn btn-primary ms-2">
-                <i class="fa fa-search me-1"></i> Rechercher
-              </button>
-
-              {% if app.request.query.get('q') %}
-                <a href="{{ path('app_consultation_index') }}" class="btn btn-light border ms-2">
-                  Réinitialiser
-                </a>
-              {% endif %}
+            {% if search is defined and search %}
+              <a href="{{ path('app_consultation_index') }}" class="btn btn-light border">
+                Réinitialiser
+              </a>
+            {% endif %}
             </form>
 
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
@@ -54,7 +55,7 @@
           <table class="table table-hover align-middle mb-0 datatable">
             <thead class="table-light">
               <tr class="text-nowrap">
-                <th class="text-uppercase small text-muted">Date</th>
+                <th class="text-uppercase small text-muted">Date / Heure</th>
                 <th class="text-uppercase small text-muted">Dossier / Patient</th>
                 <th class="text-uppercase small text-muted">Médecin</th>
                 <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
@@ -83,12 +84,20 @@
                     {% set patient = c.dossierMedical.patient ?? null %}
                     {% if patient %}
                       <div class="small text-muted">
-                        Patient :
-                        {{ patient.code ?? '—' }}
-                        {% if patient.nom or patient.prenom %}
-                          — {{ patient.nom ?? '' }} {{ patient.prenom ?? '' }}
-                        {% endif %}
+                          Patient : {% if patient.nom or patient.prenom %}
+                        
+                        {{ patient.nom ?? '' }} {{ patient.prenom ?? '' }}
+                        
+                    
+
                       </div>
+                         <div class="small text-muted">
+                          Contact : {{ patient.telephone ?? '—' }}
+                      </div>
+                        
+                      {% endif %}
+
+                      
                     {% endif %}
                   {% else %}
                     <span class="text-muted">—</span>
@@ -131,8 +140,10 @@
                     <div class="mb-2">
                       <i class="fa fa-info-circle text-muted" style="font-size: 28px;"></i>
                     </div>
-                    <div class="fw-semibold">Aucune consultation</div>
-                    <div class="text-muted small">Les consultations apparaîtront ici après enregistrement.</div>
+                    <div class="fw-semibold">Aucune consultation trouvée</div>
+                    <div class="text-muted small">
+                      Vérifie le code patient, le numéro de dossier ou le téléphone.
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -362,6 +373,30 @@
       editModalEl?.addEventListener('hidden.bs.modal', () => {
         currentUrl = null;
         setLoading();
+      });
+    })();
+
+    (() => {
+      const input = document.getElementById('consultationSearchInput');
+      if (!input) return;
+
+      let timer = null;
+
+      input.addEventListener('input', function () {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+          const value = input.value.trim();
+          const url = new URL(window.location.href);
+
+          if (value !== '') {
+            url.searchParams.set('search', value);
+          } else {
+            url.searchParams.delete('search');
+          }
+
+          window.location.href = url.toString();
+        }, 300);
       });
     })();
   </script>

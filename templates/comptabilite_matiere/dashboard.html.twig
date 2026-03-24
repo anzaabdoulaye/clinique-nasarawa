@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord - Comptabilité matière{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-bar-chart-box-line me-2 text-primary"></i>
+                Tableau de bord — Comptabilité matière
+            </h2>
+            <p class="text-muted mb-0">
+                Vue synthétique des mouvements, alertes de stock et péremptions.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary shadow-sm" href="{{ path('app_comptabilite_matiere_index') }}">
+                <i class="ri-list-check-2 me-1"></i>
+                Voir les bons
+            </a>
+
+            <button class="btn btn-primary shadow-sm"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#newBonMatiereModal">
+                <i class="ri-add-line me-1"></i>
+                Nouveau bon
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Bons du jour</small>
+                    <h3 class="fw-bold mb-0 text-dark">{{ bonsTodayCount }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Entrées du jour</small>
+                    <h3 class="fw-bold mb-0 text-success">{{ entreesTodayCount }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Sorties définitives</small>
+                    <h3 class="fw-bold mb-0 text-danger">{{ sortiesDefTodayCount }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Sorties provisoires</small>
+                    <h3 class="fw-bold mb-0 text-warning">{{ sortiesProvTodayCount }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                    <h5 class="mb-0 fw-semibold text-dark">Derniers bons matière</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    {% if recentBons|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Statut</th>
+                                        <th>Qté</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bon in recentBons %}
+                                        <tr>
+                                            <td><span class="badge bg-light text-dark border">{{ bon.numero }}</span></td>
+                                            <td>{{ bon.dateBon ? bon.dateBon|date('d/m/Y H:i') : '—' }}</td>
+                                            <td>{{ bon.type.label() }}</td>
+                                            <td>{{ bon.statut.label() }}</td>
+                                            <td><span class="fw-bold text-primary">{{ bon.quantiteTotale }}</span></td>
+                                            <td class="text-center">
+                                                <a class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                                   href="{{ path('app_comptabilite_matiere_show', {'id': bon.id}) }}">
+                                                    Voir
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucun bon récent.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                    <h5 class="mb-0 fw-semibold text-dark">Lots proches de péremption</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    {% if lotsNearExpiration|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Médicament</th>
+                                        <th>Lot</th>
+                                        <th>Péremption</th>
+                                        <th>Qté</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lot in lotsNearExpiration %}
+                                        <tr>
+                                            <td>{{ lot.medicament.nom }}</td>
+                                            <td>{{ lot.numeroLot ?: ('Lot #' ~ lot.id) }}</td>
+                                            <td>{{ lot.datePeremption ? lot.datePeremption|date('d/m/Y') : '—' }}</td>
+                                            <td><span class="fw-bold text-warning">{{ lot.quantite }}</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucun lot proche de péremption.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                    <h5 class="mb-0 fw-semibold text-dark">Stock faible</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    {% if lowStockMedicaments|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Médicament</th>
+                                        <th>Qté</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in lowStockMedicaments %}
+                                        <tr>
+                                            <td>{{ item.nom }}</td>
+                                            <td><span class="fw-bold text-danger">{{ item.quantite }}</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucune alerte de stock faible.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'comptabilite_matiere/_new_modal.html.twig' with {
+    types: types,
+    motifs: motifs,
+    medicaments: medicaments,
+    lots: lots
+} %}
+{% endblock %}  

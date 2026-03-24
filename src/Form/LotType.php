@@ -21,24 +21,35 @@ class LotType extends AbstractType
             ->add('medicament', EntityType::class, [
                 'class' => Medicament::class,
                 'choice_label' => 'nom',
-                'placeholder' => '— Choisir un médicament —',
-                'attr' => ['class' => 'form-select'],
+                
+                'attr' => [
+                    'class' => 'form-control select2-enable',
+                    'placeholder' => '— Choisir un médicament —', 
+                ],
             ])
             ->add('numeroLot', TextType::class, [
                 'required' => false,
+                'label' => 'Numéro de lot',
                 'attr' => ['class' => 'form-control'],
             ])
             ->add('datePeremption', DateType::class, [
                 'widget' => 'single_text',
                 'required' => false,
+                'label' => 'Date de péremption',
                 'attr' => ['class' => 'form-control'],
             ])
             ->add('quantite', IntegerType::class, [
-                'attr' => ['class' => 'form-control', 'min' => 0],
+                'label' => 'Quantité initiale',
+                'attr' => [
+                    'class' => 'form-control',
+                    'min' => 0,
+                ],
+                'help' => 'Cette quantité initiale générera automatiquement un bon d’entrée en comptabilité matière.',
             ])
             ->add('prixAchat', NumberType::class, [
                 'required' => false,
                 'scale' => 2,
+                'label' => 'Prix d’achat unitaire',
                 'attr' => ['class' => 'form-control'],
             ])
         ;
