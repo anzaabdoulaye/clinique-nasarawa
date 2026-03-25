@@ -16,42 +16,18 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class VenteLigneType extends AbstractType
 {
-    public function __construct(private readonly MedicamentToIdTransformer $medicamentToIdTransformer)
-    {
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $ligne = $builder->getData();
-        $medicament = $ligne instanceof VenteLigne ? $ligne->getMedicament() : null;
-        $medicamentLabel = null;
-
-        if ($medicament instanceof Medicament) {
-            $medicamentLabel = $medicament->getNom();
-
-            if ($medicament->getCodeBarre()) {
-                $medicamentLabel .= ' | ' . $medicament->getCodeBarre();
-            }
-        }
-
         $builder
-            ->add('medicamentSearch', TextType::class, [
-                'mapped' => false,
-                'required' => false,
-                'data' => $medicamentLabel,
+            ->add('medicament', EntityType::class, [
+                'class' => Medicament::class,
+                'choice_label' => 'nom',
+                'choice_attr' => function (?Medicament $m) {
+                    return $m ? ['data-price' => $m->getPrixUnitaire()] : [];
+                },
+                'placeholder' => '— Choisir un médicament —',
                 'attr' => [
-                    'class' => 'form-control medicament-search-input',
-                    'placeholder' => 'Rechercher par nom ou code-barres...',
-                    'autocomplete' => 'off',
-                    'data-search-url' => '/caisse/medicament/search',
-                    'data-initial-label' => $medicamentLabel ?? '',
-                    'data-initial-price' => $medicament ? (string) $medicament->getPrixUnitaire() : '',
-                    'data-initial-id' => $medicament ? (string) $medicament->getId() : '',
-                ],
-            ])
-            ->add('medicament', HiddenType::class, [
-                'attr' => [
-                    'class' => 'medicament-id-input',
+                    'class' => 'form-select medicament-select select2-enable',
                 ],
             ])
             ->add('lot', EntityType::class, [
@@ -84,8 +60,6 @@ class VenteLigneType extends AbstractType
                     'class' => 'form-control',
                 ],
             ]);
-
-            $builder->get('medicament')->addModelTransformer($this->medicamentToIdTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

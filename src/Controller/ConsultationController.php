@@ -31,7 +31,10 @@ use setasign\Fpdi\Fpdi;
 #[Route('/consultation')]
 final class ConsultationController extends AbstractController
 {
-    #[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
+#[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
 public function index(
     Request $request,
     ConsultationRepository $consultationRepository,
@@ -63,11 +66,10 @@ public function index(
 
     $q = trim((string) $request->query->get('q', ''));
 
-    if ($q !== '') {
-        $consultations = $consultationRepository->searchByDossierOrPatientCode($q);
-    } else {
-        $consultations = $consultationRepository->findBy([], ['createdAt' => 'DESC']);
-    }
+    /** @var Utilisateur $user */
+    $user = $this->getUser();
+
+    $consultations = $consultationRepository->searchVisibleForUser($search, $user);
 
     return $this->render('consultation/index.html.twig', [
         'consultations' => $consultations,
