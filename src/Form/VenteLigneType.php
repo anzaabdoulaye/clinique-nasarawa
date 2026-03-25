@@ -16,24 +16,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class VenteLigneType extends AbstractType
 {
-    public function __construct(private readonly MedicamentToIdTransformer $medicamentToIdTransformer)
-    {
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $ligne = $builder->getData();
-        $medicament = $ligne instanceof VenteLigne ? $ligne->getMedicament() : null;
-        $medicamentLabel = null;
-
-        if ($medicament instanceof Medicament) {
-            $medicamentLabel = $medicament->getNom();
-
-            if ($medicament->getCodeBarre()) {
-                $medicamentLabel .= ' | ' . $medicament->getCodeBarre();
-            }
-        }
-
         $builder
             ->add('medicament', EntityType::class, [
                 'class' => Medicament::class,
@@ -41,10 +25,9 @@ class VenteLigneType extends AbstractType
                 'choice_attr' => function (?Medicament $m) {
                     return $m ? ['data-price' => $m->getPrixUnitaire()] : [];
                 },
-                
-                'attr' => [
-                'class' => 'form-select medicament-select select2-enable',
                 'placeholder' => '— Choisir un médicament —',
+                'attr' => [
+                    'class' => 'form-select medicament-select select2-enable',
                 ],
             ])
             ->add('lot', EntityType::class, [
@@ -77,8 +60,6 @@ class VenteLigneType extends AbstractType
                     'class' => 'form-control',
                 ],
             ]);
-
-            $builder->get('medicament')->addModelTransformer($this->medicamentToIdTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
