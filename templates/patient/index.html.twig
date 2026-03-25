@@ -8,59 +8,28 @@
 
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white border-0 py-3">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <div>
-      <h5 class="mb-0 fw-semibold">
-        <i class="fa fa-users me-2 text-primary"></i> Patients
-      </h5>
-      <div class="text-muted small">Liste des patients enregistrés</div>
-    </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h5 class="mb-0 fw-semibold">
+              <i class="fa fa-users me-2 text-primary"></i> Patients
+            </h5>
+            <div class="text-muted small">Liste des patients enregistrés</div>
+          </div>
 
-    <div class="d-flex flex-wrap align-items-center gap-2">
-
-       <form method="get" action="{{ path('app_consultation_index') }}" class="app-search d-flex">
-             <div class="position-relative">
-              <input
-                type="text"
-                id="patientSearchInput"
-                name="search"
-                class="form-control"
-                placeholder="Code patient, N° dossier ou téléphone"
-                autocomplete="off"
-                value="{{ search|default('') }}"
-                style="min-width: 360px;"
-              >
-             <span class="mdi mdi-magnify search-widget-icon">
-             </span>
-              </div>
-               <button type="submit" class="btn btn-primary ms-2"> 
-               <i class="fa fa-search me-1"> </i> Rechercher 
-               </button>
-
-        {% if search is defined and search %}
-          <a href="{{ path('app_patient_index') }}" class="btn btn-light border">
-            Réinitialiser
-          </a>
-        {% endif %}
-      </form>
-
-      <button type="button"
-              class="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#addPatientModal">
-        <i class="fa fa-plus me-1"></i> Nouveau patient
-      </button>
-
-    </div>
-  </div>
-</div>
+          <button type="button"
+                  class="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addPatientModal">
+            <i class="fa fa-plus me-1"></i> Nouveau patient
+          </button>
+        </div>
+      </div>
 
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0 datatable">
             <thead class="table-light">
               <tr class="text-nowrap">
-                <th class="text-uppercase small text-muted">N° dossier</th>
                 <th class="text-uppercase small text-muted">Code</th>
                 <th class="text-uppercase small text-muted">Nom</th>
                 <th class="text-uppercase small text-muted">Prénom</th>
@@ -77,16 +46,6 @@
             <tbody>
             {% for patient in patients %}
               <tr>
-                <td class="text-nowrap">
-                  {% if patient.dossierMedical %}
-                    <span class="badge bg-info-subtle text-info border">
-                      <i class="fa fa-folder-open me-1"></i> {{ patient.dossierMedical.numeroDossier }}
-                    </span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-
                 <td class="text-nowrap">
                   <span class="badge bg-light text-dark border">
                     <i class="fa fa-id-badge me-1 text-muted"></i> {{ patient.code }}
@@ -162,15 +121,13 @@
               </tr>
             {% else %}
               <tr>
-                <td colspan="11">
+                <td colspan="10">
                   <div class="py-5 text-center">
                     <div class="mb-2">
                       <i class="fa fa-info-circle text-muted" style="font-size: 28px;"></i>
                     </div>
-                    <div class="fw-semibold">Aucun patient trouvé</div>
-                    <div class="text-muted small">
-                      Vérifie le code, le numéro de dossier, le téléphone, ou ajoute un nouveau patient.
-                    </div>
+                    <div class="fw-semibold">Aucun patient enregistré</div>
+                    <div class="text-muted small">Clique sur “Nouveau patient” pour ajouter un patient.</div>
                   </div>
                 </td>
               </tr>
@@ -184,7 +141,6 @@
 
   </div>
 </div>
-
 {# =========================
    MODAL AJOUT PATIENT (PRO)
 ========================= #}
@@ -233,6 +189,7 @@
           </div>
         {% endif %}
 
+        {# ========= IDENTITÉ ========= #}
         <div class="section">
           <div class="section-title"><i class="fa fa-id-card text-primary"></i> Identité</div>
           <div class="row g-3">
@@ -250,6 +207,7 @@
           </div>
         </div>
 
+        {# ========= CONTACT D’URGENCE ========= #}
         <div class="section">
           <div class="section-title"><i class="fa fa-phone text-primary"></i> Contact d’urgence</div>
           <div class="row g-3">
@@ -261,6 +219,7 @@
           </div>
         </div>
 
+        {# ========= PARAMÈTRES ========= #}
         <div class="section">
           <div class="section-title"><i class="fa fa-weight-scale text-primary"></i> Paramètres</div>
           <div class="row g-3">
@@ -272,6 +231,7 @@
           </div>
         </div>
 
+        {# ========= ANTÉCÉDENTS & MÉDICAL ========= #}
         <div class="section">
           <div class="section-title"><i class="fa fa-notes-medical text-primary"></i> Antécédents / médical</div>
           <div class="row g-3">
@@ -425,6 +385,7 @@
               }
             }
 
+            // HTML (souvent erreurs)
             body.innerHTML = await submitRes.text();
             focusFirstField();
             bindSubmit();
@@ -439,6 +400,7 @@
         });
       }
 
+      // ✅ Délégation (plus fiable)
       document.addEventListener('click', (e) => {
         const btn = e.target.closest('.js-edit-patient');
         if (!btn) return;
@@ -454,30 +416,6 @@
       editModalEl?.addEventListener('hidden.bs.modal', () => {
         currentUrl = null;
         setLoading();
-      });
-    })();
-
-    (function () {
-      const input = document.getElementById('patientSearchInput');
-      if (!input) return;
-
-      let timer = null;
-
-      input.addEventListener('input', function () {
-        clearTimeout(timer);
-
-        timer = setTimeout(() => {
-          const value = input.value.trim();
-          const url = new URL(window.location.href);
-
-          if (value !== '') {
-            url.searchParams.set('search', value);
-          } else {
-            url.searchParams.delete('search');
-          }
-
-          window.location.href = url.toString();
-        }, 300);
       });
     })();
   </script>

@@ -21,51 +21,42 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
 use Endroid\QrCode\Encoding\Encoding;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\ExpressionLanguage\Expression;
 
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/rendez/vous')]
 final class RendezVousController extends AbstractController
 {
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
    #[Route(name: 'app_rendez_vous_index', methods: ['GET', 'POST'])]
-public function index(
-    Request $request,
-    RendezVousRepository $rendezVousRepository,
-    EntityManagerInterface $em
-): Response {
-    $rv = new RendezVous();
-    $form = $this->createForm(RendezVousType::class, $rv);
-    $form->handleRequest($request);
+    public function index(
+        Request $request,
+        RendezVousRepository $rendezVousRepository,
+        EntityManagerInterface $em
+    ): Response {
+        $rv = new RendezVous();
+        $form = $this->createForm(RendezVousType::class, $rv);
+        $form->handleRequest($request);
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        $rv->setConsultation(null);
+        if ($form->isSubmitted() && $form->isValid()) {
 
-        if (!$rv->getStatut()) {
-            $rv->setStatut(StatutRendezVous::EN_ATTENTE);
-        }
+    // consultation non obligatoire à la création
+    $rv->setConsultation(null);
 
-        $em->persist($rv);
-        $em->flush();
-
-        return $this->redirectToRoute('app_rendez_vous_index');
+    // statut par défaut si vide
+    if (!$rv->getStatut()) {
+        $rv->setStatut(StatutRendezVous::EN_ATTENTE);
     }
 
-    $search = $request->query->get('search');
+    $em->persist($rv);
+    $em->flush();
 
-    return $this->render('rendez_vous/index.html.twig', [
-        'rendezVous' => $rendezVousRepository->findBySearchTerm($search),
-        'form' => $form->createView(),
-        'search' => $search,
-    ]);
+    return $this->redirectToRoute('app_rendez_vous_index');
 }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
+        return $this->render('rendez_vous/index.html.twig', [
+            'rendezVous' => $rendezVousRepository->findAll(),  
+            'form' => $form->createView(),
+        ]);
+    }
+
     #[Route('/{id}', name: 'app_rendez_vous_show', methods: ['GET'])]
     public function show(RendezVous $rendezVou): Response
     {
@@ -74,10 +65,6 @@ public function index(
         ]);
     }
 
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
-))]
     #[Route('/{id}/edit', name: 'app_rendez_vous_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, RendezVous $rendezVous, EntityManagerInterface $em): Response
     {
@@ -106,9 +93,6 @@ public function index(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
-))]
     #[Route('/{id}', name: 'app_rendez_vous_delete', methods: ['POST'])]
     public function delete(Request $request, RendezVous $rendezVou, EntityManagerInterface $entityManager): Response
     {
@@ -120,9 +104,6 @@ public function index(
         return $this->redirectToRoute('app_rendez_vous_index', [], Response::HTTP_SEE_OTHER);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/{id}/start-consultation', name: 'app_rendez_vous_start_consultation', methods: ['POST'])]
 public function startConsultation(
     Request $request,
@@ -155,9 +136,6 @@ public function startConsultation(
     return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
 }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/{id}/print', name: 'app_rendez_vous_print', methods: ['GET'])]
     public function print(RendezVous $rendezVous): Response
     {
@@ -183,9 +161,6 @@ public function startConsultation(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/{id}/print/pdf', name: 'app_rendez_vous_print_pdf', methods: ['GET'])]
     public function printPdf(RendezVous $rendezVous): Response
     {

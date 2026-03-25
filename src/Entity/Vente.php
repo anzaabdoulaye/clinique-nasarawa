@@ -39,14 +39,10 @@ class Vente
     )]
     private Collection $lignes;
 
-    #[ORM\OneToMany(mappedBy: 'vente', targetEntity: BonMatiere::class)]
-    private Collection $bonsMatiere;
-
     public function __construct()
     {
         $this->lignes = new ArrayCollection();
         $this->date = new \DateTimeImmutable();
-        $this->bonsMatiere = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -144,13 +140,5 @@ class Vente
     public function updateComputedTotal(): void
     {
         $this->recalcTotal();
-    }
-
-        /**
-     * @return Collection<int, BonMatiere>
-     */
-    public function getBonsMatiere(): Collection
-    {
-        return $this->bonsMatiere;
     }
 }

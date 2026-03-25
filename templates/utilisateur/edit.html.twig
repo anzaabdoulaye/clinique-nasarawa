@@ -1,15 +1,12 @@
 {# templates/service_medical/edit.html.twig #}
 {{ form_start(form, {
-  'action': path('app_utilisateur_edit', {id: utilisateur.id}),
-  'attr': {'id': 'UtilisateurEditForm'}
+  'action': path('app_service_medical_edit', {id: service_medical.id}),
+  'attr': {'id': 'ServiceMedicalEditForm'}
 }) }}
 
 <div class="row g-3">
   <div class="col-md-12">
-     <div class="col-md-6">{{ form_row(form.nom) }}</div>
-          <div class="col-md-6">{{ form_row(form.prenom) }}</div>
-
-          <div class="col-md-6">{{ form_row(form.username) }}</div>
+    {{ form_row(form.libelle) }}
   </div>
 </div>
 

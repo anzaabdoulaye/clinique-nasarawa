@@ -16,26 +16,28 @@ class RendezVousRepository extends ServiceEntityRepository
         parent::__construct($registry, RendezVous::class);
     }
 
-    public function findBySearchTerm(?string $term): array
-    {
-        $qb = $this->createQueryBuilder('r')
-            ->leftJoin('r.patient', 'p')
-            ->leftJoin('p.dossierMedical', 'd')
-            ->addSelect('p', 'd');
+    //    /**
+    //     * @return RendezVous[] Returns an array of RendezVous objects
+    //     */
+    //    public function findByExampleField($value): array
+    //    {
+    //        return $this->createQueryBuilder('r')
+    //            ->andWhere('r.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->orderBy('r.id', 'ASC')
+    //            ->setMaxResults(10)
+    //            ->getQuery()
+    //            ->getResult()
+    //        ;
+    //    }
 
-        if ($term && trim($term) !== '') {
-            $term = mb_strtolower(trim($term));
-
-            $qb->andWhere(
-                'LOWER(p.code) LIKE :term
-                 OR LOWER(p.telephone) LIKE :term
-                 OR LOWER(d.numeroDossier) LIKE :term'
-            )
-            ->setParameter('term', '%' . $term . '%');
-        }
-
-        return $qb->orderBy('r.id', 'DESC')
-                  ->getQuery()
-                  ->getResult();
-    }
+    //    public function findOneBySomeField($value): ?RendezVous
+    //    {
+    //        return $this->createQueryBuilder('r')
+    //            ->andWhere('r.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->getQuery()
+    //            ->getOneOrNullResult()
+    //        ;
+    //    }
 }

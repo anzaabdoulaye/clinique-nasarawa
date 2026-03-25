@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/utilisateur')]
 final class UtilisateurController extends AbstractController
@@ -152,7 +151,6 @@ public function param(
     /**
      * IMPORTANT: route statique AVANT les routes dynamiques + pas de conflit avec /{id}
      */
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/change-password', name: 'app_change_password', methods: ['GET', 'POST'])]
     public function changePassword(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
     {

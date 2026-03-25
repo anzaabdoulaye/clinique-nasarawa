@@ -22,7 +22,7 @@ class HospitalisationType extends AbstractType
             ->add('dossierMedical', EntityType::class, [
                 'label' => 'Dossier médical',
                 'class' => DossierMedical::class,
-               
+                'placeholder' => '— Sélectionner —',
                 'required' => true,
                 'choice_label' => function (DossierMedical $d) {
                     // ✅ si tu as getNumeroDossier()
@@ -31,15 +31,13 @@ class HospitalisationType extends AbstractType
                     }
                     return 'Dossier #' . $d->getId();
                 },
-                'attr' => [
-                    'class' => 'form-control select2-enable', 
-                    'placeholder' => '— Sélectionner —',
-                    ],
+                'attr' => ['class' => 'form-select'],
             ])
 
             ->add('medecinReferent', EntityType::class, [
                 'label' => 'Médecin référent',
                 'class' => Utilisateur::class,
+                'placeholder' => '— Sélectionner —',
                 'required' => true,
                 'choice_label' => function (Utilisateur $u) {
                     if (method_exists($u, 'getNomComplet') && $u->getNomComplet()) {
@@ -50,10 +48,7 @@ class HospitalisationType extends AbstractType
                     $full = trim($nom . ' ' . $prenom);
                     return $full !== '' ? $full : ('Utilisateur #' . $u->getId());
                 },
-                'attr' => [
-                    'class' => 'form-control select2-enable', 
-                    'placeholder' => '— Sélectionner —',
-                ],
+                'attr' => ['class' => 'form-select'],
             ])
 
             ->add('dateAdmission', DateTimeType::class, [
@@ -107,9 +102,7 @@ class HospitalisationType extends AbstractType
                 'placeholder' => '— (optionnel) —',
                 'required' => false,
                 'choice_label' => fn (ExamenClinique $e) => 'Examen clinique #' . $e->getId(),
-                'attr' => [
-                    'class' => 'form-control select2-enable' 
-                ],
+                'attr' => ['class' => 'form-select'],
             ])
 
             ->add('examenNeurologique', EntityType::class, [
@@ -118,9 +111,7 @@ class HospitalisationType extends AbstractType
                 'placeholder' => '— (optionnel) —',
                 'required' => false,
                 'choice_label' => fn (ExamenNeurologique $e) => 'Examen neuro #' . $e->getId(),
-                'attr' => [
-                    'class' => 'form-control select2-enable' 
-                ],
+                'attr' => ['class' => 'form-select'],
             ])
         ;
     }

@@ -17,17 +17,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Endroid\QrCode\Encoding\Encoding;
-use Symfony\Component\ExpressionLanguage\Expression;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/pharmacie')]
 final class PharmacieController extends AbstractController
 {
-
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PHARMACIE')"
-))]
     #[Route('/', name: 'app_pharmacie_index', methods: ['GET'])]
     public function index(
         MedicamentRepository $medicamentRepository,
@@ -99,9 +92,6 @@ final class PharmacieController extends AbstractController
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PHARMACIE')"
-))]
     #[Route('/vente/{id}/print', name: 'app_pharmacie_vente_print', methods: ['GET'])]
     public function printVente(Vente $vente): Response
     {
@@ -126,9 +116,6 @@ final class PharmacieController extends AbstractController
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PHARMACIE')"
-))]
     #[Route('/vente/{id}/pdf', name: 'app_pharmacie_vente_pdf', methods: ['GET'])]
     public function printVentePdf(Vente $vente): Response
     {

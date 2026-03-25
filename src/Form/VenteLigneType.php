@@ -45,7 +45,7 @@ class VenteLigneType extends AbstractType
                 },
                 'required' => false,
                 'placeholder' => '— Optionnel (choisir lot) —',
-                'attr' => ['class' => 'form-select lot-select select2-enable'],
+                'attr' => ['class' => 'form-select'],
             ])
             ->add('quantite', IntegerType::class, [
                 'attr' => [

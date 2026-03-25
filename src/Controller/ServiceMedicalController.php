@@ -114,6 +114,7 @@ final class ServiceMedicalController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'app_service_medical_delete', methods: ['POST'])]
+    //#[Route('/{id<\d+>}/edit', name: 'app_service_medical_edit', methods: ['GET','POST'])]
     public function delete(Request $request, ServiceMedical $serviceMedical, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$serviceMedical->getId(), $request->getPayload()->getString('_token'))) {

@@ -55,7 +55,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table align-middle">
+                <table class="table align-middle table-hover mb-0 datatable">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -85,8 +85,9 @@
                             <td>#{{ facture.consultation.id }}</td>
                             <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
                             <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</td>
+                            
+                            <td>{{ (facture.montantPaye ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>{{ (facture.resteAPayer ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
                             <td>
                                 {% if statut == 'brouillon' %}
                                     <span class="badge bg-secondary">Brouillon</span>
@@ -181,65 +182,11 @@
             function bindEncaissementForm() {
                 const form = modalContent.querySelector('form');
                 if (!form) return;
-                const montantInput = form.querySelector('input[name$="[montant]"]');
-                const submitBtn = form.querySelector('.js-submit-encaissement');
-                const errorBox = form.querySelector('.js-montant-error');
-                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || montantInput?.max || '0', 10);
-
-                function setMontantError(message) {
-                    if (!errorBox) return;
-
-                    errorBox.textContent = message;
-                    errorBox.classList.toggle('d-none', !message);
-                }
-
-                function validateMontant() {
-                    if (!montantInput) {
-                        return true;
-                    }
-
-                    const value = Number.parseInt(montantInput.value || '0', 10);
-
-                    if (!montantInput.value) {
-                        montantInput.setCustomValidity('');
-                        setMontantError('');
-                        if (submitBtn) submitBtn.disabled = false;
-                        return true;
-                    }
-
-                    if (Number.isNaN(value) || value < 1) {
-                        const message = 'Le montant du paiement doit être supérieur à zéro.';
-                        montantInput.setCustomValidity(message);
-                        setMontantError(message);
-                        if (submitBtn) submitBtn.disabled = true;
-                        return false;
-                    }
-
-                    if (value > maxAmount) {
-                        const message = 'Le montant saisi ne doit pas dépasser le reste à payer.';
-                        montantInput.setCustomValidity(message);
-                        setMontantError(message);
-                        if (submitBtn) submitBtn.disabled = true;
-                        return false;
-                    }
-
-                    montantInput.setCustomValidity('');
-                    setMontantError('');
-                    if (submitBtn) submitBtn.disabled = false;
-                    return true;
-                }
-
-                montantInput?.addEventListener('input', validateMontant);
-                validateMontant();
 
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
 
-                    if (!validateMontant()) {
-                        form.reportValidity();
-                        return;
-                    }
-
+                    const submitBtn = form.querySelector('.js-submit-encaissement');
                     if (submitBtn) submitBtn.disabled = true;
 
                     fetch(form.action, {

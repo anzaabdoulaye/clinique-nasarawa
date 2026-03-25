@@ -4,50 +4,16 @@
 
 {% block body %}
 <div class="container-fluid">
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div>
-                    <h3 class="mb-1 fw-semibold">
-                        <i class="fa fa-microscope me-2 text-primary"></i> Laboratoire
-                    </h3>
-                    <p class="text-muted mb-0 small">Examens de laboratoire payés, en cours et réalisés</p>
-                </div>
-
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <form method="get" action="{{ path('app_laboratoire_index') }}" class="app-search d-flex">
-                        <div class="position-relative">
-                            <input
-                                type="text"
-                                id="labSearchInput"
-                                name="search"
-                                class="form-control"
-                                placeholder="Code patient, N° dossier ou téléphone"
-                                autocomplete="off"
-                                value="{{ search|default('') }}"
-                                style="min-width: 360px;"
-                            >
-                            <span class="mdi mdi-magnify search-widget-icon"></span>
-                        </div>
-                        <button type="submit" class="btn btn-primary ms-2"> 
-                            <i class="fa fa-search me-1"></i> Rechercher 
-                        </button>
-
-                        {% if search is defined and search %}
-                            <a href="{{ path('app_laboratoire_index') }}" class="btn btn-light border ms-2">
-                                Réinitialiser
-                            </a>
-                        {% endif %}
-                    </form>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Laboratoire</h3>
+            <p class="text-muted mb-0">Examens de laboratoire payés, en cours et réalisés</p>
         </div>
     </div>
 
-    {# Section des compteurs (Cards) #}
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <div class="text-muted small">À traiter</div>
                     <div class="fs-3 fw-bold">{{ aTraiter|length }}</div>
@@ -56,7 +22,7 @@
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <div class="text-muted small">En cours</div>
                     <div class="fs-3 fw-bold">{{ enCours|length }}</div>
@@ -65,7 +31,7 @@
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <div class="text-muted small">Réalisés</div>
                     <div class="fs-3 fw-bold">{{ realises|length }}</div>
@@ -92,57 +58,27 @@
         </li>
     </ul>
 
-    <div class="tab-content border border-top-0 rounded-bottom p-3 bg-white">
+    <div class="tab-content border border-top-0 rounded-bottom p-3">
         <div class="tab-pane fade show active" id="pane-a-traiter">
             {% include 'laboratoire/_table.html.twig' with {
                 prestations: aTraiter,
-                emptyMessage: search ? 'Aucun résultat pour cette recherche dans les examens à traiter.' : 'Aucun examen payé en attente de prise en charge.'
+                emptyMessage: 'Aucun examen payé en attente de prise en charge.'
             } %}
         </div>
 
         <div class="tab-pane fade" id="pane-en-cours">
             {% include 'laboratoire/_table.html.twig' with {
                 prestations: enCours,
-                emptyMessage: search ? 'Aucun résultat pour cette recherche dans les examens en cours.' : 'Aucun examen en cours.'
+                emptyMessage: 'Aucun examen en cours.'
             } %}
         </div>
 
         <div class="tab-pane fade" id="pane-realises">
             {% include 'laboratoire/_table.html.twig' with {
                 prestations: realises,
-                emptyMessage: search ? 'Aucun résultat pour cette recherche dans les examens réalisés.' : 'Aucun examen réalisé.'
+                emptyMessage: 'Aucun examen réalisé.'
             } %}
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script>
-        (() => {
-            const input = document.getElementById('labSearchInput');
-            if (!input) return;
-
-            let timer = null;
-
-            input.addEventListener('input', function () {
-                clearTimeout(timer);
-
-                timer = setTimeout(() => {
-                    const value = input.value.trim();
-                    const url = new URL(window.location.href);
-
-                    if (value !== '') {
-                        url.searchParams.set('search', value);
-                    } else {
-                        url.searchParams.delete('search');
-                    }
-
-                    // On recharge la page avec le paramètre de recherche
-                    window.location.href = url.toString();
-                }, 800); // Délai un peu plus long pour laisser l'utilisateur taper
-            });
-        })();
-    </script>
 {% endblock %}
