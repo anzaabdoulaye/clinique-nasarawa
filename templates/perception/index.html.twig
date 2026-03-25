@@ -4,46 +4,12 @@
 
 {% block body %}
 <div class="container-fluid">
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div>
-                    <h3 class="mb-1 fw-semibold">
-                        <i class="fa fa-microscope me-2 text-primary"></i> Perception / Encaissement
-                    </h3>
-                    <p class="text-muted mb-0 small">Gestion des factures et des paiements patients</p>
-                </div>
-
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <form method="get" action="{{ path('app_perception_index') }}" class="app-search d-flex">
-                        <div class="position-relative">
-                            <input
-                                type="text"
-                                id="labSearchInput"
-                                name="search"
-                                class="form-control"
-                                placeholder="Code patient, N° dossier ou téléphone"
-                                autocomplete="off"
-                                value="{{ search|default('') }}"
-                                style="min-width: 360px;"
-                            >
-                            <span class="mdi mdi-magnify search-widget-icon"></span>
-                        </div>
-                        <button type="submit" class="btn btn-primary ms-2"> 
-                            <i class="fa fa-search me-1"></i> Rechercher 
-                        </button>
-
-                        {% if search is defined and search %}
-                            <a href="{{ path('app_perception_index') }}" class="btn btn-light border ms-2">
-                                Réinitialiser
-                            </a>
-                        {% endif %}
-                    </form>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Perception / Encaissement</h3>
+            <p class="text-muted mb-0">Gestion des factures et des paiements patients</p>
         </div>
     </div>
-
 
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-6 col-xl-3">
@@ -89,97 +55,78 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-            <tr class="text-nowrap">
-                <th class="text-uppercase small text-muted">#</th>
-                <th class="text-uppercase small text-muted">Dossier / Patient</th>
-                <th class="text-uppercase small text-muted">Montant Total</th>
-                <th class="text-uppercase small text-muted">Reste à Payer</th>
-                <th class="text-uppercase small text-muted">Date Facture</th>
-                <th class="text-uppercase small text-muted">Statut</th>
-                <th class="text-uppercase small text-muted text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for facture in factures %}
-            {% set consultation = facture.consultation %}
-            {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-            {% set patient = rdv ? rdv.patient|default(null) : null %}
-            {% set dossier = patient and patient.dossierMedical ? patient.dossierMedical : null %}
-            {% set statut = facture.statutPaiement.value %}
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Patient</th>
+                            <th>Consultation</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Payé</th>
+                            <th>Reste</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for facture in factures %}
+                        {% set patient = facture.consultation and facture.consultation.rendezVous ? facture.consultation.rendezVous.patient|default(null) : null %}
+                        {% set statut = facture.statut.value %}
+                        <tr>
+                            <td>{{ facture.id }}</td>
+                            <td>
+                                {% if patient %}
+                                    {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>#{{ facture.consultation.id }}</td>
+                            <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
+                            <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>{{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>{{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>
+                                {% if statut == 'brouillon' %}
+                                    <span class="badge bg-secondary">Brouillon</span>
+                                {% elseif statut == 'non_paye' %}
+                                    <span class="badge bg-warning text-dark">Non payé</span>
+                                {% elseif statut == 'partiellement_paye' %}
+                                    <span class="badge bg-info text-dark">Partiellement payé</span>
+                                {% elseif statut == 'paye' %}
+                                    <span class="badge bg-success">Payé</span>
+                                {% elseif statut == 'annule' %}
+                                    <span class="badge bg-danger">Annulé</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ statut }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ path('app_perception_facture_show', {id: facture.id}) }}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Voir
+                                </a>
 
-            <tr>
-                <td class="text-nowrap">{{ facture.id }}</td>
-
-                <td style="min-width: 260px;">
-                    {% if patient %}
-                        <div class="fw-semibold text-primary">
-                            {{ patient.nom|upper }} {{ patient.prenom }}
-                        </div>
-                        <div class="text-muted small d-flex align-items-center gap-2">
-                            <span><i class="fa fa-folder-open me-1"></i> {{ dossier ? dossier.numeroDossier : 'N/A' }}</span>
-                            <span class="text-secondary">|</span>
-                            <span><i class="fa fa-id-card me-1"></i> {{ patient.code }}</span>
-                        </div>
+                                {% if facture.resteAPayer > 0 and statut != 'annule' %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-success js-open-encaissement"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#encaissementModal"
+                                            data-url="{{ path('app_perception_facture_encaisser', {id: facture.id}) }}">
+                                        Encaisser
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
                     {% else %}
-                        <span class="text-muted small">Patient non défini</span>
-                    {% endif %}
-                </td>
-
-                <td class="fw-bold">{{ facture.montantTotal|number_format(0, ',', ' ') }} F</td>
-                
-                <td class="text-danger fw-bold">
-                    {{ facture.resteAPayer|number_format(0, ',', ' ') }} F
-                </td>
-
-                <td class="text-nowrap">
-                    <div class="small">{{ facture.createdAt|date('d/m/Y') }}</div>
-                    <div class="text-muted style-italic small">{{ facture.createdAt|date('H:i') }}</div>
-                </td>
-
-                <td>
-                    {% if statut == 'payee' %}
-                        <span class="badge rounded-pill bg-success-subtle text-success px-3">
-                             <i class="fa fa-check-circle me-1"></i> Payée
-                        </span>
-                    {% elseif statut == 'partiel' %}
-                        <span class="badge rounded-pill bg-warning-subtle text-warning px-3">
-                            <i class="fa fa-hourglass-half me-1"></i> Partiel
-                        </span>
-                    {% else %}
-                        <span class="badge rounded-pill bg-danger-subtle text-danger px-3">
-                            <i class="fa fa-exclamation-circle me-1"></i> Non payée
-                        </span>
-                    {% endif %}
-                </td>
-
-                <td class="text-end">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" 
-                                class="btn btn-primary js-open-encaissement" 
-                                data-url="{{ path('app_perception_new_paiement', {id: facture.id}) }}"
-                                title="Encaisser">
-                            <i class="fa fa-cash-register"></i>
-                        </button>
-                        <a href="{{ path('app_facture_print', {id: facture.id}) }}" 
-                           class="btn btn-outline-dark" target="_blank" title="Imprimer">
-                            <i class="fa fa-print"></i>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
-                    <i class="fa fa-info-circle fa-2x mb-3"></i>
-                    <p>Aucune facture trouvée pour cette recherche.</p>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">Aucune facture trouvée.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -234,11 +181,65 @@
             function bindEncaissementForm() {
                 const form = modalContent.querySelector('form');
                 if (!form) return;
+                const montantInput = form.querySelector('input[name$="[montant]"]');
+                const submitBtn = form.querySelector('.js-submit-encaissement');
+                const errorBox = form.querySelector('.js-montant-error');
+                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || montantInput?.max || '0', 10);
+
+                function setMontantError(message) {
+                    if (!errorBox) return;
+
+                    errorBox.textContent = message;
+                    errorBox.classList.toggle('d-none', !message);
+                }
+
+                function validateMontant() {
+                    if (!montantInput) {
+                        return true;
+                    }
+
+                    const value = Number.parseInt(montantInput.value || '0', 10);
+
+                    if (!montantInput.value) {
+                        montantInput.setCustomValidity('');
+                        setMontantError('');
+                        if (submitBtn) submitBtn.disabled = false;
+                        return true;
+                    }
+
+                    if (Number.isNaN(value) || value < 1) {
+                        const message = 'Le montant du paiement doit être supérieur à zéro.';
+                        montantInput.setCustomValidity(message);
+                        setMontantError(message);
+                        if (submitBtn) submitBtn.disabled = true;
+                        return false;
+                    }
+
+                    if (value > maxAmount) {
+                        const message = 'Le montant saisi ne doit pas dépasser le reste à payer.';
+                        montantInput.setCustomValidity(message);
+                        setMontantError(message);
+                        if (submitBtn) submitBtn.disabled = true;
+                        return false;
+                    }
+
+                    montantInput.setCustomValidity('');
+                    setMontantError('');
+                    if (submitBtn) submitBtn.disabled = false;
+                    return true;
+                }
+
+                montantInput?.addEventListener('input', validateMontant);
+                validateMontant();
 
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
 
-                    const submitBtn = form.querySelector('.js-submit-encaissement');
+                    if (!validateMontant()) {
+                        form.reportValidity();
+                        return;
+                    }
+
                     if (submitBtn) submitBtn.disabled = true;
 
                     fetch(form.action, {
@@ -288,20 +289,6 @@
 
                 openEncaissementModal(url);
             });
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('perceptionSearchInput');
-            if (searchInput) {
-                let timeout = null;
-                searchInput.addEventListener('input', function() {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => {
-                        this.closest('form').submit();
-                    }, 800); // Lance la recherche après 0.8s d'arrêt de frappe
-                });
-            }
         });
     </script>
 {% endblock %}

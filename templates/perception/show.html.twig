@@ -194,11 +194,65 @@
             function bindEncaissementForm() {
                 const form = modalContent.querySelector('form');
                 if (!form) return;
+                const montantInput = form.querySelector('input[name$="[montant]"]');
+                const submitBtn = form.querySelector('.js-submit-encaissement');
+                const errorBox = form.querySelector('.js-montant-error');
+                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || montantInput?.max || '0', 10);
+
+                function setMontantError(message) {
+                    if (!errorBox) return;
+
+                    errorBox.textContent = message;
+                    errorBox.classList.toggle('d-none', !message);
+                }
+
+                function validateMontant() {
+                    if (!montantInput) {
+                        return true;
+                    }
+
+                    const value = Number.parseInt(montantInput.value || '0', 10);
+
+                    if (!montantInput.value) {
+                        montantInput.setCustomValidity('');
+                        setMontantError('');
+                        if (submitBtn) submitBtn.disabled = false;
+                        return true;
+                    }
+
+                    if (Number.isNaN(value) || value < 1) {
+                        const message = 'Le montant du paiement doit être supérieur à zéro.';
+                        montantInput.setCustomValidity(message);
+                        setMontantError(message);
+                        if (submitBtn) submitBtn.disabled = true;
+                        return false;
+                    }
+
+                    if (value > maxAmount) {
+                        const message = 'Le montant saisi ne doit pas dépasser le reste à payer.';
+                        montantInput.setCustomValidity(message);
+                        setMontantError(message);
+                        if (submitBtn) submitBtn.disabled = true;
+                        return false;
+                    }
+
+                    montantInput.setCustomValidity('');
+                    setMontantError('');
+                    if (submitBtn) submitBtn.disabled = false;
+                    return true;
+                }
+
+                montantInput?.addEventListener('input', validateMontant);
+                validateMontant();
 
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
 
-                    const submitBtn = form.querySelector('.js-submit-encaissement');
+                    if (!validateMontant()) {
+                        form.reportValidity();
+                        return;
+                    }
+
                     if (submitBtn) submitBtn.disabled = true;
 
                     fetch(form.action, {

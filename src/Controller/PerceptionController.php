@@ -8,6 +8,7 @@ use App\Repository\FactureRepository;
 use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Endroid\QrCode\QrCode;
@@ -114,9 +115,18 @@ public function index(Request $request, FactureRepository $factureRepository): R
         $form = $this->createForm(EncaissementType::class, null, [
             'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
             'method' => 'POST',
+            'max_amount' => $facture->getResteAPayer(),
         ]);
 
         $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+
+            if ((int) $data['montant'] > $facture->getResteAPayer()) {
+                $form->get('montant')->addError(new FormError('Le montant saisi ne doit pas dépasser le reste à payer.'));
+            }
+        }
 
         if ($request->isXmlHttpRequest()) {
             if ($form->isSubmitted() && $form->isValid()) {
