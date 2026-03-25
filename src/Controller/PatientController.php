@@ -10,46 +10,34 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\ExpressionLanguage\Expression;
 
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/patient')]
 final class PatientController extends AbstractController
 {
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
-    #[Route(name: 'app_patient_index', methods: ['GET', 'POST'])]
-public function index(
-    Request $request,
-    PatientRepository $patientRepository,
-    EntityManagerInterface $em
-): Response {
-    $patient = new Patient();
+     #[Route(name: 'app_patient_index', methods: ['GET', 'POST'])]
+    public function index(
+        Request $request,
+        PatientRepository $patientRepository,
+        EntityManagerInterface $em
+    ): Response {
+        $patient = new Patient();
 
-    $form = $this->createForm(PatientType::class, $patient);
-    $form->handleRequest($request);
+        $form = $this->createForm(PatientType::class, $patient);
+        $form->handleRequest($request);
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        $em->persist($patient);
-        $em->flush();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($patient);
+            $em->flush();
 
-        return $this->redirectToRoute('app_patient_index');
+            return $this->redirectToRoute('app_patient_index');
+        }
+
+        return $this->render('patient/index.html.twig', [
+            'patients' => $patientRepository->findAll(),
+            'form' => $form->createView(),
+        ]);
     }
 
-    $search = $request->query->get('search');
-
-    return $this->render('patient/index.html.twig', [
-        'patients' => $patientRepository->findBySearchTerm($search),
-        'form' => $form->createView(),
-        'search' => $search,
-    ]);
-}
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/new', name: 'app_patient_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -70,9 +58,6 @@ public function index(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
     #[Route('/{id}', name: 'app_patient_show', methods: ['GET'])]
     public function show(Patient $patient): Response
     {
@@ -81,9 +66,6 @@ public function index(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
    #[Route('/{id}/edit', name: 'app_patient_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Patient $patient, EntityManagerInterface $entityManager): Response
     {
@@ -123,7 +105,6 @@ public function index(
         ]);
     }
 
-    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_patient_delete', methods: ['POST'])]
     public function delete(Request $request, Patient $patient, EntityManagerInterface $entityManager): Response
     {

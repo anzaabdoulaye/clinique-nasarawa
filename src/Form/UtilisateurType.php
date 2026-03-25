@@ -89,12 +89,7 @@ final class UtilisateurType extends AbstractType
                     'Admin' => 'ROLE_ADMIN',
                     'Médecin' => 'ROLE_MEDECIN',
                     'Infirmier(ère)' => 'ROLE_INFIRMIER',
-                    'Perception / Caisse' => 'ROLE_PERCEPTION',
-                    'Laboratoire' => 'ROLE_LABO',
-                    'Pharmacie' => 'ROLE_PHARMACIE',
-                    'Hospitalisation' => 'ROLE_HOSPITALISATION',
-                    'Comptabilité matière' => 'ROLE_COMPTA_MATIERE',
-                    'Accueil' => 'ROLE_ACCUEIL',
+                    'Réception' => 'ROLE_RECEPTION',
                     'RH' => 'ROLE_RH',
                 ],
                 'multiple' => true,
@@ -108,12 +103,11 @@ final class UtilisateurType extends AbstractType
                 'class' => ServiceMedical::class,
                 'choice_label' => 'libelle', 
                 'label' => 'Service médical',
-                
+                'placeholder' => 'Choisir...',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-select select2-enable',
-                    'placeholder' => 'Choisir...',
-                    ],
+                    'class' => 'form-select',
+                ],
             ])
         ;
     }

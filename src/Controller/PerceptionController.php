@@ -8,7 +8,6 @@ use App\Repository\FactureRepository;
 use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Endroid\QrCode\QrCode;
@@ -20,80 +19,56 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
-use Symfony\Component\ExpressionLanguage\Expression;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/perception')]
 final class PerceptionController extends AbstractController
 {
+    #[Route('', name: 'app_perception_index', methods: ['GET'])]
+    public function index(FactureRepository $factureRepository): Response
+    {
+        $factures = $factureRepository->createQueryBuilder('f')
+            ->leftJoin('f.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('f.paiements', 'pa')->addSelect('pa')
+            ->orderBy('f.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
 
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
-))]
-#[Route('', name: 'app_perception_index', methods: ['GET'])]
-public function index(Request $request, FactureRepository $factureRepository): Response
-{
-    $search = trim((string) $request->query->get('search', ''));
+        $nbNonPayees = 0;
+        $nbPartielles = 0;
+        $nbPayees = 0;
+        $totalEncaisseJour = 0;
 
-    $qb = $factureRepository->createQueryBuilder('f')
-        ->leftJoin('f.consultation', 'c')->addSelect('c')
-        ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-        ->leftJoin('r.patient', 'p')->addSelect('p')
-        ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
-        ->leftJoin('f.paiements', 'pa')->addSelect('pa');
+        $today = (new \DateTimeImmutable())->format('Y-m-d');
 
-    if ($search !== '') {
-        $qb->andWhere(
-            'LOWER(p.code) LIKE :search
-             OR LOWER(p.telephone) LIKE :search
-             OR LOWER(dm.numeroDossier) LIKE :search'
-        )
-        ->setParameter('search', '%' . mb_strtolower($search) . '%');
-    }
+        foreach ($factures as $facture) {
+            $statut = $facture->getStatut()->value;
 
-    $factures = $qb->orderBy('f.createdAt', 'DESC')
-        ->getQuery()
-        ->getResult();
+            if ($statut === 'non_paye') {
+                $nbNonPayees++;
+            } elseif ($statut === 'partiellement_paye') {
+                $nbPartielles++;
+            } elseif ($statut === 'paye') {
+                $nbPayees++;
+            }
 
-    $nbNonPayees = 0;
-    $nbPartielles = 0;
-    $nbPayees = 0;
-    $totalEncaisseJour = 0;
-
-    $today = (new \DateTimeImmutable())->format('Y-m-d');
-
-    foreach ($factures as $facture) {
-        $statut = $facture->getStatut()->value;
-
-        if ($statut === 'non_paye') {
-            $nbNonPayees++;
-        } elseif ($statut === 'partiellement_paye') {
-            $nbPartielles++;
-        } elseif ($statut === 'paye') {
-            $nbPayees++;
-        }
-
-        foreach ($facture->getPaiements() as $paiement) {
-            if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
-                $totalEncaisseJour += $paiement->getMontant();
+            foreach ($facture->getPaiements() as $paiement) {
+                if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
+                    $totalEncaisseJour += $paiement->getMontant();
+                }
             }
         }
+
+        return $this->render('perception/index.html.twig', [
+            'factures' => $factures,
+            'nbNonPayees' => $nbNonPayees,
+            'nbPartielles' => $nbPartielles,
+            'nbPayees' => $nbPayees,
+            'totalEncaisseJour' => $totalEncaisseJour,
+        ]);
     }
 
-    return $this->render('perception/index.html.twig', [
-        'factures' => $factures,
-        'nbNonPayees' => $nbNonPayees,
-        'nbPartielles' => $nbPartielles,
-        'nbPayees' => $nbPayees,
-        'totalEncaisseJour' => $totalEncaisseJour,
-        'search' => $search,
-    ]);
-}
-
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
-))]
     #[Route('/facture/{id}', name: 'app_perception_facture_show', methods: ['GET'])]
     public function show(Facture $facture): Response
     {
@@ -102,9 +77,6 @@ public function index(Request $request, FactureRepository $factureRepository): R
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
-))]
     #[Route('/facture/{id}/encaisser', name: 'app_perception_facture_encaisser', methods: ['GET', 'POST'])]
     public function encaisser(
         Request $request,
@@ -115,18 +87,9 @@ public function index(Request $request, FactureRepository $factureRepository): R
         $form = $this->createForm(EncaissementType::class, null, [
             'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
             'method' => 'POST',
-            'max_amount' => $facture->getResteAPayer(),
         ]);
 
         $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
-
-            if ((int) $data['montant'] > $facture->getResteAPayer()) {
-                $form->get('montant')->addError(new FormError('Le montant saisi ne doit pas dépasser le reste à payer.'));
-            }
-        }
 
         if ($request->isXmlHttpRequest()) {
             if ($form->isSubmitted() && $form->isValid()) {
@@ -176,10 +139,6 @@ public function index(Request $request, FactureRepository $factureRepository): R
             'facture' => $facture,
         ]);
     }
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
-))]
     #[Route('/facture/{id}/print', name: 'app_perception_facture_print', methods: ['GET'])]
     public function print(Facture $facture): Response
     {
@@ -206,9 +165,6 @@ public function index(Request $request, FactureRepository $factureRepository): R
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
-))]
     #[Route('/facture/{id}/pdf', name: 'app_perception_facture_pdf', methods: ['GET'])]
     public function printPdf(Facture $facture): Response
     {

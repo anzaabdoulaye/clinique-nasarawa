@@ -87,10 +87,9 @@ class Facture
         return $this->montantTotal ?? 0;
     }
 
-   public function setMontantTotal(int $montantTotal): static
+    public function setMontantTotal(int $montantTotal): static
     {
         $this->montantTotal = max(0, $montantTotal);
-        $this->recalculerMontants(); 
         return $this;
     }
 
@@ -191,8 +190,8 @@ class Facture
         if (!$this->paiements->contains($paiement)) {
             $this->paiements->add($paiement);
             $paiement->setFacture($this);
-            $this->recalculerMontants(); 
         }
+
         return $this;
     }
 
@@ -207,39 +206,42 @@ class Facture
         return $this;
     }
 
+    public function recalculerMontants(): void
+    {
+        $montantTotal = 0;
+        foreach ($this->lignes as $ligne) {
+            $montantTotal += $ligne->getTotal();
+        }
 
-public function recalculerMontants(): void
-{
-    $sommeLignes = 0;
-    foreach ($this->lignes as $ligne) {
-        $sommeLignes += $ligne->getTotal();
-    }
+        $montantPaye = 0;
+        foreach ($this->paiements as $paiement) {
+            $montantPaye += $paiement->getMontant();
+        }
 
-    if ($this->montantTotal <= 0) {
-        $this->montantTotal = $sommeLignes;
-    }
+        $this->montantTotal = $montantTotal;
+        $this->montantPaye = $montantPaye;
+        $this->resteAPayer = max(0, $montantTotal - $montantPaye);
 
-    $montantPaye = 0;
-    foreach ($this->paiements as $paiement) {
-        $montantPaye += $paiement->getMontant();
-    }
+        if ($this->montantTotal === 0) {
+            $this->statut = StatutFacture::BROUILLON;
+            $this->datePaiement = null;
+            return;
+        }
 
-    $this->montantPaye = $montantPaye;
-    $this->resteAPayer = max(0, $this->montantTotal - $montantPaye);
+        if ($this->montantPaye <= 0) {
+            $this->statut = StatutFacture::NON_PAYE;
+            $this->datePaiement = null;
+            return;
+        }
 
-    
-    if ($this->montantTotal === 0) {
-        $this->statut = StatutFacture::BROUILLON;
-        return;
-    }
+        if ($this->montantPaye < $this->montantTotal) {
+            $this->statut = StatutFacture::PARTIELLEMENT_PAYE;
+            $this->datePaiement = null;
+            return;
+        }
 
-    if ($this->montantPaye <= 0) {
-        $this->statut = StatutFacture::NON_PAYE;
-    } elseif ($this->montantPaye < $this->montantTotal) {
-        $this->statut = StatutFacture::PARTIELLEMENT_PAYE;
-    } else {
         $this->statut = StatutFacture::PAYE;
         $this->datePaiement = new \DateTimeImmutable();
+        $this->resteAPayer = 0;
     }
-}
 }

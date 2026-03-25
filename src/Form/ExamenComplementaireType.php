@@ -22,9 +22,6 @@ class ExamenComplementaireType extends AbstractType
             ->add('hospitalisation', EntityType::class, [
                 'class' => Hospitalisation::class,
                 'choice_label' => 'id',
-                'attr' => [
-                    'class' => 'form-control select2-enable' 
-                ],
             ])
         ;
     }

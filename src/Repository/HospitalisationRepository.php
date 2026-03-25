@@ -16,26 +16,28 @@ class HospitalisationRepository extends ServiceEntityRepository
         parent::__construct($registry, Hospitalisation::class);
     }
 
-    public function findBySearchTerm(?string $term): array
-    {
-        $qb = $this->createQueryBuilder('h')
-            ->leftJoin('h.dossierMedical', 'd')
-            ->leftJoin('d.patient', 'p')
-            ->addSelect('d', 'p');
+    //    /**
+    //     * @return Hospitalisation[] Returns an array of Hospitalisation objects
+    //     */
+    //    public function findByExampleField($value): array
+    //    {
+    //        return $this->createQueryBuilder('h')
+    //            ->andWhere('h.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->orderBy('h.id', 'ASC')
+    //            ->setMaxResults(10)
+    //            ->getQuery()
+    //            ->getResult()
+    //        ;
+    //    }
 
-        if ($term && trim($term) !== '') {
-            $term = mb_strtolower(trim($term));
-
-            $qb->andWhere(
-                'LOWER(d.numeroDossier) LIKE :term
-                 OR LOWER(p.code) LIKE :term
-                 OR LOWER(p.telephone) LIKE :term'
-            )
-            ->setParameter('term', '%' . $term . '%');
-        }
-
-        return $qb->orderBy('h.id', 'DESC')
-                  ->getQuery()
-                  ->getResult();
-    }
+    //    public function findOneBySomeField($value): ?Hospitalisation
+    //    {
+    //        return $this->createQueryBuilder('h')
+    //            ->andWhere('h.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->getQuery()
+    //            ->getOneOrNullResult()
+    //        ;
+    //    }
 }

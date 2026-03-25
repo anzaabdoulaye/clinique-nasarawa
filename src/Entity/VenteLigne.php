@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\VenteLigneRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VenteLigneRepository::class)]
@@ -33,14 +31,6 @@ class VenteLigne
     #[ORM\Column]
     private float $prixUnitaire = 0.0;
 
-    #[ORM\OneToMany(mappedBy: 'venteLigne', targetEntity: BonMatiereLigne::class)]
-    private Collection $bonsMatiereLignes;
-
-    public function __construct()
-    {
-        $this->bonsMatiereLignes = new ArrayCollection();
-    }
-
     public function getId(): ?int { return $this->id; }
 
     public function getVente(): Vente { return $this->vente; }
@@ -59,12 +49,4 @@ class VenteLigne
     public function setPrixUnitaire(float $prixUnitaire): self { $this->prixUnitaire = $prixUnitaire; return $this; }
 
     public function getSousTotal(): float { return $this->prixUnitaire * $this->quantite; }
-
-        /**
-     * @return Collection<int, BonMatiereLigne>
-     */
-    public function getBonsMatiereLignes(): Collection
-    {
-        return $this->bonsMatiereLignes;
-    }
 }

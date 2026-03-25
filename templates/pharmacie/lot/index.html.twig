@@ -130,12 +130,6 @@
                                                 Éditer
                                             </a>
 
-                                             <a href="{{ path('app_lot_reapprovisionner', {'id': lot.id}) }}"
-                                            class="btn btn-sm btn-success rounded-pill px-3">
-                                                <i class="ri-add-circle-line me-1"></i>
-                                                Réapprovisionner
-                                            </a>
-
                                             <form method="post"
                                                   action="{{ path('app_lot_delete', {id: lot.id}) }}"
                                                   onsubmit="return confirm('Supprimer ce lot ?');"

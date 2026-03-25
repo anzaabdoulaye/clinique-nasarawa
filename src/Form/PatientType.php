@@ -38,7 +38,9 @@ class PatientType extends AbstractType
                 'label' => 'Date de naissance',
                 'widget' => 'single_text',
                 'required' => false,
-                
+                'attr' => [
+                    'class' => 'form-control',
+                ],
             ])
             ->add('sexe', ChoiceType::class, [
                 'label' => 'Sexe',
@@ -49,9 +51,8 @@ class PatientType extends AbstractType
                 'placeholder' => '— Choisir —',
                 'required' => true,
                 'attr' => [
-                    'class' => 'form-control' 
+                    'class' => 'form-select',
                 ],
-                
             ])
             ->add('telephone', TelType::class, [
                 'label' => 'Téléphone',
@@ -85,8 +86,8 @@ class PatientType extends AbstractType
             ->add('emergencyContactRelation', TextType::class, [
                 'label' => 'Relation',
                 'required' => false,
-                    'attr' => [
-                        'class' => 'form-control',
+                'attr' => [
+                    'class' => 'form-control',
                     'placeholder' => 'Ex: Père / Mère / Frère / Conjoint…',
                 ],
             ])
@@ -94,7 +95,7 @@ class PatientType extends AbstractType
                 'label' => 'Téléphone du proche',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-control' ,
+                    'class' => 'form-control',
                     'placeholder' => 'Ex: +227 90 00 00 00',
                     'inputmode' => 'tel',
                 ],
@@ -103,7 +104,7 @@ class PatientType extends AbstractType
                 'label' => 'Adresse du proche',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-control ',
+                    'class' => 'form-control',
                     'placeholder' => 'Adresse du contact d’urgence',
                 ],
             ])
@@ -124,14 +125,14 @@ class PatientType extends AbstractType
                 'placeholder' => '— Choisir —',
                 'required' => false,
                 'attr' => [
-                        'class' => 'form-control' 
-                    ],
-                ])
+                    'class' => 'form-select',
+                ],
+            ])
             ->add('taille', TextType::class, [
                 'label' => 'Taille',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-control', 
+                    'class' => 'form-control',
                     'placeholder' => 'Ex: 1.72 (m)',
                     'inputmode' => 'decimal',
                 ],
@@ -140,7 +141,7 @@ class PatientType extends AbstractType
                 'label' => 'Poids',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-control ',
+                    'class' => 'form-control',
                     'placeholder' => 'Ex: 70 (kg)',
                     'inputmode' => 'decimal',
                 ],
@@ -207,7 +208,7 @@ class PatientType extends AbstractType
                 'placeholder' => '— Indifférent —',
                 'required' => false,
                 'attr' => [
-                    'class' => 'form-control' 
+                    'class' => 'form-select',
                 ],
             ])
 

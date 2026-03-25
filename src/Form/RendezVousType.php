@@ -48,7 +48,7 @@ class RendezVousType extends AbstractType
             ->add('patient', EntityType::class, [
                 'label' => 'Patient',
                 'class' => Patient::class,
-                
+                'placeholder' => '— Sélectionner un patient —',
                 'required' => true,
                 'choice_label' => function (Patient $p) {
                     $nom = $p->getNom() ?? '';
@@ -57,15 +57,14 @@ class RendezVousType extends AbstractType
                     return ($full !== '' ? $full : 'Patient') . ' (#' . $p->getId() . ')';
                 },
                 'attr' => [
-                    'class' => 'form-select select2-enable',
-                    'placeholder' => '— Sélectionner un patient —',
+                    'class' => 'form-select',
                 ],
             ])
 
             ->add('medecin', EntityType::class, [
                 'label' => 'Médecin',
                 'class' => Utilisateur::class,
-                
+                'placeholder' => '— (optionnel) —',
                 'required' => false,
                 'choice_label' => function (Utilisateur $u) {
                     // ✅ si tu as getNomComplet()
@@ -78,8 +77,7 @@ class RendezVousType extends AbstractType
                     return $full !== '' ? $full : ('Utilisateur #' . $u->getId());
                 },
                 'attr' => [
-                    'class' => 'form-select select2-enable',
-                    'placeholder' => '— (optionnel) —',
+                    'class' => 'form-select',
                 ],
             ])
         ;

@@ -27,18 +27,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
-use Symfony\Component\ExpressionLanguage\Expression;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/consultation')]
 final class ConsultationController extends AbstractController
 {
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
-#[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
+    #[Route(name: 'app_consultation_index', methods: ['GET', 'POST'])]
 public function index(
     Request $request,
     ConsultationRepository $consultationRepository,
@@ -68,20 +61,20 @@ public function index(
         }
     }
 
-    $search = $request->query->get('search');
+    $q = trim((string) $request->query->get('q', ''));
 
-    $consultations = $consultationRepository->searchByDossierCodeOrTelephone($search);
+    if ($q !== '') {
+        $consultations = $consultationRepository->searchByDossierOrPatientCode($q);
+    } else {
+        $consultations = $consultationRepository->findBy([], ['createdAt' => 'DESC']);
+    }
 
     return $this->render('consultation/index.html.twig', [
         'consultations' => $consultations,
         'form' => $form->createView(),
-        'search' => $search,
     ]);
 }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
     #[Route('/{id}', name: 'app_consultation_show', methods: ['GET'])]
     public function show(Consultation $consultation, BonExamenRepository $bonRepo): Response
     {
@@ -93,9 +86,6 @@ public function index(
     }
 
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/consultation/{id}/prestation/new', name: 'app_prescription_prestation_new', methods: ['GET', 'POST'])]
 public function new(
     Request $request,
@@ -146,9 +136,6 @@ public function new(
     ]);
 }
 
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
 #[Route('/prestation/{id}/edit', name: 'app_prescription_prestation_edit', methods: ['GET', 'POST'])]
 public function edit(
     Request $request,
@@ -196,9 +183,6 @@ public function edit(
 
 
 
-   #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN')"
-))]
    #[Route('/{id}/medical', name: 'app_consultation_medical_edit', methods: ['GET', 'POST'])]
 public function editMedical(
     Request $request,
@@ -278,7 +262,6 @@ public function editMedical(
     ]);
 }
 
-   #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_consultation_delete', methods: ['POST'])]
     public function delete(Request $request, Consultation $consultation, EntityManagerInterface $entityManager): Response
     {
@@ -290,10 +273,6 @@ public function editMedical(
         return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
     }
 
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/consultation/{id}/facture', name: 'app_consultation_facture', methods: ['GET', 'POST'])]
     public function facture(Consultation $consultation, Request $request, BillingService $billing, EntityManagerInterface $em): Response
     {
@@ -321,9 +300,6 @@ public function editMedical(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/consultation/{id}/examens/bon', name: 'app_consultation_examens_bon', methods: ['GET'])]
     public function bonExamens(Consultation $consultation): Response
     {
@@ -339,11 +315,6 @@ public function editMedical(
         ]);
     }
 
-
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/consultation/{id}/labo/bon/new', name: 'app_consultation_labo_bon_new', methods: ['GET', 'POST'])]
     public function newBonFromConsultation(
         Consultation $consultation,
@@ -392,9 +363,6 @@ public function editMedical(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
-))]
     #[Route('/consultation/{id}/labo/bon/modal', name: 'app_consultation_labo_bon_modal', methods: ['GET', 'POST'])]
 public function laboBonModal(
     Consultation $consultation,
@@ -460,9 +428,6 @@ public function laboBonModal(
     ]);
 }
 
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
-))]
 #[Route('/{id}/edit-admin', name: 'app_consultation_admin_edit', methods: ['GET', 'POST'])]
 public function editAdmin(
     Request $request,
@@ -502,9 +467,6 @@ public function editAdmin(
     ]);
 }
 
-#[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
 #[Route('/{id}/fiche', name: 'app_consultation_print_fiche', methods: ['GET'])]
     public function printFiche(Consultation $consultation): Response
     {
