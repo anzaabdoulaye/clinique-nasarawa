@@ -30,25 +30,6 @@ class ConsultationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    //    /**
-    //     * @return Consultation[] Returns an array of Consultation objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-        return $qb->orderBy('c.createdAt', 'DESC')
-                  ->getQuery()
-                  ->getResult();
-    }
 
     public function searchVisibleForUser(?string $search, \App\Entity\Utilisateur $user): array
 {

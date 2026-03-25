@@ -27,6 +27,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
+use Symfony\Component\ExpressionLanguage\Expression;
 
 #[Route('/consultation')]
 final class ConsultationController extends AbstractController
@@ -69,7 +70,12 @@ public function index(
     /** @var Utilisateur $user */
     $user = $this->getUser();
 
-    $consultations = $consultationRepository->searchVisibleForUser($search, $user);
+    $search = $request->query->get('search');
+
+/** @var Utilisateur $user */
+$user = $this->getUser();
+
+$consultations = $consultationRepository->searchVisibleForUser($search, $user);
 
     return $this->render('consultation/index.html.twig', [
         'consultations' => $consultations,
