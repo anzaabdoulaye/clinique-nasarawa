@@ -103,17 +103,6 @@ final class UtilisateurType extends AbstractType
                     'class' => 'mt-1',
                 ],
             ])
-
-            ->add('serviceMedical', EntityType::class, [
-                'class' => ServiceMedical::class,
-                'choice_label' => 'libelle', 
-                'label' => 'Service médical',
-                'placeholder' => 'Choisir...',
-                'required' => false,
-                'attr' => [
-                    'class' => 'form-select',
-                ],
-            ])
         ;
     }
 

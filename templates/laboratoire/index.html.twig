@@ -3,82 +3,277 @@
 {% block title %}Laboratoire{% endblock %}
 
 {% block body %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="mb-1">Laboratoire</h3>
-            <p class="text-muted mb-0">Examens de laboratoire payés, en cours et réalisés</p>
+<div class="container-fluid py-4 labo-page">
+    <div class="labo-hero card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-4 p-lg-5">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <div class="d-inline-flex align-items-center gap-2 small text-uppercase fw-semibold text-primary mb-2">
+                        <i class="ri-flask-line fs-5"></i>
+                        <span>Module laboratoire</span>
+                    </div>
+                    <h2 class="fw-bold mb-2">Suivi des examens de laboratoire</h2>
+                    <p class="text-muted mb-0">
+                        Gérez les examens payés, les prises en charge en cours et les résultats déjà réalisés.
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill text-bg-light px-3 py-2 border">
+                        Total : {{ aTraiter|length + enCours|length + realises|length }}
+                    </span>
+                    <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                        Aujourd’hui
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <div class="text-muted small">À traiter</div>
-                    <div class="fs-3 fw-bold">{{ aTraiter|length }}</div>
+            <div class="card stat-card stat-warning border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-2">À traiter</div>
+                            <div class="display-6 fw-bold mb-1">{{ aTraiter|length }}</div>
+                            <div class="small text-muted">
+                                Examens payés en attente de prise en charge
+                            </div>
+                        </div>
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="ri-time-line"></i>
+                        </div>
+                    </div>
+
+                    <div class="progress mt-4" style="height: 8px;">
+                        {% set total = (aTraiter|length + enCours|length + realises|length) %}
+                        <div class="progress-bar bg-warning"
+                             role="progressbar"
+                             style="width: {{ total > 0 ? (aTraiter|length * 100 / total) : 0 }}%"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <div class="text-muted small">En cours</div>
-                    <div class="fs-3 fw-bold">{{ enCours|length }}</div>
+            <div class="card stat-card stat-primary border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-2">En cours</div>
+                            <div class="display-6 fw-bold mb-1">{{ enCours|length }}</div>
+                            <div class="small text-muted">
+                                Examens déjà pris en charge par le laboratoire
+                            </div>
+                        </div>
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="ri-loader-4-line"></i>
+                        </div>
+                    </div>
+
+                    <div class="progress mt-4" style="height: 8px;">
+                        {% set total = (aTraiter|length + enCours|length + realises|length) %}
+                        <div class="progress-bar bg-primary"
+                             role="progressbar"
+                             style="width: {{ total > 0 ? (enCours|length * 100 / total) : 0 }}%"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <div class="text-muted small">Réalisés</div>
-                    <div class="fs-3 fw-bold">{{ realises|length }}</div>
+            <div class="card stat-card stat-success border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-2">Réalisés</div>
+                            <div class="display-6 fw-bold mb-1">{{ realises|length }}</div>
+                            <div class="small text-muted">
+                                Examens terminés avec résultat disponible
+                            </div>
+                        </div>
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="ri-checkbox-circle-line"></i>
+                        </div>
+                    </div>
+
+                    <div class="progress mt-4" style="height: 8px;">
+                        {% set total = (aTraiter|length + enCours|length + realises|length) %}
+                        <div class="progress-bar bg-success"
+                             role="progressbar"
+                             style="width: {{ total > 0 ? (realises|length * 100 / total) : 0 }}%"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <ul class="nav nav-tabs" id="labTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-a-traiter" type="button">
-                À traiter
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-en-cours" type="button">
-                En cours
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-realises" type="button">
-                Réalisés
-            </button>
-        </li>
-    </ul>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <h5 class="mb-1 fw-bold">Liste des examens</h5>
+                    <p class="text-muted mb-0 small">
+                        Consultez les examens selon leur état d’avancement dans le circuit laboratoire.
+                    </p>
+                </div>
+            </div>
 
-    <div class="tab-content border border-top-0 rounded-bottom p-3">
-        <div class="tab-pane fade show active" id="pane-a-traiter">
-            {% include 'laboratoire/_table.html.twig' with {
-                prestations: aTraiter,
-                emptyMessage: 'Aucun examen payé en attente de prise en charge.'
-            } %}
+            <ul class="nav nav-pills lab-tabs mt-4" id="labTabs" role="tablist">
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link active d-flex align-items-center gap-2"
+                            id="a-traiter-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-a-traiter"
+                            type="button"
+                            role="tab">
+                        <i class="ri-time-line"></i>
+                        <span>À traiter</span>
+                        <span class="badge rounded-pill bg-white text-dark ms-1">{{ aTraiter|length }}</span>
+                    </button>
+                </li>
+
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link d-flex align-items-center gap-2"
+                            id="en-cours-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-en-cours"
+                            type="button"
+                            role="tab">
+                        <i class="ri-loader-4-line"></i>
+                        <span>En cours</span>
+                        <span class="badge rounded-pill bg-white text-dark ms-1">{{ enCours|length }}</span>
+                    </button>
+                </li>
+
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link d-flex align-items-center gap-2"
+                            id="realises-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-realises"
+                            type="button"
+                            role="tab">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span>Réalisés</span>
+                        <span class="badge rounded-pill bg-white text-dark ms-1">{{ realises|length }}</span>
+                    </button>
+                </li>
+            </ul>
         </div>
 
-        <div class="tab-pane fade" id="pane-en-cours">
-            {% include 'laboratoire/_table.html.twig' with {
-                prestations: enCours,
-                emptyMessage: 'Aucun examen en cours.'
-            } %}
-        </div>
+        <div class="card-body p-4 bg-light-subtle">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="pane-a-traiter" role="tabpanel" aria-labelledby="a-traiter-tab">
+                    <div class="tab-panel card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-3 p-lg-4">
+                            {% include 'laboratoire/_table.html.twig' with {
+                                prestations: aTraiter,
+                                emptyMessage: 'Aucun examen payé en attente de prise en charge.'
+                            } %}
+                        </div>
+                    </div>
+                </div>
 
-        <div class="tab-pane fade" id="pane-realises">
-            {% include 'laboratoire/_table.html.twig' with {
-                prestations: realises,
-                emptyMessage: 'Aucun examen réalisé.'
-            } %}
+                <div class="tab-pane fade" id="pane-en-cours" role="tabpanel" aria-labelledby="en-cours-tab">
+                    <div class="tab-panel card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-3 p-lg-4">
+                            {% include 'laboratoire/_table.html.twig' with {
+                                prestations: enCours,
+                                emptyMessage: 'Aucun examen en cours.'
+                            } %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="pane-realises" role="tabpanel" aria-labelledby="realises-tab">
+                    <div class="tab-panel card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-3 p-lg-4">
+                            {% include 'laboratoire/_table.html.twig' with {
+                                prestations: realises,
+                                emptyMessage: 'Aucun examen réalisé.'
+                            } %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .labo-page {
+        background: #f8fafc;
+        min-height: 100%;
+    }
+
+    .labo-hero {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .stat-card {
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+    }
+
+    .lab-tabs .nav-link {
+        border: 0;
+        border-radius: 999px;
+        padding: .75rem 1rem;
+        font-weight: 600;
+        color: #475569;
+        background: #f1f5f9;
+    }
+
+    .lab-tabs .nav-link:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    .lab-tabs .nav-link.active {
+        background: #0d6efd;
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.22);
+    }
+
+    .lab-tabs .nav-link.active .badge {
+        background: rgba(255,255,255,.95) !important;
+        color: #0f172a !important;
+    }
+
+    .tab-panel {
+        background: #fff;
+    }
+
+    .bg-light-subtle {
+        background-color: #f8fafc !important;
+    }
+
+    @media (max-width: 991.98px) {
+        .lab-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding-bottom: .25rem;
+        }
+
+        .lab-tabs .nav-item {
+            flex: 0 0 auto;
+        }
+    }
+</style>
 {% endblock %}

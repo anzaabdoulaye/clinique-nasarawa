@@ -39,13 +39,19 @@
                     Modifier le résultat
                 </button>
             {% else %}
-                <button type="button"
-                        class="btn btn-outline-dark js-open-resultat"
-                        data-bs-toggle="modal"
-                        data-bs-target="#resultatLaboratoireModal"
-                        data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
-                    Saisir le résultat
-                </button>
+                {% if statut == 'en_cours' %}
+                    <button type="button"
+                            class="btn btn-outline-dark js-open-resultat"
+                            data-bs-toggle="modal"
+                            data-bs-target="#resultatLaboratoireModal"
+                            data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
+                        {{ prestation.resultatLaboratoire ? 'Modifier le résultat' : 'Saisir le résultat' }}
+                    </button>
+                {% else %}
+                    <button class="btn btn-outline-dark" disabled>
+                        Saisir le résultat
+                    </button>
+                {% endif %}
             {% endif %}
             {% if prestation.resultatLaboratoire %}
                 <a href="{{ path('app_laboratoire_resultat_print', {id: prestation.id}) }}"
@@ -55,11 +61,18 @@
                 </a>
             {% endif %}
             {% if statut in ['paye', 'en_cours'] %}
-                <form method="post" action="{{ path('app_laboratoire_realiser', {id: prestation.id}) }}">
-                    <button type="submit" class="btn btn-success">
+               {% if prestation.resultatLaboratoire %}
+                    <form method="post" action="{{ path('app_laboratoire_realiser', {id: prestation.id}) }}">
+                        <button type="submit" class="btn btn-success">
+                            Marquer réalisé
+                        </button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-success" disabled
+                     title="Veuillez d'abord saisir le résultat" >
                         Marquer réalisé
                     </button>
-                </form>
+                {% endif %}
             {% endif %}
         </div>
     </div>
