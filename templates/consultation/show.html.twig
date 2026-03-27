@@ -67,7 +67,12 @@
             <a href="{{ path('app_consultation_index') }}" class="btn btn-outline-secondary">
                 <i class="fa fa-arrow-left me-1"></i> Retour
             </a>
-
+            {% if consultation.dossierMedical %}
+                <a href="{{ path('app_dossier_medical_show', {'id': consultation.dossierMedical.id}) }}"
+                class="btn btn-outline-info">
+                    <i class="fa fa-folder-open me-1"></i> Ouvrir le dossier
+                </a>
+            {% endif %}
             <button type="button"
                     class="btn btn-primary js-edit-consultation {{ locked ? 'disabled' : '' }}"
                     title="Saisie médicale"
@@ -77,14 +82,6 @@
                     {{ locked ? 'disabled' : '' }}>
                 <i class="fa fa-pen me-1"></i> Saisie médicale
             </button>
-
-     {#        <button type="button"
-                    class="btn btn-outline-primary js-open-prescription"
-                    data-bs-toggle="modal"
-                    data-bs-target="#prescriptionModal"
-                    data-url="{{ path('app_consultation_prescription_modal', {id: consultation.id}) }}">
-                <i class="ri-file-text-line me-1"></i> Prescription
-            </button> #}
 
             <a href="{{ path('app_consultation_print_fiche', {id: consultation.id}) }}"
             target="_blank"
@@ -126,9 +123,9 @@
                                 <th>Catégorie</th>
                                 <th>Quantité</th>
                                 <th>Instructions</th>
-                        
                                 <th>Résultat</th>
-                                <th class="text-end">Actions</th>
+                                <th>Action</th>
+                               
                             </tr>
                         </thead>
                         <tbody>
@@ -161,26 +158,38 @@
                                         -
                                     {% endif %}
                                 </td>
-                                <td class="text-end">
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-primary js-edit-prestation"
-                                            title="Modifier"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#prestationModal"
-                                            data-url="{{ path('app_prescription_prestation_edit', {id: p.id}) }}">
-                                        <i class="ri-pencil-line"></i>
-                                    </button>
+                               <td >
+    {% set locked = p.estVerrouilleePourEdition %}
 
-                                    <form method="post"
-                                          action="{{ path('app_prescription_prestation_delete', {id: p.id}) }}"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Supprimer cette prestation ?');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_prestation_' ~ p.id) }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                            <i class="ri-delete-bin-line"></i>
-                                        </button>
-                                    </form>
-                                </td>
+    {% if locked %}
+        <span class="badge bg-warning-subtle text-warning border">
+            {% if p.resultatLaboratoire %}
+                Résultat disponible
+            {% else %}
+                Prise en charge
+            {% endif %}
+        </span>
+    {% else %}
+        <button type="button"
+                class="btn btn-sm btn-outline-primary js-edit-prestation"
+                title="Modifier"
+                data-bs-toggle="modal"
+                data-bs-target="#prestationModal"
+                data-url="{{ path('app_prescription_prestation_edit', {id: p.id}) }}">
+            <i class="ri-pencil-line"></i>
+        </button>
+
+        <form method="post"
+              action="{{ path('app_prescription_prestation_delete', {id: p.id}) }}"
+              class="d-inline"
+              onsubmit="return confirm('Supprimer cette prestation ?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete_prestation_' ~ p.id) }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                <i class="ri-delete-bin-line"></i>
+            </button>
+        </form>
+    {% endif %}
+</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -303,8 +312,8 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Taille</div>
-                    <div class="fs-4 fw-semibold" id="consultation-poids">
-    {{ consultation.poids ?? '-' }} <span class="text-muted fs-6">kg</span>
+                    <div class="fs-4 fw-semibold" id="consultation-taille">
+    {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
 </div>
                 </div>
             </div>
@@ -314,8 +323,8 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small">Température</div>
-                    <div class="fs-4 fw-semibold" id="consultation-taille">
-    {{ consultation.taille ?? '-' }} <span class="text-muted fs-6">cm</span>
+                    <div class="fs-4 fw-semibold" id="consultation-temperature">
+    {{ consultation.temperature ?? '-' }} <span class="text-muted fs-6">°C</span>
 </div>
                 </div>
             </div>
@@ -372,7 +381,7 @@
 
                             <div>
                                 <div class="text-muted small">Histoire / Anamnèse</div>
-                                <div id="consultation-motifs">{{ consultation.motifs ?? '-' }}</div>
+                                <div id="consultation-histoire">{{ consultation.histoire ?? '-' }}</div>
                             </div>
                         </div>
                     </div>
@@ -618,9 +627,9 @@
                     });
 
                     const contentType = response.headers.get('content-type') || '';
-console.log('submit status=', response.status, 'contentType=', contentType);
-console.log('submit redirected =', response.redirected);
-console.log('submit final url =', response.url);
+                    console.log('submit status=', response.status, 'contentType=', contentType);
+                    console.log('submit redirected =', response.redirected);
+                    console.log('submit final url =', response.url);
 
                     if (contentType.includes('application/json')) {
                         const data = await response.json();
@@ -775,6 +784,21 @@ console.log('submit final url =', response.url);
         `;
     }
 
+    function initSelect2Prestation() {
+    const selects = prestationModalContent.querySelectorAll('.select2-prestation');
+
+    selects.forEach(select => {
+        $(select).select2({
+            dropdownParent: $('#prestationModal'), // 🔥 IMPORTANT pour modal
+            width: '100%',
+            placeholder: select.dataset.placeholder || 'Rechercher une prestation...',
+            allowClear: true
+        });
+    });
+
+    console.log('Select2 initialisé sur prestation');
+}
+
     function bindPrestationForm() {
         const form = prestationModalContent.querySelector('#prestationForm') || prestationModalContent.querySelector('form');
         console.log('bindPrestationForm =>', !!form);
@@ -829,6 +853,7 @@ console.log('submit final url =', response.url);
 
                 const html = await response.text();
                 prestationModalContent.innerHTML = html;
+                initSelect2Prestation(); // ✅ IMPORTANT
                 bindPrestationForm();
             } catch (error) {
                 console.error('Erreur soumission prestation:', error);
@@ -842,7 +867,9 @@ console.log('submit final url =', response.url);
         });
     }
 
+
     async function openPrestationModal(url) {
+        
         console.log('openPrestationModal =>', url);
         showLoading();
 
@@ -861,7 +888,9 @@ console.log('submit final url =', response.url);
                 return;
             }
 
-            prestationModalContent.innerHTML = html;
+           prestationModalContent.innerHTML = html;
+
+            initSelect2Prestation(); // ✅ AJOUT CRITIQUE
             bindPrestationForm();
         } catch (error) {
             console.error('Erreur chargement prestation:', error);
@@ -889,4 +918,6 @@ console.log('submit final url =', response.url);
     });
 })();
 </script>
+
+
 {% endblock %}

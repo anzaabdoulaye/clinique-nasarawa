@@ -1,6 +1,10 @@
 {{ form_start(form) }}
 
 <div class="row g-3">
+ <div class="col-12">
+        {{ form_errors(form) }}
+    </div>
+   <div class="row g-3">
     {% if form.medecin is defined %}
         <div class="col-md-6">
             {{ form_row(form.medecin) }}
@@ -12,6 +16,13 @@
             {{ form_row(form.dossierMedical) }}
         </div>
     {% endif %}
+
+    {% if form.rendezVous is defined %}
+        <div class="col-md-6">
+            {{ form_row(form.rendezVous) }}
+        </div>
+    {% endif %}
+</div>
 
     {% if form.rendezVous is defined %}
         <div class="col-md-6">

@@ -1,38 +1,262 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}DossierMedical{% endblock %}
+{% block title %}Dossier médical {{ dossier.numeroDossier }}{% endblock %}
 
 {% block body %}
-    <h1>DossierMedical</h1>
+<div class="container-fluid py-4">
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ dossier_medical.id }}</td>
-            </tr>
-            <tr>
-                <th>NumeroDossier</th>
-                <td>{{ dossier_medical.numeroDossier }}</td>
-            </tr>
-            <tr>
-                <th>Observations</th>
-                <td>{{ dossier_medical.observations }}</td>
-            </tr>
-            <tr>
-                <th>CreatedAt</th>
-                <td>{{ dossier_medical.createdAt ? dossier_medical.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-            <tr>
-                <th>ModifiedAt</th>
-                <td>{{ dossier_medical.modifiedAt ? dossier_medical.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h2 class="mb-1">
+                        {{ patient.nom }} {{ patient.prenom }}
+                    </h2>
+                    <div class="text-muted">
+                        Dossier : <strong>{{ dossier.numeroDossier }}</strong>
+                        {% if patient.code %}
+                            | Code patient : <strong>{{ patient.code }}</strong>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2 text-muted">
+                        Sexe : {{ patient.sexe ?? '-' }}
+                        {% if patient.dateNaissance %}
+                            | Né(e) le : {{ patient.dateNaissance|date('d/m/Y') }}
+                        {% endif %}
+                        | Téléphone : {{ patient.telephone ?? '-' }}
+                    </div>
+                    <div class="mt-1 text-muted">
+                        Adresse : {{ patient.adresse ?? '-' }}
+                    </div>
+                </div>
 
-    <a href="{{ path('app_dossier_medical_index') }}">back to list</a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ path('app_dossier_medical_edit', {'id': dossier.id}) }}"
+                       class="btn btn-outline-primary">
+                        Modifier le dossier
+                    </a>
 
-    <a href="{{ path('app_dossier_medical_edit', {'id': dossier_medical.id}) }}">edit</a>
+                    {% if dossier.patient and dossier.patient.dossierMedical %}
+                        <a href="{{ path('app_consultation_index', {'dossierId': dossier.id}) }}"
+                           class="btn btn-primary">
+                            Nouvelle consultation
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
-    {{ include('dossier_medical/_delete_form.html.twig') }}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Consultations</div>
+                    <div class="fs-3 fw-bold">{{ consultations|length }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Hospitalisations</div>
+                    <div class="fs-3 fw-bold">{{ hospitalisations|length }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Dernière consultation</div>
+                    <div class="fw-semibold">
+                        {{ derniereConsultation ? derniereConsultation.createdAt|date('d/m/Y H:i') : '-' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Dernière hospitalisation</div>
+                    <div class="fw-semibold">
+                        {{ derniereHospitalisation ? derniereHospitalisation.createdAt|date('d/m/Y H:i') : '-' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Résumé médical</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="fw-semibold">Groupe sanguin</div>
+                        <div class="text-muted">{{ dossier.groupeSanguin ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Allergies</div>
+                        <div class="text-muted">{{ dossier.allergies ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Antécédents médicaux</div>
+                        <div class="text-muted">{{ dossier.antecedentsMedicaux ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Antécédents chirurgicaux</div>
+                        <div class="text-muted">{{ dossier.antecedentsChirurgicaux ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Maladies chroniques</div>
+                        <div class="text-muted">{{ dossier.maladiesChroniques ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Traitement en cours</div>
+                        <div class="text-muted">{{ dossier.traitementEnCours ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Handicap</div>
+                        <div class="text-muted">{{ dossier.handicap ?: '-' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="fw-semibold">Grossesse</div>
+                        <div class="text-muted">
+                            {% if dossier.grossesse is same as(true) %}
+                                Oui
+                            {% elseif dossier.grossesse is same as(false) %}
+                                Non
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold">Observations générales</div>
+                        <div class="text-muted">{{ dossier.observations ?: '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Historique des consultations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover mb-0 datatable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Date</th>
+                                    <th>Médecin</th>
+                                    <th>Motif</th>
+                                    <th>Diagnostic</th>
+                                    <th>Statut</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for consultation in consultations %}
+                                <tr>
+                                    <td>#{{ consultation.id }}</td>
+                                    <td>{{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}</td>
+                                    <td>
+                                        {% if consultation.medecin %}
+                                            {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ consultation.motifs ?: '-' }}</td>
+                                    <td>{{ consultation.diagnostic ?: '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ consultation.statut.value }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ path('app_consultation_show', {'id': consultation.id}) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Voir
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        Aucune consultation trouvée.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Historique des hospitalisations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover mb-0 datatable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Date</th>
+                                    <th>Motif</th>
+                                    <th>Statut</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for hospitalisation in hospitalisations %}
+                                <tr>
+                                    <td>#{{ hospitalisation.id }}</td>
+                                    <td>{{ hospitalisation.createdAt ? hospitalisation.createdAt|date('d/m/Y H:i') : '-' }}</td>
+                                    <td>{{ hospitalisation.motif ?: '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            {{ hospitalisation.statut.value ?? '-' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ path('app_hospitalisation_show', {'id': hospitalisation.id}) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Voir
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        Aucune hospitalisation trouvée.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

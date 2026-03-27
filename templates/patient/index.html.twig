@@ -38,7 +38,7 @@
                 <th class="text-uppercase small text-muted">Téléphone</th>
                 <th class="text-uppercase small text-muted">Groupe</th>
                 <th class="text-uppercase small text-muted">Adresse</th>
-                <th class="text-uppercase small text-muted">Créé le</th>
+                <th class="text-uppercase small text-muted">Dossier médical</th>
                 <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
               </tr>
             </thead>
@@ -92,9 +92,11 @@
                 </td>
 
                 <td class="text-nowrap">
-                  {% if patient.createdAt %}
-                    <div class="fw-semibold">{{ patient.createdAt|date('d/m/Y') }}</div>
-                    <div class="small text-muted">{{ patient.createdAt|date('H:i') }}</div>
+                  {% if patient.dossierMedical %}
+                    <a href="{{ path('app_dossier_medical_show', {'id': patient.dossierMedical.id}) }}"
+                      class="btn btn-sm btn-outline-primary">
+                      <i class="fa fa-folder-open me-1"></i> Voir dossier
+                    </a>
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}

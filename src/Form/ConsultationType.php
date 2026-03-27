@@ -15,7 +15,9 @@ use App\Repository\RendezVousRepository;
 use App\Repository\UtilisateurRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -24,9 +26,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class ConsultationType extends AbstractType
 {
     public function __construct(
-        private readonly UtilisateurRepository $utilisateurRepository,
-    ) {
-    }
+    private UtilisateurRepository $utilisateurRepository,
+    private DossierMedicalRepository $dossierMedicalRepository
+) {
+}
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -97,37 +100,62 @@ class ConsultationType extends AbstractType
 
         if ($context === 'admin') {
             $currentRendezVous = $builder->getData()?->getRendezVous();
-            $doctorChoices = array_values(array_filter(
-                $this->utilisateurRepository->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']),
-                static fn (Utilisateur $utilisateur) => in_array('ROLE_MEDECIN', $utilisateur->getRoles(), true)
-            ));
 
-            $builder
-                ->add('medecin', EntityType::class, [
-                    'class' => Utilisateur::class,
-                    'choices' => $doctorChoices,
-                    'choice_label' => fn (Utilisateur $u) => $u->getNomComplet(),
-                    'placeholder' => '— Choisir un médecin —',
-                    'label' => 'Médecin',
-                ])
-                ->add('dossierMedical', EntityType::class, [
-                    'class' => DossierMedical::class,
-                    'query_builder' => static function (DossierMedicalRepository $repository) {
-                        return $repository->createQueryBuilder('d')
-                            ->orderBy('d.createdAt', 'DESC')
-                            ->addOrderBy('d.id', 'DESC');
-                    },
-                    'choice_label' => function (DossierMedical $dossier) {
-                        $patient = method_exists($dossier, 'getPatient') ? $dossier->getPatient() : null;
-                        $patientLabel = $patient
-                            ? trim(($patient->getCode() ?? '') . ' - ' . ($patient->getNom() ?? '') . ' ' . ($patient->getPrenom() ?? ''))
-                            : 'Sans patient';
 
-                        return ($dossier->getNumeroDossier() ?: ('#' . $dossier->getId())) . ' / ' . $patientLabel;
-                    },
-                    'placeholder' => '— Choisir un dossier médical —',
-                    'label' => 'Dossier médical',
-                ])
+/** @var Utilisateur|null $currentUser */
+    $currentUser = $options['current_user'] ?? null;
+
+    $isMedecinConnecte = $currentUser instanceof Utilisateur
+        && in_array('ROLE_MEDECIN', $currentUser->getRoles(), true);
+
+    $doctorChoices = array_values(array_filter(
+        $this->utilisateurRepository->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']),
+        static fn (Utilisateur $utilisateur) => in_array('ROLE_MEDECIN', $utilisateur->getRoles(), true)
+    ));
+
+    $currentMedecin = $builder->getData()?->getMedecin();
+
+    $builder->add('medecin', EntityType::class, [
+        'class' => Utilisateur::class,
+        'choices' => $doctorChoices,
+        'choice_label' => fn (Utilisateur $u) => $u->getNomComplet(),
+        'placeholder' => '— Choisir un médecin —',
+        'label' => 'Médecin',
+        'required' => true,
+        'disabled' => $isMedecinConnecte,
+        'data' => $isMedecinConnecte ? $currentUser : $currentMedecin,
+        'attr' => [
+            'class' => 'js-select2-medecin',
+            'data-placeholder' => 'Rechercher un médecin...',
+        ],
+    ]);
+
+    $builder
+        ->add('dossierMedical', EntityType::class, [
+            'class' => DossierMedical::class,
+            'query_builder' => static function (DossierMedicalRepository $repository) {
+                return $repository->createQueryBuilder('d')
+                    ->leftJoin('d.patient', 'p')
+                    ->addSelect('p')
+                    ->orderBy('d.createdAt', 'DESC')
+                    ->addOrderBy('d.id', 'DESC');
+            },
+            'choice_label' => function (DossierMedical $dossier) {
+                $patient = method_exists($dossier, 'getPatient') ? $dossier->getPatient() : null;
+                $patientLabel = $patient
+                    ? trim(($patient->getCode() ?? '') . ' - ' . ($patient->getNom() ?? '') . ' ' . ($patient->getPrenom() ?? '') . ' - ' . ($patient->getTelephone() ?? ''))
+                    : 'Sans patient';
+
+                return ($dossier->getNumeroDossier() ?: ('#' . $dossier->getId())) . ' / ' . $patientLabel;
+            },
+            'placeholder' => '— Choisir un dossier médical —',
+            'label' => 'Dossier médical',
+            'required' => true,
+            'attr' => [
+                'class' => 'js-select2-dossier',
+                'data-placeholder' => 'Rechercher un dossier médical...',
+            ],
+        ])
                 ->add('rendezVous', EntityType::class, [
                     'class' => RendezVous::class,
                     'query_builder' => static function (RendezVousRepository $repository) use ($currentRendezVous) {
@@ -169,16 +197,6 @@ class ConsultationType extends AbstractType
                 ]);
             }
 
-            /* if ($builder->getData() && property_exists($builder->getData(), 'facture')) {
-                $builder->add('facture', EntityType::class, [
-                    'class' => Facture::class,
-                    'choice_label' => 'id',
-                    'required' => false,
-                    'placeholder' => '— Aucune facture —',
-                    'label' => 'Facture',
-                ]);
-            } */
-
             if ($builder->getData() && property_exists($builder->getData(), 'tarifPrestation')) {
                 $builder->add('tarifPrestation', EntityType::class, [
                     'class' => TarifPrestation::class,
@@ -196,6 +214,7 @@ class ConsultationType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Consultation::class,
             'context' => 'medical',
+            'current_user' => null,
         ]);
 
         $resolver->setAllowedValues('context', ['medical', 'admin']);

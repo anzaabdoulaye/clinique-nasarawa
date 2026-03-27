@@ -19,9 +19,11 @@ use App\Repository\PatientRepository;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 use App\Service\TreatmentAlertService;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class HomeController extends AbstractController
 {
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/', name: 'home')]
     public function index(
         Request $request,

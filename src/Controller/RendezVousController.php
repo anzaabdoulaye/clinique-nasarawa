@@ -21,10 +21,17 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
 use Endroid\QrCode\Encoding\Encoding;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/rendez/vous')]
 final class RendezVousController extends AbstractController
 {
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
    #[Route(name: 'app_rendez_vous_index', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
@@ -57,6 +64,9 @@ final class RendezVousController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}', name: 'app_rendez_vous_show', methods: ['GET'])]
     public function show(RendezVous $rendezVou): Response
     {
@@ -65,6 +75,9 @@ final class RendezVousController extends AbstractController
         ]);
     }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
+))]
     #[Route('/{id}/edit', name: 'app_rendez_vous_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, RendezVous $rendezVous, EntityManagerInterface $em): Response
     {
@@ -93,6 +106,9 @@ final class RendezVousController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
+))]
     #[Route('/{id}', name: 'app_rendez_vous_delete', methods: ['POST'])]
     public function delete(Request $request, RendezVous $rendezVou, EntityManagerInterface $entityManager): Response
     {
@@ -104,6 +120,9 @@ final class RendezVousController extends AbstractController
         return $this->redirectToRoute('app_rendez_vous_index', [], Response::HTTP_SEE_OTHER);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}/start-consultation', name: 'app_rendez_vous_start_consultation', methods: ['POST'])]
 public function startConsultation(
     Request $request,
@@ -136,6 +155,9 @@ public function startConsultation(
     return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}/print', name: 'app_rendez_vous_print', methods: ['GET'])]
     public function print(RendezVous $rendezVous): Response
     {
@@ -161,6 +183,9 @@ public function startConsultation(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}/print/pdf', name: 'app_rendez_vous_print_pdf', methods: ['GET'])]
     public function printPdf(RendezVous $rendezVous): Response
     {

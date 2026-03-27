@@ -53,82 +53,98 @@
         <div class="card-header bg-white">
             <h5 class="mb-0">Liste des factures</h5>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table align-middle table-hover mb-0 datatable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Patient</th>
-                            <th>Consultation</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Payé</th>
-                            <th>Reste</th>
-                            <th>Statut</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for facture in factures %}
-                        {% set patient = facture.consultation and facture.consultation.rendezVous ? facture.consultation.rendezVous.patient|default(null) : null %}
-                        {% set statut = facture.statut.value %}
-                        <tr>
-                            <td>{{ facture.id }}</td>
-                            <td>
-                                {% if patient %}
-                                    {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>#{{ facture.consultation.id }}</td>
-                            <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
-                            <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
-                            
-                            <td>{{ (facture.montantPaye ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ (facture.resteAPayer ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>
-                                {% if statut == 'brouillon' %}
-                                    <span class="badge bg-secondary">Brouillon</span>
-                                {% elseif statut == 'non_paye' %}
-                                    <span class="badge bg-warning text-dark">Non payé</span>
-                                {% elseif statut == 'partiellement_paye' %}
-                                    <span class="badge bg-info text-dark">Partiellement payé</span>
-                                {% elseif statut == 'paye' %}
-                                    <span class="badge bg-success">Payé</span>
-                                {% elseif statut == 'annule' %}
-                                    <span class="badge bg-danger">Annulé</span>
-                                {% else %}
-                                    <span class="badge bg-dark">{{ statut }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <a href="{{ path('app_perception_facture_show', {id: facture.id}) }}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    Voir
-                                </a>
+         <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0 datatable">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Patient</th>
+                        <th>Consultation</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Payé</th>
+                        <th>Reste</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for facture in factures %}
+                    {% set consultation = facture.consultation %}
+                    {% set patient = null %}
 
-                                {% if facture.resteAPayer > 0 and statut != 'annule' %}
-                                    <button type="button"
-                                            class="btn btn-sm btn-success js-open-encaissement"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#encaissementModal"
-                                            data-url="{{ path('app_perception_facture_encaisser', {id: facture.id}) }}">
-                                        Encaisser
-                                    </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="9" class="text-center text-muted">Aucune facture trouvée.</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    {% if consultation %}
+                        {% if consultation.rendezVous and consultation.rendezVous.patient %}
+                            {% set patient = consultation.rendezVous.patient %}
+                        {% elseif consultation.dossierMedical and consultation.dossierMedical.patient %}
+                            {% set patient = consultation.dossierMedical.patient %}
+                        {% endif %}
+                    {% endif %}
+
+                    {% set statut = facture.statut.value %}
+
+                    <tr>
+                        <td>{{ facture.id }}</td>
+                        <td>
+                            {% if patient %}
+                                {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if consultation %}
+                                #{{ consultation.id }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
+                        <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
+                        <td>{{ (facture.montantPaye ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
+                        <td>{{ (facture.resteAPayer ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
+                        <td>
+                            {% if statut == 'brouillon' %}
+                                <span class="badge bg-secondary">Brouillon</span>
+                            {% elseif statut == 'non_paye' %}
+                                <span class="badge bg-warning text-dark">Non payé</span>
+                            {% elseif statut == 'partiellement_paye' %}
+                                <span class="badge bg-info text-dark">Partiellement payé</span>
+                            {% elseif statut == 'paye' %}
+                                <span class="badge bg-success">Payé</span>
+                            {% elseif statut == 'annule' %}
+                                <span class="badge bg-danger">Annulé</span>
+                            {% else %}
+                                <span class="badge bg-dark">{{ statut }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ path('app_perception_facture_show', {id: facture.id}) }}"
+                               class="btn btn-sm btn-outline-primary">
+                                Voir
+                            </a>
+
+                            {% if facture.resteAPayer > 0 and statut != 'annule' %}
+                                <button type="button"
+                                        class="btn btn-sm btn-success js-open-encaissement"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#encaissementModal"
+                                        data-url="{{ path('app_perception_facture_encaisser', {id: facture.id}) }}">
+                                    Encaisser
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">Aucune facture trouvée.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
     </div>
 </div>
 

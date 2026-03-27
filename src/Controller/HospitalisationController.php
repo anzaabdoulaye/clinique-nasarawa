@@ -11,14 +11,18 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[IsGranted('ROLE_USER')]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/hospitalisation')]
 final class HospitalisationController extends AbstractController
 {
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
     #[Route(name: 'app_hospitalisation_index', methods: ['GET','POST'])]
     public function index(
         Request $request,
@@ -44,6 +48,9 @@ final class HospitalisationController extends AbstractController
     }
 
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
     #[Route('/{id}', name: 'app_hospitalisation_show', methods: ['GET'])]
     public function show(Hospitalisation $hospitalisation): Response
     {
@@ -52,6 +59,9 @@ final class HospitalisationController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
     #[Route('/{id}/print', name: 'app_hospitalisation_print', methods: ['GET'])]
     public function print(Hospitalisation $hospitalisation): Response
     {
@@ -81,7 +91,9 @@ final class HospitalisationController extends AbstractController
     }
 
 
-    #[IsGranted('ROLE_ADMIN')]
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}/edit', name: 'app_hospitalisation_edit', methods: ['GET','POST'])]
     public function edit(
         Request $request,
@@ -131,6 +143,7 @@ final class HospitalisationController extends AbstractController
     }
 
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_hospitalisation_delete', methods: ['POST'])]
     public function delete(
         Request $request,

@@ -19,10 +19,16 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/perception')]
 final class PerceptionController extends AbstractController
 {
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('', name: 'app_perception_index', methods: ['GET'])]
     public function index(FactureRepository $factureRepository): Response
     {
@@ -69,6 +75,9 @@ final class PerceptionController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/facture/{id}', name: 'app_perception_facture_show', methods: ['GET'])]
     public function show(Facture $facture): Response
     {
@@ -77,6 +86,9 @@ final class PerceptionController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/facture/{id}/encaisser', name: 'app_perception_facture_encaisser', methods: ['GET', 'POST'])]
     public function encaisser(
         Request $request,
@@ -139,6 +151,10 @@ final class PerceptionController extends AbstractController
             'facture' => $facture,
         ]);
     }
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/facture/{id}/print', name: 'app_perception_facture_print', methods: ['GET'])]
     public function print(Facture $facture): Response
     {
@@ -165,6 +181,9 @@ final class PerceptionController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/facture/{id}/pdf', name: 'app_perception_facture_pdf', methods: ['GET'])]
     public function printPdf(Facture $facture): Response
     {

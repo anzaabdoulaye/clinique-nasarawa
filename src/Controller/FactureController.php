@@ -22,10 +22,16 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/facture')]
 final class FactureController extends AbstractController
 {
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route(name: 'app_facture_index', methods: ['GET'])]
     public function index(FactureRepository $factureRepository): Response
     {
@@ -35,6 +41,7 @@ final class FactureController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/new', name: 'app_facture_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -55,6 +62,9 @@ final class FactureController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/{id}', name: 'app_facture_show', methods: ['GET'])]
     public function show(Facture $facture): Response
     {
@@ -63,6 +73,7 @@ final class FactureController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}/edit', name: 'app_facture_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Facture $facture, EntityManagerInterface $entityManager): Response
     {
@@ -81,6 +92,7 @@ final class FactureController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_facture_delete', methods: ['POST'])]
     public function delete(Request $request, Facture $facture, EntityManagerInterface $entityManager): Response
     {
@@ -94,6 +106,9 @@ final class FactureController extends AbstractController
 
 
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/facture/modal', name: 'app_consultation_facture_modal', methods: ['GET'])]
     public function factureModal(
         Consultation $consultation,
@@ -112,6 +127,9 @@ final class FactureController extends AbstractController
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
     #[Route('/facture/{id}/payer', name: 'app_facture_payer', methods: ['POST'])]
     public function payer(
         Facture $facture,
@@ -131,7 +149,9 @@ final class FactureController extends AbstractController
     }
 
    
-
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION')"
+))]
 #[Route('/facture/{id}/qr', name: 'app_facture_qr', methods: ['GET'])]
 public function qrFacture(Facture $facture, BuilderInterface $builder): Response
 {
@@ -153,6 +173,9 @@ public function qrFacture(Facture $facture, BuilderInterface $builder): Response
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION') or is_granted('ROLE_MEDECIN')"
+))]
 #[Route('/{id}/print', name: 'app_facture_print', methods: ['GET'])]
     public function print(Facture $facture): Response
     {
@@ -195,6 +218,9 @@ public function qrFacture(Facture $facture, BuilderInterface $builder): Response
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/{id}/pdf', name: 'app_facture_pdf', methods: ['GET'])]
     public function printPdf(Facture $facture): Response
     {

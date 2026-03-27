@@ -38,10 +38,10 @@
                         </button>
 
                         <div class="dropdown-menu dropdown-menu-lg w-100 p-2" id="app-quick-search-menu">
-                            <div class="px-2 pt-1 pb-2 border-bottom">
+                            {# <div class="px-2 pt-1 pb-2 border-bottom">
                                 <div class="fw-semibold text-dark small">Acces rapide</div>
                                 <div class="text-muted small">Filtrez puis appuyez sur Entree pour ouvrir le premier resultat.</div>
-                            </div>
+                            </div> #}
 
                             <div class="py-2" data-search-items>
                                 <a href="{{ path('home') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="tableau de bord accueil home dashboard">
@@ -232,7 +232,7 @@
                             <span class="align-middle">Settings</span>
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">
+                        <a class="dropdown-item" href="{{ path('app_logout') }}">
                             <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> 
                             <span class="align-middle">Logout</span>
                         </a>

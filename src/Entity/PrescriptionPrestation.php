@@ -40,6 +40,20 @@ class PrescriptionPrestation
     #[ORM\OneToOne(mappedBy: 'prescriptionPrestation', targetEntity: ResultatLaboratoire::class, cascade: ['persist', 'remove'])]
     private ?ResultatLaboratoire $resultatLaboratoire = null;
 
+    public function estVerrouilleePourEdition(): bool
+{
+    if ($this->getResultatLaboratoire() !== null) {
+        return true;
+    }
+
+    return in_array($this->getStatut(), [
+        StatutPrescriptionPrestation::PRESCRIT,
+        StatutPrescriptionPrestation::EN_COURS,
+        StatutPrescriptionPrestation::PAYE,
+        StatutPrescriptionPrestation::ANNULE,
+    ], true);
+}
+
     public function getId(): ?int
     {
         return $this->id;

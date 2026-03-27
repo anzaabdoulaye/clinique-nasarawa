@@ -365,4 +365,62 @@
       });
     })();
   </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        console.error('jQuery ou Select2 non chargé');
+        return;
+    }
+
+    function initConsultationSelect2(context) {
+        const $context = $(context || document);
+
+        $context.find('.js-select2-medecin, .js-select2-dossier').each(function () {
+            const $el = $(this);
+
+            if ($el.hasClass('select2-hidden-accessible')) {
+                return;
+            }
+
+            const placeholder = $el.data('placeholder') || 'Rechercher...';
+            const $modal = $el.closest('.modal');
+
+            $el.select2({
+                width: '100%',
+                placeholder: placeholder,
+                allowClear: true,
+                dropdownParent: $modal.length ? $modal : $(document.body),
+                minimumResultsForSearch: 0
+            });
+        });
+    }
+
+    initConsultationSelect2(document);
+
+    document.addEventListener('shown.bs.modal', function (e) {
+        initConsultationSelect2(e.target);
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('addConsultationModal');
+    if (!modalEl) {
+        return;
+    }
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        const form = modalEl.querySelector('form');
+        if (!form) {
+            return;
+        }
+
+        form.reset();
+
+        if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+            $(form).find('.js-select2-medecin, .js-select2-dossier').val(null).trigger('change');
+        }
+    });
+});
+</script>
 {% endblock %}
