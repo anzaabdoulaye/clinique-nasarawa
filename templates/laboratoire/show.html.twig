@@ -30,39 +30,59 @@
                 </form>
             {% endif %}
 
-           {% if prestation.resultatLaboratoire %}
-                <button type="button"
-                        class="btn btn-outline-dark js-open-resultat"
-                        data-bs-toggle="modal"
-                        data-bs-target="#resultatLaboratoireModal"
-                        data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
-                    Modifier le résultat
-                </button>
+            {% if canEditResult %}
+                {% if prestation.resultatLaboratoire %}
+                    <button type="button"
+                            class="btn btn-outline-dark js-open-resultat"
+                            data-bs-toggle="modal"
+                            data-bs-target="#resultatLaboratoireModal"
+                            data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
+                        Modifier le résultat
+                    </button>
+                {% else %}
+                    <button type="button"
+                            class="btn btn-outline-dark js-open-resultat"
+                            data-bs-toggle="modal"
+                            data-bs-target="#resultatLaboratoireModal"
+                            data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
+                        Saisir le résultat
+                    </button>
+                {% endif %}
             {% else %}
-                <button type="button"
-                        class="btn btn-outline-dark js-open-resultat"
-                        data-bs-toggle="modal"
-                        data-bs-target="#resultatLaboratoireModal"
-                        data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
+                <button type="button" class="btn btn-outline-dark" disabled>
                     Saisir le résultat
                 </button>
             {% endif %}
-            {% if prestation.resultatLaboratoire %}
-                <a href="{{ path('app_laboratoire_resultat_print', {id: prestation.id}) }}"
+            {% if prestation.resultatLaboratoire and hasResultatSaisi %}
+                <a href="{{ path('app_laboratoire_resultat_pdf', {id: prestation.id}) }}"
                 target="_blank"
                 class="btn btn-outline-primary">
                     <i class="ri-printer-line me-1"></i> Imprimer le résultat
                 </a>
             {% endif %}
-            {% if statut in ['paye', 'en_cours'] %}
+            {% if canMarkRealise %}
                 <form method="post" action="{{ path('app_laboratoire_realiser', {id: prestation.id}) }}">
                     <button type="submit" class="btn btn-success">
                         Marquer réalisé
                     </button>
                 </form>
+            {% elseif statut == 'en_cours' %}
+                <button type="button" class="btn btn-success" disabled>
+                    Marquer réalisé
+                </button>
             {% endif %}
         </div>
     </div>
+
+    {% if not canEditResult %}
+        <div class="alert alert-warning">
+            Vous devez d'abord prendre en charge cet examen avant de saisir le resultat.
+        </div>
+    {% elseif statut == 'en_cours' and not hasResultatSaisi %}
+        <div class="alert alert-info">
+            Saisissez le resultat avant de marquer cet examen comme realise.
+        </div>
+    {% endif %}
 
     <div class="row g-3">
         <div class="col-12 col-lg-4">
@@ -78,6 +98,8 @@
                     </div>
                     <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
                     <div><strong>Rendez-vous :</strong> {{ rdv ? ('#' ~ rdv.id) : '-' }}</div>
+                    <div><strong>Sexe :</strong> {{ patient and patient.sexe ? patient.sexe : '-' }}</div>
+                    <div><strong>Âge :</strong> {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}</div>
                 </div>
             </div>
         </div>
@@ -111,6 +133,8 @@
                     </div>
                     <div class="mt-2"><strong>Date création :</strong> {{ prestation.createdAt ? prestation.createdAt|date('Y-m-d H:i') : '-' }}</div>
                     <div><strong>Dernière mise à jour :</strong> {{ prestation.modifiedAt ? prestation.modifiedAt|date('Y-m-d H:i') : '-' }}</div>
+                    <div><strong>Résultat saisi :</strong> {{ hasResultatSaisi ? 'Oui' : 'Non' }}</div>
+                    <div><strong>Validé par :</strong> {{ prestation.resultatLaboratoire and prestation.resultatLaboratoire.validePar ? prestation.resultatLaboratoire.validePar : '-' }}</div>
                 </div>
             </div>
         </div>

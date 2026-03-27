@@ -548,11 +548,19 @@ public function editAdmin(
 
         $code = 'C-' . $consultation->getId();
 
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
         return $this->render('consultation/print_fiche.html.twig', [
             'consultation' => $consultation,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
         ]);
     }
 
@@ -576,11 +584,19 @@ public function editAdmin(
 
         $code = 'C-' . $consultation->getId();
 
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
         $html = $this->renderView('consultation/print_fiche.html.twig', [
             'consultation' => $consultation,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
         ]);
 
         $options = new Options();

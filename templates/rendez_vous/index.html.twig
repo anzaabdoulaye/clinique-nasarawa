@@ -199,7 +199,16 @@
 
           <div class="col-12">{{ form_row(form.motif) }}</div>
 
-          <div class="col-md-6">{{ form_row(form.patient) }}</div>
+          <div class="col-md-6">
+            <label for="rdv-patient-search" class="form-label">Recherche patient</label>
+            <input type="search"
+                   id="rdv-patient-search"
+                   class="form-control js-patient-search"
+                   placeholder="Rechercher par nom, prénom ou identifiant..."
+                   autocomplete="off">
+            <div class="form-text">Tapez quelques lettres pour filtrer la liste des patients.</div>
+            <div class="mt-2">{{ form_row(form.patient) }}</div>
+          </div>
           <div class="col-md-6">{{ form_row(form.medecin) }}</div>
         </div>
 
@@ -253,11 +262,72 @@
   {{ parent() }}
   <script>
     (function () {
+      function initPatientSearch(root) {
+        const scope = root || document;
+
+        scope.querySelectorAll('.js-patient-search').forEach((searchInput) => {
+          if (searchInput.dataset.bound === '1') {
+            return;
+          }
+
+          const container = searchInput.closest('.col-md-6, .col-12, .mb-3, .form-group') || scope;
+          const patientSelect = container.querySelector('select[id$="_patient"]');
+
+          if (!patientSelect) {
+            return;
+          }
+
+          const baseOptions = Array.from(patientSelect.options).map((option) => ({
+            value: option.value,
+            text: option.text,
+            selected: option.selected,
+          }));
+
+          const renderOptions = (term) => {
+            const normalizedTerm = (term || '').trim().toLocaleLowerCase();
+            const selectedValue = patientSelect.value;
+
+            patientSelect.innerHTML = '';
+
+            baseOptions.forEach((optionData) => {
+              const isPlaceholder = optionData.value === '';
+              const matches = isPlaceholder || optionData.text.toLocaleLowerCase().includes(normalizedTerm);
+
+              if (!matches) {
+                return;
+              }
+
+              const option = new Option(optionData.text, optionData.value, false, optionData.value === selectedValue);
+              patientSelect.add(option);
+            });
+
+            if (patientSelect.options.length === 0) {
+              patientSelect.add(new Option('Aucun patient trouvé', '', false, false));
+            }
+          };
+
+          searchInput.addEventListener('input', () => {
+            renderOptions(searchInput.value);
+          });
+
+          patientSelect.addEventListener('change', () => {
+            baseOptions.forEach((optionData) => {
+              optionData.selected = optionData.value === patientSelect.value;
+            });
+          });
+
+          renderOptions(searchInput.value);
+          searchInput.dataset.bound = '1';
+        });
+      }
+
       const modalEl = document.getElementById('editRdvModal');
       const loader  = document.getElementById('editRdvLoader');
       const body    = document.getElementById('editRdvModalBody');
 
       let currentUrl = null;
+
+      initPatientSearch(document.getElementById('addRendezVousModal'));
 
       function setLoading() {
         loader.classList.remove('d-none');
@@ -297,6 +367,7 @@
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
+        initPatientSearch(body);
         focusFirstField();
         bindEditSubmit();
       }
@@ -343,6 +414,7 @@
 
             // erreurs => HTML
             body.innerHTML = await resp.text();
+            initPatientSearch(body);
             focusFirstField();
             bindEditSubmit();
           } catch (err) {

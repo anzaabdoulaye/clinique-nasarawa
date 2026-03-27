@@ -77,7 +77,9 @@ final class FactureController extends AbstractController
     #[Route('/{id}/edit', name: 'app_facture_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Facture $facture, EntityManagerInterface $entityManager): Response
     {
-        $form = $this->createForm(FactureType::class, $facture);
+        $form = $this->createForm(FactureType::class, $facture, [
+            'is_edit' => true,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

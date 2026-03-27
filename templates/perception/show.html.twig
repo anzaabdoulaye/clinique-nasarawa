@@ -195,8 +195,51 @@
                 const form = modalContent.querySelector('form');
                 if (!form) return;
 
+                const montantInput = form.querySelector('#encaissement_montant');
+                const alertBox = form.querySelector('.js-encaissement-alert');
+                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || '0', 10);
+
+                function showAlert(message) {
+                    if (!alertBox) {
+                        return;
+                    }
+
+                    if (!message) {
+                        alertBox.textContent = '';
+                        alertBox.classList.add('d-none');
+                        return;
+                    }
+
+                    alertBox.textContent = message;
+                    alertBox.classList.remove('d-none');
+                }
+
+                function validateMontant() {
+                    if (!montantInput || Number.isNaN(maxAmount) || maxAmount <= 0) {
+                        showAlert('');
+                        return true;
+                    }
+
+                    const value = Number.parseInt(montantInput.value || '0', 10);
+
+                    if (!Number.isNaN(value) && value > maxAmount) {
+                        showAlert(`Le montant saisi ne doit pas depasser le total a payer de ${maxAmount} FCFA.`);
+                        return false;
+                    }
+
+                    showAlert('');
+
+                    return true;
+                }
+
+                montantInput?.addEventListener('input', validateMontant);
+
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
+
+                    if (!validateMontant()) {
+                        return;
+                    }
 
                     const submitBtn = form.querySelector('.js-submit-encaissement');
                     if (submitBtn) submitBtn.disabled = true;

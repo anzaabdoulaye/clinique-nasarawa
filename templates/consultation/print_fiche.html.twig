@@ -2,7 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Fiche de consultation #{{ consultation.id }}</title>
+    <title>
+        Fiche de consultation #
+        {{ consultation ? consultation.id : (facture is defined and facture and facture.consultation ? facture.consultation.id : '-') }}
+    </title>
 
     <style>
         @page {
@@ -31,7 +34,6 @@
         .header-table,
         .meta-table,
         .data-table,
-        .footer-table,
         .signature-table {
             width: 100%;
             border-collapse: collapse;
@@ -39,7 +41,6 @@
 
         .header-table td,
         .meta-table td,
-        .footer-table td,
         .signature-table td {
             vertical-align: top;
         }
@@ -79,7 +80,7 @@
             width: 20mm;
             height: 20mm;
             border: 1px solid #e5e7eb;
-            background: #fff;
+            background: #ffffff;
             padding: 2px;
         }
 
@@ -90,30 +91,13 @@
             color: #6b7280;
         }
 
-        .title-box {
-            width: 32mm;
-            border: 1px solid #d1d5db;
-            padding: 5px;
+        .title {
+            margin: 5px 0;
             text-align: center;
-            background: #f8fafc;
-        }
-
-        .title-box .title {
             font-size: 12px;
             font-weight: bold;
-            color: #0f4c81;
+            color: #111827;
             text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .title-box .ref {
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .separator {
-            border-bottom: 1px solid #d1d5db;
-            margin: 6px 0;
         }
 
         .meta-box,
@@ -153,10 +137,6 @@
             line-height: 1.3;
         }
 
-        .box strong {
-            color: #111827;
-        }
-
         .table-wrap {
             border-top: none;
         }
@@ -164,7 +144,7 @@
         .data-table th,
         .data-table td {
             border: 1px solid #e5e7eb;
-            padding: 4px;
+            padding: 3px;
             font-size: 8.5px;
             text-align: left;
             vertical-align: top;
@@ -176,33 +156,16 @@
             font-weight: bold;
         }
 
-        .center {
-            text-align: center;
-        }
-
-        .footer-block {
-            border-top: 1px dashed #d1d5db;
-            margin-top: 6px;
-            padding-top: 6px;
-        }
-
-        .footer-left {
-            font-size: 8px;
-            color: #6b7280;
-            line-height: 1.3;
-            padding-right: 6px;
-        }
-
         .signature-table {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 100px;
             border-collapse: collapse;
         }
 
         .signature-block {
             text-align: center;
             vertical-align: bottom;
-            height: 65px;
+            height: 4px; /* espace réservé pour signer / cacheter */
             padding: 0 8px;
         }
 
@@ -225,185 +188,161 @@
     </style>
 </head>
 <body>
+    {% set consultation = consultation ?? (facture is defined and facture ? facture.consultation : null) %}
+    {% set patient = consultation and consultation.rendezVous ? consultation.rendezVous.patient : null %}
 
-{% set patient = consultation.rendezVous.patient ?? null %}
-{% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
+    <div class="document">
+        <div class="top-bar"></div>
 
-<div class="document">
-    <div class="top-bar"></div>
+        <table class="header-table">
+            <tr>
+                <td style="width:20%;">
+                    {% if logo_path is defined and logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
+                    {% endif %}
+                </td>
 
-    <table class="header-table">
-        <tr>
-            <td style="width:18%;">
-                {% if logo_path is defined and logo_path %}
-                    <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
-                {% endif %}
-            </td>
-
-            <td style="width:52%;">
-                <div class="clinic">
-                    <h1>Clinique Nassarawa</h1>
-                    <div class="sub">
-                        Niamey - Niger<br>
-                        Tél : 20 75 51 02 / 88 05 22 20<br>
-                        Email : nassrawaclinique@gmail.com
+                <td style="width:52%;">
+                    <div class="clinic">
+                        <h1>Clinique Médicale Nassarawa</h1>
+                        <div class="sub">
+                            NIF : 120402/R<br>
+                            RCCM : NE-NIM-01-2024-B12-00145<br>
+                            Adresse : Yantala Haut, Avenue du Daoura YN 187, Niamey<br>
+                            Tél : 20 75 51 02 / 88 05 22 20<br>
+                            BP : 2120 Niamey<br>
+                            Email : nassrawaclinique@gmail.com
+                        </div>
                     </div>
-                </div>
-            </td>
-
-            <td style="width:30%; text-align:right;">
-                <div class="qr-box">
-                    {% if _qr %}
-                        <img src="{{ _qr }}" alt="QR Code fiche consultation">
-                    {% endif %}
-
-                    <div class="qr-label">QR Consultation</div>
-
-                    {% if code_qr is defined and code_qr %}
-                        <div class="qr-label">Code : {{ code_qr }}</div>
-                    {% endif %}
-
-                    <div class="qr-label">Scanner pour vérification</div>
-                </div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="separator"></div>
-
-    <div class="meta-box">
-        <table class="meta-table">
-            <tr>
-                <td>
-                    <strong>N° fiche :</strong>
-                    {{ consultation.id }}
                 </td>
-                <td>
-                    <strong>N° consultation :</strong>
-                    {{ consultation.id }}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <strong>Date :</strong>
-                    {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}
-                </td>
-                <td>
-                    <strong>Service médical :</strong>
-                    {{ consultation.serviceMedical.nom ?? '-' }}
+
+                <td style="width:28%; text-align:right;">
+                    <div class="qr-box">
+                        {% if qr_data is defined and qr_data %}
+                            <img src="{{ qr_data }}" alt="QR Code">
+                        {% endif %}
+
+                        {% if code_qr is defined and code_qr %}
+                            <div class="qr-label">Code : {{ code_qr }}</div>
+                        {% endif %}
+
+                        <div class="qr-label">Scanner pour vérification</div>
+                    </div>
                 </td>
             </tr>
         </table>
-    </div>
 
-    <div class="section">
-        <div class="section-title">Patient</div>
-        <div class="box">
-            <strong>Nom et prénom :</strong>
-            {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
-            <br>
+        <div class="title">Fiche de consultation</div>
 
-            <strong>Code patient :</strong>
-            {{ patient and patient.code is defined ? patient.code : '-' }}
-            <br>
-
-            <strong>N° dossier médical :</strong>
-            {{ consultation.dossierMedical and consultation.dossierMedical.numeroDossier is defined
-                ? consultation.dossierMedical.numeroDossier
-                : '-' }}
-            <br>
-
-            <strong>Téléphone :</strong>
-            {{ patient and patient.telephone is defined ? patient.telephone : '-' }}
-        </div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Médecin</div>
-        <div class="box">
-            {{ consultation.medecin
-                ? ((consultation.medecin.nom ?? '') ~ ' ' ~ (consultation.medecin.prenom ?? ''))|trim
-                : '-' }}
-        </div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Prestations prescrites</div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th style="width:6%;" class="center">#</th>
-                        <th style="width:42%;">Prestation</th>
-                        <th style="width:20%;">Catégorie</th>
-                        <th style="width:12%;">Qté</th>
-                        <th style="width:20%;">Instructions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for p in consultation.prescriptionsPrestations %}
-                    <tr>
-                        <td class="center">{{ loop.index }}</td>
-                        <td>{{ p.tarifPrestation.libelle|default('-') }}</td>
-                        <td>{{ p.tarifPrestation.categorie.value|default('-')|replace({'_':' '})|title }}</td>
-                        <td>{{ p.quantite|default(1) }}</td>
-                        <td>{{ p.instructions ?: '-' }}</td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="center">Aucune prestation prescrite</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
+        <div class="meta-box">
+            <table class="meta-table">
+                <tr>
+                    <td>
+                        <strong>N° fiche :</strong>
+                        {{ consultation ? consultation.id : '-' }}
+                    </td>
+                    <td>
+                        <strong>Date :</strong>
+                        {{ consultation and consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Service :</strong>
+                        {{ consultation.serviceMedical.nom ?? '-' }}
+                    </td>
+                    <td>
+                        <strong>Médecin :</strong>
+                        {% if consultation and consultation.medecin %}
+                            {{ ((consultation.medecin.nom ?? '') ~ ' ' ~ (consultation.medecin.prenom ?? ''))|trim }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
             </table>
         </div>
-    </div>
 
-    <div class="section">
-        <div class="section-title">Observations médicales</div>
-        <div class="box">
-            <strong>Motif :</strong> {{ consultation.motifs ?: '-' }}
-            <br>
+        <div class="section">
+            <div class="section-title">Patient</div>
+            <div class="box">
+                <strong>Nom et prénom :</strong>
+                {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
+                <br>
 
-            <strong>Diagnostic :</strong> {{ consultation.diagnostic ?: '-' }}
-            <br>
+                <strong>Code patient :</strong>
+                {{ patient and patient.code ? patient.code : '-' }}
+                <br>
 
-            <strong>Conduite à tenir :</strong> {{ consultation.conduiteATenir ?: '-' }}
+                <strong>N° dossier médical :</strong>
+                {{ consultation and consultation.dossierMedical and consultation.dossierMedical.numeroDossier ? consultation.dossierMedical.numeroDossier : '-' }}
+                <br>
+
+                <strong>Téléphone :</strong>
+                {{ patient and patient.telephone ? patient.telephone : '-' }}
+            </div>
         </div>
-    </div>
 
-    <div class="footer-block">
-        <table class="footer-table">
+        <div class="section">
+            <div class="section-title">Prestations prescrites</div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:8%;">#</th>
+                            <th style="width:52%;">Prestation</th>
+                            <th style="width:12%;">Qté</th>
+                            <th style="width:28%;">Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in consultation and consultation.prescriptionsPrestations ? consultation.prescriptionsPrestations : [] %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ p.tarifPrestation.libelle|default('-') }}</td>
+                                <td>{{ p.quantite|default(1) }}</td>
+                                <td>{{ p.instructions ?: '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4">Aucune prestation prescrite</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Observations médicales</div>
+            <div class="box">
+                <strong>Motif :</strong>
+                {{ consultation and consultation.motifs ? consultation.motifs : '-' }}
+                <br>
+
+                <strong>Diagnostic :</strong>
+                {{ consultation and consultation.diagnostic ? consultation.diagnostic : '-' }}
+                <br>
+
+                <strong>Conduite à tenir :</strong>
+                {{ consultation and consultation.conduiteATenir ? consultation.conduiteATenir : '-' }}
+            </div>
+        </div>
+
+        <table class="signature-table">
             <tr>
-                <td class="footer-left">
-                    <div>
-                        <strong>Document :</strong>
-                        Fiche de consultation générée automatiquement par le système de gestion de la clinique.
-                    </div>
-                    <div>
-                        <strong>Référence :</strong>
-                        CONS-{{ consultation.id }}
-                    </div>
+                <td class="signature-block" style="width:50%;">
+                    <div class="line">Signature du médecin</div>
+                </td>
+                <td class="signature-block" style="width:50%;">
+                    <div class="line">Cachet du service</div>
                 </td>
             </tr>
         </table>
+
+        <div class="footer-note">
+            À PRÉSENTER À LA CAISSE POUR RÈGLEMENT
+        </div>
     </div>
-
-    <table class="signature-table">
-        <tr>
-            <td class="signature-block" style="width:50%;">
-                <div class="line">Signature du médecin</div>
-            </td>
-            <td class="signature-block" style="width:50%;">
-                <div class="line">Cachet du service</div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="footer-note">
-        À PRÉSENTER À LA CAISSE POUR RÈGLEMENT
-    </div>
-</div>
-
 </body>
 </html>

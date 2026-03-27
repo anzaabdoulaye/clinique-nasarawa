@@ -5,7 +5,14 @@
 
 <div class="row g-3">
   <div class="col-md-6">
-    {{ form_row(form.patient) }}
+    <label for="rdv-edit-patient-search" class="form-label">Recherche patient</label>
+    <input type="search"
+           id="rdv-edit-patient-search"
+           class="form-control js-patient-search"
+           placeholder="Rechercher par nom, prénom ou identifiant..."
+           autocomplete="off">
+    <div class="form-text">Tapez quelques lettres pour filtrer la liste des patients.</div>
+    <div class="mt-2">{{ form_row(form.patient) }}</div>
   </div>
 
   {% if form.medecin is defined %}
