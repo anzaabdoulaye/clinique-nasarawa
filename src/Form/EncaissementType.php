@@ -8,17 +8,37 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class EncaissementType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $maxAmount = $options['max_amount'];
+
         $builder
             ->add('montant', IntegerType::class, [
                 'label' => 'Montant encaissé',
+                'constraints' => [
+                    new NotBlank([
+                        'message' => 'Veuillez saisir un montant.',
+                    ]),
+                    new GreaterThanOrEqual([
+                        'value' => 1,
+                        'message' => 'Le montant doit être supérieur à zéro.',
+                    ]),
+                    new LessThanOrEqual([
+                        'value' => $maxAmount,
+                        'message' => 'Le montant ne doit pas dépasser le reste à payer.',
+                    ]),
+                ],
                 'attr' => [
                     'min' => 1,
+                    'max' => $maxAmount,
                     'placeholder' => 'Montant en FCFA',
+                    'data-max-amount' => $maxAmount,
                 ],
             ])
             ->add('mode', ChoiceType::class, [
@@ -37,12 +57,19 @@ class EncaissementType extends AbstractType
                     ModePaiement::VIREMENT => 'Virement',
                 },
                 'placeholder' => 'Choisir un mode',
+                'attr' => [
+                    'class' => 'form-control' 
+                ],
             ])
         ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([]);
+        $resolver->setDefaults([
+            'max_amount' => 0,
+        ]);
+
+        $resolver->setAllowedTypes('max_amount', 'int');
     }
 }

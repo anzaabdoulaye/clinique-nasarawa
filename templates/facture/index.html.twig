@@ -52,7 +52,7 @@
                 </td>
 
                 <td class="text-nowrap fw-semibold">
-                  {{ facture.montant ?? '—' }}
+                  {{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA
                 </td>
 
                 <td class="text-nowrap">

@@ -100,6 +100,7 @@ class ConsultationType extends AbstractType
 
         if ($context === 'admin') {
             $currentRendezVous = $builder->getData()?->getRendezVous();
+            $doctorChoices = $this->utilisateurRepository->findDoctors();
 
 
 /** @var Utilisateur|null $currentUser */

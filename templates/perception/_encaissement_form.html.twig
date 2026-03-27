@@ -3,7 +3,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
 </div>
 
-{{ form_start(form, {'attr': {'id': 'encaissementForm'}}) }}
+{{ form_start(form, {'attr': {'id': 'encaissementForm', 'data-reste-a-payer': facture.resteAPayer}}) }}
 <div class="modal-body">
     <div class="alert alert-light border">
         <div><strong>Total :</strong> {{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</div>
@@ -11,9 +11,12 @@
         <div><strong>Reste à payer :</strong> {{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</div>
     </div>
 
+    <div class="alert alert-danger d-none js-encaissement-alert" role="alert"></div>
+
     <div class="row g-3">
         <div class="col-12">
             {{ form_row(form.montant) }}
+            <div class="form-text">Le montant maximum autorisé est de {{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA.</div>
         </div>
         <div class="col-12">
             {{ form_row(form.mode) }}

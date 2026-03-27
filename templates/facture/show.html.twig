@@ -72,6 +72,9 @@
 {% set statut = facture.statut.value ?? '' %}
 {% set dernierPaiement = facture.paiements|last %}
 {% set mode = dernierPaiement and dernierPaiement.mode ? dernierPaiement.mode.value : '' %}
+{% set consultation = facture.consultation ?? null %}
+{% set rendezVous = consultation and consultation.rendezVous ? consultation.rendezVous : null %}
+{% set patient = rendezVous and rendezVous.patient ? rendezVous.patient : null %}
 
 {% set statutClass =
   statut in ['PAYE','PAYEE','PAID'] ? 'badge-soft is-ok' :
@@ -137,8 +140,34 @@
     <div class="card-body">
       <div class="fx-kv">
         <div class="fx-field">
+          <div class="fx-label">Patient</div>
+          <div class="fx-value">
+            {% if patient %}
+              {{ patient.nom }} {{ patient.prenom }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="fx-field">
+          <div class="fx-label">Code patient</div>
+          <div class="fx-value">{{ patient and patient.code ? patient.code : '—' }}</div>
+        </div>
+
+        <div class="fx-field">
+          <div class="fx-label">Téléphone patient</div>
+          <div class="fx-value">{{ patient and patient.telephone ? patient.telephone : '—' }}</div>
+        </div>
+
+        <div class="fx-field">
+          <div class="fx-label">Sexe</div>
+          <div class="fx-value">{{ patient and patient.sexe ? patient.sexe : '—' }}</div>
+        </div>
+
+        <div class="fx-field">
           <div class="fx-label">Montant</div>
-          <div class="fx-value">{{ facture.montant ?? '—' }}</div>
+          <div class="fx-value">{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</div>
         </div>
 
         <div class="fx-field">

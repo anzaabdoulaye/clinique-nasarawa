@@ -8,6 +8,7 @@ use App\Repository\FactureRepository;
 use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Endroid\QrCode\QrCode;
@@ -26,56 +27,71 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/perception')]
 final class PerceptionController extends AbstractController
 {
-    #[IsGranted(new Expression(
+
+#[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
 ))]
-    #[Route('', name: 'app_perception_index', methods: ['GET'])]
-    public function index(FactureRepository $factureRepository): Response
-    {
-        $factures = $factureRepository->createQueryBuilder('f')
-            ->leftJoin('f.consultation', 'c')->addSelect('c')
-            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-            ->leftJoin('r.patient', 'p')->addSelect('p')
-            ->leftJoin('f.paiements', 'pa')->addSelect('pa')
-            ->orderBy('f.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+#[Route('', name: 'app_perception_index', methods: ['GET'])]
+public function index(Request $request, FactureRepository $factureRepository): Response
+{
+    $search = trim((string) $request->query->get('search', ''));
 
-        $nbNonPayees = 0;
-        $nbPartielles = 0;
-        $nbPayees = 0;
-        $totalEncaisseJour = 0;
+    $qb = $factureRepository->createQueryBuilder('f')
+        ->leftJoin('f.consultation', 'c')->addSelect('c')
+        ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+        ->leftJoin('r.patient', 'p')->addSelect('p')
+        ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
+        ->leftJoin('f.paiements', 'pa')->addSelect('pa');
 
-        $today = (new \DateTimeImmutable())->format('Y-m-d');
-
-        foreach ($factures as $facture) {
-            $statut = $facture->getStatut()->value;
-
-            if ($statut === 'non_paye') {
-                $nbNonPayees++;
-            } elseif ($statut === 'partiellement_paye') {
-                $nbPartielles++;
-            } elseif ($statut === 'paye') {
-                $nbPayees++;
-            }
-
-            foreach ($facture->getPaiements() as $paiement) {
-                if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
-                    $totalEncaisseJour += $paiement->getMontant();
-                }
-            }
-        }
-
-        return $this->render('perception/index.html.twig', [
-            'factures' => $factures,
-            'nbNonPayees' => $nbNonPayees,
-            'nbPartielles' => $nbPartielles,
-            'nbPayees' => $nbPayees,
-            'totalEncaisseJour' => $totalEncaisseJour,
-        ]);
+    if ($search !== '') {
+        $qb->andWhere(
+            'LOWER(p.code) LIKE :search
+             OR LOWER(p.telephone) LIKE :search
+             OR LOWER(dm.numeroDossier) LIKE :search'
+        )
+        ->setParameter('search', '%' . mb_strtolower($search) . '%');
     }
 
-    #[IsGranted(new Expression(
+    $factures = $qb->orderBy('f.createdAt', 'DESC')
+        ->getQuery()
+        ->getResult();
+
+    $nbNonPayees = 0;
+    $nbPartielles = 0;
+    $nbPayees = 0;
+    $totalEncaisseJour = 0;
+
+    $today = (new \DateTimeImmutable())->format('Y-m-d');
+
+    foreach ($factures as $facture) {
+        $statut = $facture->getStatut()->value;
+
+        if ($statut === 'non_paye') {
+            $nbNonPayees++;
+        } elseif ($statut === 'partiellement_paye') {
+            $nbPartielles++;
+        } elseif ($statut === 'paye') {
+            $nbPayees++;
+        }
+
+        foreach ($facture->getPaiements() as $paiement) {
+            if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
+                $totalEncaisseJour += $paiement->getMontant();
+            }
+        }
+    }
+
+    return $this->render('perception/index.html.twig', [
+        'factures' => $factures,
+        'nbNonPayees' => $nbNonPayees,
+        'nbPartielles' => $nbPartielles,
+        'nbPayees' => $nbPayees,
+        'totalEncaisseJour' => $totalEncaisseJour,
+        'search' => $search,
+    ]);
+}
+
+#[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
 ))]
     #[Route('/facture/{id}', name: 'app_perception_facture_show', methods: ['GET'])]
@@ -96,9 +112,12 @@ final class PerceptionController extends AbstractController
         FacturationService $facturationService,
         EntityManagerInterface $em
     ): Response {
+        $resteAPayer = $facture->getResteAPayer();
+
         $form = $this->createForm(EncaissementType::class, null, [
             'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
             'method' => 'POST',
+            'max_amount' => $resteAPayer,
         ]);
 
         $form->handleRequest($request);
@@ -107,11 +126,20 @@ final class PerceptionController extends AbstractController
             if ($form->isSubmitted() && $form->isValid()) {
                 $data = $form->getData();
 
-                $facturationService->ajouterPaiement(
-                    $facture,
-                    (int) $data['montant'],
-                    $data['mode']
-                );
+                try {
+                    $facturationService->ajouterPaiement(
+                        $facture,
+                        (int) $data['montant'],
+                        $data['mode']
+                    );
+                } catch (\InvalidArgumentException $exception) {
+                    $form->get('montant')->addError(new FormError($exception->getMessage()));
+
+                    return $this->render('perception/_encaissement_form.html.twig', [
+                        'form' => $form->createView(),
+                        'facture' => $facture,
+                    ]);
+                }
 
                 $em->flush();
 
@@ -133,11 +161,20 @@ final class PerceptionController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
 
-            $facturationService->ajouterPaiement(
-                $facture,
-                (int) $data['montant'],
-                $data['mode']
-            );
+            try {
+                $facturationService->ajouterPaiement(
+                    $facture,
+                    (int) $data['montant'],
+                    $data['mode']
+                );
+            } catch (\InvalidArgumentException $exception) {
+                $form->get('montant')->addError(new FormError($exception->getMessage()));
+
+                return $this->render('perception/encaisser.html.twig', [
+                    'form' => $form->createView(),
+                    'facture' => $facture,
+                ]);
+            }
 
             $em->flush();
 
