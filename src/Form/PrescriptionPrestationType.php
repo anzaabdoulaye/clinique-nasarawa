@@ -35,6 +35,10 @@ class PrescriptionPrestationType extends AbstractType
                         ->setParameter('actif', true)
                         ->orderBy('t.libelle', 'ASC');
                 },
+                'attr' => [
+                    'class' => 'select2-prestation',
+                    'data-placeholder' => 'Rechercher une prestation...',
+                ],
             ])
             ->add('quantite', IntegerType::class, [
                 'label' => 'Quantité',

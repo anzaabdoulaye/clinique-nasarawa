@@ -12,6 +12,8 @@ use App\Form\ConsultationType;
 use App\Form\PrescriptionPrestationType;
 use App\Repository\ConsultationRepository;
 use App\Repository\BonExamenRepository;
+use App\Repository\DossierMedicalRepository;
+use App\Repository\UtilisateurRepository;
 use App\Service\BillingService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormError;
@@ -28,7 +30,9 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
 use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/consultation')]
 final class ConsultationController extends AbstractController
 {
@@ -39,50 +43,76 @@ final class ConsultationController extends AbstractController
 public function index(
     Request $request,
     ConsultationRepository $consultationRepository,
+    UtilisateurRepository $utilisateurRepository,
+    DossierMedicalRepository $dossierMedicalRepository,
     EntityManagerInterface $em
 ): Response {
     $consultation = new Consultation();
 
     $form = $this->createForm(ConsultationType::class, $consultation, [
         'context' => 'admin',
+        'current_user' => $this->getUser(),
     ]);
+
     $form->handleRequest($request);
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        if (null === $consultation->getDossierMedical()) {
-            $form->addError(new FormError('Le dossier médical est requis.'));
-        } else {
-            if (null === $consultation->getMedecin() && $this->getUser() instanceof Utilisateur) {
-                $consultation->setMedecin($this->getUser());
+    /** @var Utilisateur|null $currentUser */
+    $currentUser = $this->getUser();
+
+    if ($form->isSubmitted()) {
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            && !$this->isGranted('ROLE_ACCUEIL')
+            && !$this->isGranted('ROLE_MEDECIN')
+        ) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas créer de consultation.');
+        }
+
+        // Important : on force le médecin AVANT isValid()
+        if ($this->isGranted('ROLE_MEDECIN')) {
+            if (!$currentUser instanceof Utilisateur) {
+                throw $this->createAccessDeniedException('Utilisateur invalide.');
             }
 
-            $em->persist($consultation);
-            $em->flush();
+            $consultation->setMedecin($currentUser);
+        }
 
-            $this->addFlash('success', 'Consultation créée avec succès.');
+        if ($form->isValid()) {
+            if (!$this->isGranted('ROLE_MEDECIN') && null === $consultation->getMedecin()) {
+                $form->addError(new FormError('Le médecin est requis.'));
+            }
 
-            return $this->redirectToRoute('app_consultation_index');
+            if (null === $consultation->getDossierMedical()) {
+                $form->addError(new FormError('Le dossier médical est requis.'));
+            }
+
+            if (0 === count($form->getErrors(true))) {
+                $em->persist($consultation);
+                $em->flush();
+
+                $this->addFlash('success', 'Consultation créée avec succès.');
+
+                return $this->redirectToRoute('app_consultation_index');
+            }
         }
     }
 
-    $q = trim((string) $request->query->get('q', ''));
+    $search = $request->query->get('search');
 
     /** @var Utilisateur $user */
     $user = $this->getUser();
 
-    $search = $request->query->get('search');
-
-/** @var Utilisateur $user */
-$user = $this->getUser();
-
-$consultations = $consultationRepository->searchVisibleForUser($search, $user);
+    $consultations = $consultationRepository->searchVisibleForUser($search, $user);
 
     return $this->render('consultation/index.html.twig', [
         'consultations' => $consultations,
         'form' => $form->createView(),
+        'search' => $search,
     ]);
-}
-
+ }
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
     #[Route('/{id}', name: 'app_consultation_show', methods: ['GET'])]
     public function show(Consultation $consultation, BonExamenRepository $bonRepo): Response
     {
@@ -94,6 +124,9 @@ $consultations = $consultationRepository->searchVisibleForUser($search, $user);
     }
 
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/prestation/new', name: 'app_prescription_prestation_new', methods: ['GET', 'POST'])]
 public function new(
     Request $request,
@@ -144,6 +177,9 @@ public function new(
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
 #[Route('/prestation/{id}/edit', name: 'app_prescription_prestation_edit', methods: ['GET', 'POST'])]
 public function edit(
     Request $request,
@@ -190,7 +226,9 @@ public function edit(
 }
 
 
-
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN')"
+))]
    #[Route('/{id}/medical', name: 'app_consultation_medical_edit', methods: ['GET', 'POST'])]
 public function editMedical(
     Request $request,
@@ -270,6 +308,7 @@ public function editMedical(
     ]);
 }
 
+#[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_consultation_delete', methods: ['POST'])]
     public function delete(Request $request, Consultation $consultation, EntityManagerInterface $entityManager): Response
     {
@@ -281,6 +320,9 @@ public function editMedical(
         return $this->redirectToRoute('app_consultation_index', [], Response::HTTP_SEE_OTHER);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/facture', name: 'app_consultation_facture', methods: ['GET', 'POST'])]
     public function facture(Consultation $consultation, Request $request, BillingService $billing, EntityManagerInterface $em): Response
     {
@@ -308,6 +350,9 @@ public function editMedical(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/examens/bon', name: 'app_consultation_examens_bon', methods: ['GET'])]
     public function bonExamens(Consultation $consultation): Response
     {
@@ -323,6 +368,9 @@ public function editMedical(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/labo/bon/new', name: 'app_consultation_labo_bon_new', methods: ['GET', 'POST'])]
     public function newBonFromConsultation(
         Consultation $consultation,
@@ -371,6 +419,9 @@ public function editMedical(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
     #[Route('/consultation/{id}/labo/bon/modal', name: 'app_consultation_labo_bon_modal', methods: ['GET', 'POST'])]
 public function laboBonModal(
     Consultation $consultation,
@@ -436,6 +487,9 @@ public function laboBonModal(
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN')"
+))]
 #[Route('/{id}/edit-admin', name: 'app_consultation_admin_edit', methods: ['GET', 'POST'])]
 public function editAdmin(
     Request $request,
@@ -475,6 +529,9 @@ public function editAdmin(
     ]);
 }
 
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
 #[Route('/{id}/fiche', name: 'app_consultation_print_fiche', methods: ['GET'])]
     public function printFiche(Consultation $consultation): Response
     {
@@ -507,6 +564,9 @@ public function editAdmin(
         ]);
     }
 
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
     #[Route('/{id}/fiche/pdf', name: 'app_consultation_print_fiche_pdf', methods: ['GET'])]
     public function printFichePdf(Consultation $consultation): Response
     {

@@ -34,6 +34,30 @@ class DossierMedical
     #[ORM\OneToMany(mappedBy: 'dossierMedical', targetEntity: Hospitalisation::class)]
     private Collection $hospitalisations;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $groupeSanguin = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $allergies = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $antecedentsMedicaux = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $antecedentsChirurgicaux = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $maladiesChroniques = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $traitementEnCours = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $handicap = null;
+
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $grossesse = null;
+
     public function __construct()
     {
         $this->consultations = new ArrayCollection();
@@ -139,5 +163,115 @@ class DossierMedical
         return $this;
     }
 
+    public function getGroupeSanguin(): ?string
+    {
+        return $this->groupeSanguin;
+    }
+
+    public function setGroupeSanguin(?string $groupeSanguin): self
+    {
+        $this->groupeSanguin = $groupeSanguin;
+
+        return $this;
+    }
+
+    public function getAllergies(): ?string
+    {
+        return $this->allergies;
+    }
+
+    public function setAllergies(?string $allergies): self
+    {
+        $this->allergies = $allergies;
+
+        return $this;
+    }
+
+    public function getAntecedentsMedicaux(): ?string
+    {
+        return $this->antecedentsMedicaux;
+    }
+
+    public function setAntecedentsMedicaux(?string $antecedentsMedicaux): self
+    {
+        $this->antecedentsMedicaux = $antecedentsMedicaux;
+
+        return $this;
+    }
+
+    public function getAntecedentsChirurgicaux(): ?string
+    {
+        return $this->antecedentsChirurgicaux;
+    }
+
+    public function setAntecedentsChirurgicaux(?string $antecedentsChirurgicaux): self
+    {
+        $this->antecedentsChirurgicaux = $antecedentsChirurgicaux;
+
+        return $this;
+    }
+
+    public function getMaladiesChroniques(): ?string
+    {
+        return $this->maladiesChroniques;
+    }
+
+    public function setMaladiesChroniques(?string $maladiesChroniques): self
+    {
+        $this->maladiesChroniques = $maladiesChroniques;
+
+        return $this;
+    }
+
+    public function getTraitementEnCours(): ?string
+    {
+        return $this->traitementEnCours;
+    }
+
+    public function setTraitementEnCours(?string $traitementEnCours): self
+    {
+        $this->traitementEnCours = $traitementEnCours;
+
+        return $this;
+    }
+
+    public function getHandicap(): ?string
+    {
+        return $this->handicap;
+    }
+
+    public function setHandicap(?string $handicap): self
+    {
+        $this->handicap = $handicap;
+
+        return $this;
+    }
+
+    public function isGrossesse(): ?bool
+    {
+        return $this->grossesse;
+    }
+
+    public function getGrossesse(): ?bool
+    {
+        return $this->grossesse;
+    }
+
+    public function setGrossesse(?bool $grossesse): self
+    {
+        $this->grossesse = $grossesse;
+
+        return $this;
+    }
+
+    public function getNombreConsultations(): int
+    {
+        return $this->consultations->count();
+    }
+
+    public function getNombreHospitalisations(): int
+    {
+        return $this->hospitalisations->count();
+    }
     
 }

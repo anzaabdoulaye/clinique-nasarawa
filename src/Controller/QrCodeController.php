@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Endroid\QrCode\Builder\BuilderInterface;
 
-final class QrCodeController 
+final class QrCodeController extends AbstractController
 {
     #[Route('/qr/consultation/{id}/bon-examens', name: 'app_qr_consultation_bon_examens', methods: ['GET'])]
     public function bonExamensQr(Consultation $consultation): Response

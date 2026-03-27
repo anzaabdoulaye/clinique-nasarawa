@@ -15,12 +15,12 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/prescription-prestation')]
 final class PrescriptionPrestationController extends AbstractController
 {
-    #[Route('/consultation/{id}/prestation/new', name: 'app_prescription_prestation_new', methods: ['GET', 'POST'])]
+        #[Route('/consultation/{id}/prestation/new', name: 'app_prescription_prestation_new', methods: ['GET', 'POST'])]
     public function new(
-    Request $request,
-    Consultation $consultation,
-    EntityManagerInterface $em,
-    FacturationService $facturationService
+        Request $request,
+        Consultation $consultation,
+        EntityManagerInterface $em,
+        FacturationService $facturationService
     ): Response {
         $prescription = new PrescriptionPrestation();
         $prescription->setConsultation($consultation);
@@ -58,6 +58,8 @@ final class PrescriptionPrestationController extends AbstractController
             $facturationService->synchroniserDepuisPrescription($prescription);
             $em->flush();
 
+            $this->addFlash('success', 'Prestation ajoutée avec succès.');
+
             return $this->redirectToRoute('app_consultation_show', [
                 'id' => $consultation->getId(),
             ]);
@@ -69,6 +71,7 @@ final class PrescriptionPrestationController extends AbstractController
             'prescription' => $prescription,
         ]);
     }
+
     #[Route('/{id}/edit', name: 'app_prescription_prestation_edit', methods: ['GET', 'POST'])]
     public function edit(
         Request $request,
@@ -76,6 +79,21 @@ final class PrescriptionPrestationController extends AbstractController
         EntityManagerInterface $em,
         FacturationService $facturationService
     ): Response {
+        if ($prescription->estVerrouilleePourEdition()) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Cette prestation ne peut plus être modifiée.',
+                ], 403);
+            }
+
+            $this->addFlash('warning', 'Cette prestation ne peut plus être modifiée.');
+
+            return $this->redirectToRoute('app_consultation_show', [
+                'id' => $prescription->getConsultation()?->getId(),
+            ]);
+        }
+
         $form = $this->createForm(PrescriptionPrestationType::class, $prescription, [
             'action' => $this->generateUrl('app_prescription_prestation_edit', [
                 'id' => $prescription->getId(),
@@ -87,6 +105,7 @@ final class PrescriptionPrestationController extends AbstractController
 
         if ($request->isXmlHttpRequest()) {
             if ($form->isSubmitted() && $form->isValid()) {
+                $facturationService->synchroniserDepuisPrescription($prescription);
                 $em->flush();
 
                 return $this->json([
@@ -106,9 +125,10 @@ final class PrescriptionPrestationController extends AbstractController
             $facturationService->synchroniserDepuisPrescription($prescription);
             $em->flush();
 
-            return $this->json([
-                'success' => true,
-                'message' => 'Prestation modifiée avec succès.',
+            $this->addFlash('success', 'Prestation modifiée avec succès.');
+
+            return $this->redirectToRoute('app_consultation_show', [
+                'id' => $prescription->getConsultation()?->getId(),
             ]);
         }
 
@@ -119,7 +139,7 @@ final class PrescriptionPrestationController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_prescription_prestation_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'app_prescription_prestation_delete', methods: ['POST'])]
     public function delete(
         Request $request,
         PrescriptionPrestation $prescription,
@@ -127,23 +147,31 @@ final class PrescriptionPrestationController extends AbstractController
         FacturationService $facturationService
     ): Response {
         $consultation = $prescription->getConsultation();
-        $consultationId = $consultation?->getId();
 
-        if ($this->isCsrfTokenValid(
-            'delete_prestation_' . $prescription->getId(),
-            $request->request->get('_token')
-        )) {
-            $em->remove($prescription);
-            $em->flush();
+        if (!$this->isCsrfTokenValid('delete_prestation_' . $prescription->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Jeton CSRF invalide.');
 
-            if ($consultation) {
-                $facturationService->synchroniserFactureDepuisConsultation($consultation);
-                $em->flush();
-            }
+            return $this->redirectToRoute('app_consultation_show', [
+                'id' => $consultation?->getId(),
+            ]);
         }
 
+        if ($prescription->estVerrouilleePourEdition()) {
+            $this->addFlash('warning', 'Cette prestation ne peut plus être supprimée.');
+
+            return $this->redirectToRoute('app_consultation_show', [
+                'id' => $consultation?->getId(),
+            ]);
+        }
+
+        $facturationService->supprimerDepuisPrescription($prescription);
+        $em->remove($prescription);
+        $em->flush();
+
+        $this->addFlash('success', 'Prestation supprimée avec succès.');
+
         return $this->redirectToRoute('app_consultation_show', [
-            'id' => $consultationId,
+            'id' => $consultation?->getId(),
         ]);
     }
 }

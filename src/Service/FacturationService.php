@@ -208,6 +208,35 @@ class FacturationService
             'prescriptionPrestation' => $prescription,
         ]);
     }
+    
+    public function supprimerDepuisPrescription(PrescriptionPrestation $prescription): void
+    {
+        $consultation = $prescription->getConsultation();
+
+        if (!$consultation instanceof Consultation) {
+            return;
+        }
+
+        $facture = $consultation->getFacture();
+
+        if (!$facture instanceof Facture) {
+            return;
+        }
+
+        $ligne = $this->trouverLigneParPrescription($prescription);
+
+        if ($ligne instanceof FactureLigne) {
+            $facture->removeLigne($ligne);
+            $this->em->remove($ligne);
+        }
+
+        $this->recalculerFacture($facture);
+
+        if ($facture->getLignes()->isEmpty()) {
+            $consultation->setFacture(null);
+            $this->em->remove($facture);
+        }
+    }
 
     private function supprimerLignesOrphelines(Facture $facture, Consultation $consultation): void
     {

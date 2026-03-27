@@ -21,7 +21,44 @@ final class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             return new RedirectResponse($this->urlGenerator->generate('app_change_password'));
         }
 
-        // Mets ici ton dashboard (ou page d'accueil)
+        $roles = $user instanceof Utilisateur ? $user->getRoles() : [];
+
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('home'));
+        }
+
+        if (in_array('ROLE_ACCUEIL', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_patient_index'));
+        }
+
+        if (in_array('ROLE_MEDECIN', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_consultation_index'));
+        }
+
+        if (in_array('ROLE_PERCEPTION', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_perception_index'));
+        }
+
+        if (in_array('ROLE_LABO', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_laboratoire_index'));
+        }
+
+        if (in_array('ROLE_INFIRMIER', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_consultation_index'));
+        }
+
+        if (in_array('ROLE_PHARMACIE', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_pharmacie_index'));
+        }
+
+        if (in_array('ROLE_HOSPITALISATION', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_hospitalisation_index'));
+        }
+
+        if (in_array('ROLE_COMPTA_MATIERE', $roles, true)) {
+            return new RedirectResponse($this->urlGenerator->generate('app_comptabilite_matiere_index'));
+        }
+
         return new RedirectResponse($this->urlGenerator->generate('home'));
     }
 }

@@ -18,6 +18,7 @@
     
     <!-- App favicon -->
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
+    
 
     {% block stylesheets %}
         <!-- jsvectormap css -->
@@ -35,6 +36,9 @@
         <!-- DataTables CSS  -->
         <link href="{{ asset('assets/libs/datatables/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
         <link href="{{ asset('assets/libs/datatables/buttons/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
+        
+        
     {% endblock %}
 
     <!-- Layout config Js -->
@@ -58,6 +62,14 @@
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ label == 'danger' ? 'danger' : (label == 'error' ? 'danger' : label) }} alert-dismissible fade show mx-3 mt-3" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
                     {% block body %}
                     {% endblock %}
                 </div>
@@ -101,6 +113,9 @@
         <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
         <script src="{{ asset('assets/js/pages/plugins/lord-icon-2.1.0.js') }}"></script>
         <script src="{{ asset('assets/js/plugins.js') }}"></script>
+
+        <script src="{{ asset('assets/js/pages/select2.min.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/select2.init.js') }}"></script>
         
         <!-- apexcharts -->
         <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
