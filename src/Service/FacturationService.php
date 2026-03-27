@@ -128,6 +128,10 @@ class FacturationService
             throw new \InvalidArgumentException('Le montant du paiement doit être supérieur à zéro.');
         }
 
+        if ($montant > $facture->getResteAPayer()) {
+            throw new \InvalidArgumentException('Le montant ne doit pas dépasser le reste à payer.');
+        }
+
         $paiement = new Paiement();
         $paiement->setFacture($facture);
         $paiement->setMontant($montant);

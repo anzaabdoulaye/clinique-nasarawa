@@ -2,14 +2,14 @@
 
 namespace App\Service;
 
-use App\Entity\BonExamen;
 use App\Entity\Consultation;
 use App\Entity\Facture;
 use App\Entity\FactureLigne;
+use App\Entity\Paiement;
 use App\Enum\ModePaiement;
 use App\Enum\StatutBonExamen;
 use App\Enum\StatutExamenDemande;
-use App\Enum\StatutPaiement;
+use App\Enum\StatutFacture;
 use App\Repository\BonExamenRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -28,7 +28,7 @@ final class BillingService
             $facture = new Facture();
             $facture->setConsultation($c);
             $facture->setDateEmission(new \DateTimeImmutable());
-            $facture->setStatutPaiement(StatutPaiement::EN_ATTENTE);
+            $facture->setStatut(StatutFacture::BROUILLON);
 
             $this->em->persist($facture);
 
@@ -39,18 +39,12 @@ final class BillingService
         }
 
         // Si déjà payée => on ne touche pas
-        if ($facture->getStatutPaiement() === StatutPaiement::PAYE) {
+        if ($facture->getStatut() === StatutFacture::PAYE) {
             return $facture;
         }
 
-        // Rebuild lignes (idempotent)
-        if (method_exists($facture, 'clearLignes')) {
-            $facture->clearLignes();
-        } else {
-            // fallback si pas de clearLignes()
-            foreach ($facture->getLignes() as $l) {
-               // $facture->removeLigne($l);
-            }
+        foreach (iterator_to_array($facture->getLignes()) as $ligne) {
+            $facture->removeLigne($ligne);
         }
 
         // ============ 1) Forfait consultation ============
@@ -140,34 +134,26 @@ final class BillingService
             }
         }
 
-        // ============ 5) Total facture ============
-        if (method_exists($facture, 'recalcMontant')) {
-            $facture->recalcMontant();
-        } else {
-            // fallback
-            $montant = 0;
-            foreach ($facture->getLignes() as $l) {
-                $montant += (int)$l->getTotal();
-            }
-            $facture->setMontant((float)$montant);
-        }
-
-        $this->em->flush();
+        $facture->recalculerMontants();
 
         return $facture;
     }
 
     public function payInvoice(Facture $facture, ModePaiement $mode): void
     {
-        if ($facture->getStatutPaiement() === StatutPaiement::PAYE) {
+        if ($facture->getStatut() === StatutFacture::PAYE || $facture->getResteAPayer() <= 0) {
             return;
         }
 
-        $facture->setModePaiement($mode);
-        $facture->setDatePaiement(new \DateTimeImmutable());
-        $facture->setStatutPaiement(StatutPaiement::PAYE);
+        $paiement = (new Paiement())
+            ->setFacture($facture)
+            ->setMontant($facture->getResteAPayer())
+            ->setMode($mode)
+            ->setPayeLe(new \DateTimeImmutable());
 
-        $this->em->flush();
+        $facture->addPaiement($paiement);
+        $this->em->persist($paiement);
+        $facture->recalculerMontants();
     }
 
     private function recalcLine(FactureLigne $l): void

@@ -330,7 +330,7 @@
                 <tr>
                     <td>
                         <strong>Statut :</strong>
-                        {{ facture.statutPaiement.value ?? facture.statut.value ?? '-' }}
+                        {{ facture.statut.value ?? '-' }}
                     </td>
                     
                 </tr>
@@ -403,7 +403,7 @@
                     <th>Total facture</th>
                     <td class="right">
                         <strong>
-                            {{ (facture.montantTotal ?? facture.montant ?? 0)|number_format(0, '.', ' ') }} FCFA
+                            {{ facture.montantTotal|number_format(0, '.', ' ') }} FCFA
                         </strong>
                     </td>
                 </tr>

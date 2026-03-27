@@ -1,4 +1,101 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
-{{ form_end(form) }}
+{{ form_start(form, {'attr': {'class': 'js-facture-form', 'novalidate': 'novalidate'}}) }}
+
+<style>
+    .f-form .form-label{
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: .35rem;
+    }
+    .f-form .form-text,
+    .f-form .help-text{
+        color: #6b7280;
+        font-size: .85rem;
+    }
+    .f-form .required:after{
+        content: " *";
+        color: #dc3545;
+        font-weight: 900;
+    }
+    .f-form .form-control,
+    .f-form .form-select{
+        border-radius: 12px;
+    }
+    .f-form .form-control:focus,
+    .f-form .form-select:focus{
+        box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
+    }
+    .f-form .field-card{
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+    }
+    .f-form .error{
+        color:#dc3545;
+        font-size:.85rem;
+        margin-top:.35rem;
+        font-weight:600;
+    }
+</style>
+
+<div class="f-form">
+    {% if form_errors(form) %}
+        <div class="alert alert-danger d-flex gap-2 align-items-start">
+            <i class="fa fa-triangle-exclamation mt-1"></i>
+            <div>
+                <div class="fw-semibold">Veuillez corriger les erreurs du formulaire.</div>
+                <div class="small">{{ form_errors(form) }}</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="field-card mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                {{ form_label(form.montantTotal, 'Montant', {'label_attr': {'class': 'form-label required'}}) }}
+                {{ form_widget(form.montantTotal, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 15000'}}) }}
+                <div class="help-text">Montant total de la facture.</div>
+                {% if form_errors(form.montantTotal) %}<div class="error">{{ form_errors(form.montantTotal) }}</div>{% endif %}
+            </div>
+
+            <div class="col-12 col-md-6">
+                {{ form_label(form.consultation, 'Consultation', {'label_attr': {'class': 'form-label required'}}) }}
+                {{ form_widget(form.consultation, {'attr': {'class': 'form-select'}}) }}
+                <div class="help-text">Associer la facture à une consultation.</div>
+                {% if form_errors(form.consultation) %}<div class="error">{{ form_errors(form.consultation) }}</div>{% endif %}
+            </div>
+
+            <div class="col-12 col-md-6">
+                {{ form_label(form.dateEmission, 'Date d’émission', {'label_attr': {'class': 'form-label required'}}) }}
+                {{ form_widget(form.dateEmission, {'attr': {'class': 'form-control'}}) }}
+                {% if form_errors(form.dateEmission) %}<div class="error">{{ form_errors(form.dateEmission) }}</div>{% endif %}
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Statut</label>
+                <input type="text" class="form-control" value="{{ form.vars.data.statut.value|replace({'_': ' '})|title }}" readonly>
+                <div class="help-text">Le statut est calculé selon les paiements enregistrés.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Reste à payer</label>
+                <input type="text" class="form-control" value="{{ form.vars.data.resteAPayer|number_format(0, '.', ' ') }} FCFA" readonly>
+                <div class="help-text">Pour encaisser une facture, utilisez le module de perception.</div>
+            </div>
+        </div>
+    </div>
+
+    {{ form_rest(form) }}
+
+    <div class="d-flex justify-content-end gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save me-1"></i> {{ button_label|default('Enregistrer') }}
+        </button>
+
+        <a href="{{ path('app_facture_index') }}" class="btn btn-light border d-none d-md-inline-flex">
+            Annuler
+        </a>
+    </div>
+</div>
+
+{{ form_end(form, {'render_rest': false}) }}

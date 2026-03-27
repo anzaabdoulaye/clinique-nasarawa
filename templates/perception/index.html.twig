@@ -55,7 +55,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table align-middle table-hover mb-0 datatable">
+                <table class="table align-middle">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -85,9 +85,8 @@
                             <td>#{{ facture.consultation.id }}</td>
                             <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
                             <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
-                            
-                            <td>{{ (facture.montantPaye ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ (facture.resteAPayer ?? 0)|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>{{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</td>
+                            <td>{{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</td>
                             <td>
                                 {% if statut == 'brouillon' %}
                                     <span class="badge bg-secondary">Brouillon</span>
@@ -183,8 +182,51 @@
                 const form = modalContent.querySelector('form');
                 if (!form) return;
 
+                const montantInput = form.querySelector('#encaissement_montant');
+                const alertBox = form.querySelector('.js-encaissement-alert');
+                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || '0', 10);
+
+                function showAlert(message) {
+                    if (!alertBox) {
+                        return;
+                    }
+
+                    if (!message) {
+                        alertBox.textContent = '';
+                        alertBox.classList.add('d-none');
+                        return;
+                    }
+
+                    alertBox.textContent = message;
+                    alertBox.classList.remove('d-none');
+                }
+
+                function validateMontant() {
+                    if (!montantInput || Number.isNaN(maxAmount) || maxAmount <= 0) {
+                        showAlert('');
+                        return true;
+                    }
+
+                    const value = Number.parseInt(montantInput.value || '0', 10);
+
+                    if (!Number.isNaN(value) && value > maxAmount) {
+                        showAlert(`Le montant saisi ne doit pas depasser le total a payer de ${maxAmount} FCFA.`);
+                        return false;
+                    }
+
+                    showAlert('');
+
+                    return true;
+                }
+
+                montantInput?.addEventListener('input', validateMontant);
+
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
+
+                    if (!validateMontant()) {
+                        return;
+                    }
 
                     const submitBtn = form.querySelector('.js-submit-encaissement');
                     if (submitBtn) submitBtn.disabled = true;

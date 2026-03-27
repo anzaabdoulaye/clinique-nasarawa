@@ -16,6 +16,19 @@ class UtilisateurRepository extends ServiceEntityRepository
         parent::__construct($registry, Utilisateur::class);
     }
 
+    /**
+     * @return list<Utilisateur>
+     */
+    public function findDoctors(): array
+    {
+        $utilisateurs = $this->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']);
+
+        return array_values(array_filter(
+            $utilisateurs,
+            static fn (Utilisateur $utilisateur) => in_array('ROLE_MEDECIN', $utilisateur->getRoles(), true)
+        ));
+    }
+
     //    /**
     //     * @return Utilisateur[] Returns an array of Utilisateur objects
     //     */

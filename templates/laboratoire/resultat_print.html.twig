@@ -6,78 +6,87 @@
 
     <style>
         @page {
-            size: A4 portrait;
-            margin: 8mm;
+            size: A5 portrait;
+            margin: 6mm;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: #1f2937;
+            background: #ffffff;
         }
 
         .document {
             width: 100%;
+            margin: 0 auto;
+            border: 1px solid #dbe3ea;
+            border-radius: 10px;
+            padding: 6px;
         }
 
         .top-bar {
-            height: 4px;
+            height: 3px;
             background: #0f4c81;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
         }
 
-        .header-table,
-        .meta-table,
-        .result-table,
-        .footer-table,
-        .signature-table {
+        table {
             width: 100%;
             border-collapse: collapse;
         }
 
         .header-table td,
-        .meta-table td,
-        .footer-table td,
+        .info-table td,
+        .trace-table td,
         .signature-table td {
             vertical-align: top;
         }
 
         .clinic-logo {
-            width: 26mm;
-            height: 26mm;
+            width: 20mm;
+            height: 20mm;
             border: 1px solid #d1d5db;
             padding: 2px;
             background: #ffffff;
             border-radius: 50%;
+            object-fit: cover;
         }
 
         .clinic h1 {
-            margin: 0 0 3px 0;
-            font-size: 14px;
+            margin: 0 0 2px 0;
+            font-size: 11px;
             font-weight: bold;
             color: #0f4c81;
             text-transform: uppercase;
+            line-height: 1.2;
         }
 
         .clinic .sub {
-            font-size: 8px;
-            line-height: 1.35;
+            font-size: 7px;
+            line-height: 1.3;
             color: #6b7280;
         }
 
         .qr-box {
-            width: 30mm;
+            width: 100%;
             text-align: center;
             border: 1px solid #d1d5db;
-            padding: 4px;
+            padding: 3px;
             background: #f8fafc;
+            border-radius: 6px;
         }
 
         .qr-box img {
-            width: 22mm;
-            height: 22mm;
+            width: 17mm;
+            height: 17mm;
             border: 1px solid #e5e7eb;
             background: #fff;
             padding: 2px;
@@ -85,49 +94,38 @@
 
         .qr-label {
             margin-top: 2px;
-            font-size: 7px;
+            font-size: 6.5px;
             line-height: 1.2;
             color: #6b7280;
         }
 
         .separator {
             border-bottom: 1px solid #d1d5db;
-            margin: 8px 0;
+            margin: 5px 0 6px 0;
         }
 
         .title-box {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            padding: 4px 6px;
+            background: #f8fafc;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
         }
 
         .title-box .title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: bold;
             color: #0f4c81;
             text-transform: uppercase;
+            line-height: 1.2;
         }
 
         .title-box .subtitle {
             margin-top: 2px;
-            font-size: 8px;
+            font-size: 7px;
             color: #6b7280;
-        }
-
-        .meta-box,
-        .box,
-        .table-wrap {
-            border: 1px solid #d1d5db;
-        }
-
-        .meta-box {
-            padding: 6px;
-            margin-bottom: 8px;
-        }
-
-        .meta-table td {
-            width: 50%;
-            padding: 3px 4px;
-            line-height: 1.35;
+            line-height: 1.2;
         }
 
         .section {
@@ -135,32 +133,47 @@
         }
 
         .section-title {
-            padding: 4px 6px;
-            font-size: 9px;
+            padding: 4px 5px;
+            font-size: 8px;
             font-weight: bold;
             color: #0f4c81;
             background: #f8fafc;
             border: 1px solid #d1d5db;
             border-bottom: none;
+            border-radius: 6px 6px 0 0;
             text-transform: uppercase;
+            line-height: 1.2;
         }
 
-        .box {
-            padding: 6px;
-            line-height: 1.35;
-        }
-
-        .table-wrap {
+        .section-body {
+            border: 1px solid #d1d5db;
             border-top: none;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .info-table td,
+        .trace-table td {
+            padding: 4px 5px;
+            font-size: 8px;
+            line-height: 1.35;
+            border: 1px solid #eef2f7;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #374151;
         }
 
         .result-table th,
         .result-table td {
             border: 1px solid #e5e7eb;
-            padding: 6px 5px;
-            font-size: 9px;
+            padding: 4px;
+            font-size: 8px;
             text-align: left;
             vertical-align: top;
+            line-height: 1.3;
         }
 
         .result-table th {
@@ -169,52 +182,74 @@
             font-weight: bold;
         }
 
-        .footer-block {
-            border-top: 1px dashed #d1d5db;
-            margin-top: 8px;
-            padding-top: 6px;
+        .result-table tbody tr:nth-child(even) {
+            background: #fafcff;
         }
 
-        .footer-left {
+        .box {
+            padding: 6px;
+            line-height: 1.4;
             font-size: 8px;
-            color: #6b7280;
-            line-height: 1.35;
-            padding-right: 6px;
-        }
-
-        .signature-table {
-            margin-top: 10px;
-        }
-
-        .signature-block {
-            text-align: center;
-            vertical-align: bottom;
-            height: 70px;
-            padding: 0 12px;
-        }
-
-        .line {
-            border-top: 1px solid #000;
-            padding-top: 4px;
-            font-size: 8px;
-            color: #6b7280;
+            min-height: 28px;
         }
 
         .footer-note {
-            margin-top: 8px;
+            margin-top: 6px;
             padding-top: 4px;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
             color: #0f4c81;
             border-top: 1px dashed #d1d5db;
         }
 
+        .signature-table {
+            margin-top: 80px;
+        }
+
+        .signature-block {
+            text-align: center;
+            vertical-align: bottom;
+            height: 10px;
+            padding: 0 8px;
+        }
+
+        .line {
+            border-top: 1px solid #000;
+            padding-top: 3px;
+            font-size: 7px;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
         .no-print {
-            display: none;
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .no-print button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            background: #0f4c81;
+            color: #fff;
+            cursor: pointer;
+            font-size: 8px;
         }
 
         @media print {
+            body {
+                background: #fff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .document {
+                border: none;
+                border-radius: 0;
+                padding: 0;
+            }
+
             .no-print {
                 display: none !important;
             }
@@ -232,13 +267,13 @@
 
         <table class="header-table">
             <tr>
-                <td style="width:16%;">
+                <td style="width:18%;">
                     {% if logo_path is defined and logo_path %}
                         <img src="{{ logo_path }}" alt="Logo Clinique Médicale Nassarawa" class="clinic-logo">
                     {% endif %}
                 </td>
 
-                <td style="width:60%;">
+                <td style="width:56%;">
                     <div class="clinic">
                         <h1>Clinique Médicale Nassarawa</h1>
                         <div class="sub">
@@ -252,7 +287,7 @@
                     </div>
                 </td>
 
-                <td style="width:24%; text-align:right;">
+                <td style="width:26%; text-align:right;">
                     <div class="qr-box">
                         {% if _qr %}
                             <img src="{{ _qr }}" alt="QR Code">
@@ -273,78 +308,85 @@
         <div class="title-box">
             <div class="title">Résultat laboratoire</div>
             <div class="subtitle">
-                {% if prestation.tarifPrestation is defined and prestation.tarifPrestation %}
-                    {{ prestation.tarifPrestation.libelle }}
-                {% endif %}
+                {{ prestation.tarifPrestation is defined and prestation.tarifPrestation ? prestation.tarifPrestation.libelle : 'Examen de laboratoire' }}
             </div>
         </div>
 
-        <div class="meta-box">
-            <table class="meta-table">
-                <tr>
-                    <td>
-                        <strong>Nom Prénom :</strong>
-                        {% if patient %}
-                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        <strong>Consultation :</strong>
-                        {{ consultation ? ('#' ~ consultation.id) : '-' }}
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <strong>Âge :</strong>
-                        {{ patient and attribute(patient, 'age') is defined ? patient.age ~ ' ans' : '-' }}
-                    </td>
-                    <td>
-                        <strong>Sexe :</strong>
-                        {{ patient and attribute(patient, 'sexe') is defined ? patient.sexe : '-' }}
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <strong>Date de validation :</strong>
-                        {{ resultat.dateValidation ? resultat.dateValidation|date('d/m/Y') : "now"|date('d/m/Y') }}
-                    </td>
-                    <td>
-                        <strong>Référence :</strong>
-                        LAB-{{ resultat.id ?? prestation.id }}
-                    </td>
-                </tr>
-            </table>
+        <div class="section">
+            <div class="section-title">Informations du patient et de l'examen</div>
+            <div class="section-body">
+                <table class="info-table">
+                    <tr>
+                        <td style="width:50%;">
+                            <span class="label">Nom et prénom :</span>
+                            {% if patient %}
+                                {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="width:50%;">
+                            <span class="label">Référence :</span>
+                            LAB-{{ resultat.id ?? prestation.id }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="label">Âge :</span>
+                            {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}
+                        </td>
+                        <td>
+                            <span class="label">Sexe :</span>
+                            {{ patient and patient.sexe ? patient.sexe : '-' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="label">Consultation :</span>
+                            {{ consultation ? ('#' ~ consultation.id) : '-' }}
+                        </td>
+                        <td>
+                            <span class="label">Date de validation :</span>
+                            {{ resultat.dateValidation ? resultat.dateValidation|date('d/m/Y') : "now"|date('d/m/Y') }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <span class="label">Examen demandé :</span>
+                            {{ prestation.tarifPrestation is defined and prestation.tarifPrestation ? prestation.tarifPrestation.libelle : '-' }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </div>
 
         <div class="section">
-            <div class="section-title">Résultats</div>
-            <div class="table-wrap">
+            <div class="section-title">Résultats du laboratoire</div>
+            <div class="section-body">
                 <table class="result-table">
                     <thead>
                         <tr>
-                            <th style="width:34%;">Demandes</th>
-                            <th style="width:33%;">Résultats</th>
+                            <th style="width:34%;">Paramètre / Demande</th>
+                            <th style="width:33%;">Résultat</th>
                             <th style="width:33%;">Valeurs normales</th>
                         </tr>
                     </thead>
                     <tbody>
-                    {% if resultat.lignes|length > 0 %}
-                        {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                        {% if resultat.lignes|length > 0 %}
+                            {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                                <tr>
+                                    <td>{{ ligne.demande|nl2br }}</td>
+                                    <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
+                                    <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
                             <tr>
-                                <td>{{ ligne.demande|nl2br }}</td>
-                                <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
-                                <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                <td>{{ prestation.tarifPrestation.libelle }}</td>
+                                <td>{{ resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
+                                <td>-</td>
                             </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td>{{ prestation.tarifPrestation.libelle }}</td>
-                            <td>{{ resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
-                            <td>-</td>
-                        </tr>
-                    {% endif %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -352,28 +394,37 @@
 
         {% if resultat.conclusion %}
             <div class="section">
-                <div class="section-title">Conclusion</div>
-                <div class="box">
-                    {{ resultat.conclusion|nl2br }}
+                <div class="section-title">Conclusion / Observation</div>
+                <div class="section-body">
+                    <div class="box">
+                        {{ resultat.conclusion|nl2br }}
+                    </div>
                 </div>
             </div>
         {% endif %}
 
-        <div class="footer-block">
-            <table class="footer-table">
-                <tr>
-                    <td class="footer-left">
-                        <div>
-                            <strong>Document :</strong>
-                            Résultat laboratoire généré par le système de gestion de la clinique.
-                        </div>
-                        <div>
-                            <strong>Examen :</strong>
-                            {{ prestation.tarifPrestation.libelle }}
-                        </div>
-                    </td>
-                </tr>
-            </table>
+        <div class="section">
+            <div class="section-title">Traçabilité et validation</div>
+            <div class="section-body">
+                <table class="trace-table">
+                    <tr>
+                        <td style="width:50%;">
+                            <span class="label">Laborantin :</span>
+                            {{ resultat.validePar ?: '-' }}
+                        </td>
+                        <td style="width:50%;">
+                            <span class="label">Document :</span>
+                            Résultat laboratoire généré par le système
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <span class="label">Mention :</span>
+                            Document à conserver par le patient
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </div>
 
         <table class="signature-table">
@@ -388,10 +439,10 @@
         </table>
 
         <div class="footer-note">
-            Document à conserver par le patient
+            Clinique Médicale Nassarawa — Résultat de laboratoire
         </div>
 
-        <div class="no-print" style="margin-top:12px; text-align:right;">
+        <div class="no-print">
             <button onclick="window.print()">Imprimer</button>
         </div>
     </div>

@@ -7,6 +7,7 @@ use App\Entity\ExamenClinique;
 use App\Entity\ExamenNeurologique;
 use App\Entity\Hospitalisation;
 use App\Entity\Utilisateur;
+use App\Repository\UtilisateurRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -16,27 +17,38 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class HospitalisationType extends AbstractType
 {
+    public function __construct(
+        private readonly UtilisateurRepository $utilisateurRepository,
+    ) {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('dossierMedical', EntityType::class, [
-                'label' => 'Dossier médical',
-                'class' => DossierMedical::class,
-                'placeholder' => '— Sélectionner —',
-                'required' => true,
-                'choice_label' => function (DossierMedical $d) {
-                    // ✅ si tu as getNumeroDossier()
-                    if (method_exists($d, 'getNumeroDossier') && $d->getNumeroDossier()) {
-                        return $d->getNumeroDossier();
-                    }
-                    return 'Dossier #' . $d->getId();
-                },
-                'attr' => ['class' => 'form-select'],
-            ])
+           ->add('dossierMedical', EntityType::class, [
+    'label' => 'Dossier médical',
+    'class' => DossierMedical::class,
+    'placeholder' => '— Rechercher un dossier —',
+    'required' => true,
+    'choice_label' => function (DossierMedical $d) {
+        $numero = $d->getNumeroDossier() ?: 'Dossier #' . $d->getId();
+
+        if ($d->getPatient()) {
+            return $numero . ' - ' . $d->getPatient()->getNom() . ' ' . $d->getPatient()->getPrenom();
+        }
+
+        return $numero;
+    },
+    'attr' => [
+        'class' => 'form-select select2-enable',
+        'data-placeholder' => 'Rechercher dossier + patient...',
+    ],
+])
 
             ->add('medecinReferent', EntityType::class, [
                 'label' => 'Médecin référent',
                 'class' => Utilisateur::class,
+                'choices' => $this->utilisateurRepository->findDoctors(),
                 'placeholder' => '— Sélectionner —',
                 'required' => true,
                 'choice_label' => function (Utilisateur $u) {

@@ -97,10 +97,7 @@ class ConsultationType extends AbstractType
 
         if ($context === 'admin') {
             $currentRendezVous = $builder->getData()?->getRendezVous();
-            $doctorChoices = array_values(array_filter(
-                $this->utilisateurRepository->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']),
-                static fn (Utilisateur $utilisateur) => in_array('ROLE_MEDECIN', $utilisateur->getRoles(), true)
-            ));
+            $doctorChoices = $this->utilisateurRepository->findDoctors();
 
             $builder
                 ->add('medecin', EntityType::class, [

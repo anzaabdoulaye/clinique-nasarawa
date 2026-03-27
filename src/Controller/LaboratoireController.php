@@ -45,8 +45,14 @@ final class LaboratoireController extends AbstractController
     {
         $this->verifierDestinationLaboratoire($prestation);
 
+        $resultat = $prestation->getResultatLaboratoire();
+        $hasResultatSaisi = $resultat ? $this->hasSaisiResultat($resultat) : false;
+
         return $this->render('laboratoire/show.html.twig', [
             'prestation' => $prestation,
+            'canEditResult' => $this->canEditResult($prestation),
+            'hasResultatSaisi' => $hasResultatSaisi,
+            'canMarkRealise' => $prestation->getStatut() === StatutPrescriptionPrestation::EN_COURS && $hasResultatSaisi,
         ]);
     }
 
@@ -74,13 +80,25 @@ final class LaboratoireController extends AbstractController
     ): Response {
         $this->verifierDestinationLaboratoire($prestation);
 
-        if (\in_array($prestation->getStatut(), [
-            StatutPrescriptionPrestation::PAYE,
-            StatutPrescriptionPrestation::EN_COURS,
-        ], true)) {
-            $prestation->setStatut(StatutPrescriptionPrestation::REALISE);
-            $em->flush();
+        if ($prestation->getStatut() !== StatutPrescriptionPrestation::EN_COURS) {
+            $this->addFlash('warning', 'Vous devez d\'abord prendre en charge cet examen avant de le marquer comme realise.');
+
+            return $this->redirectToRoute('app_laboratoire_show', [
+                'id' => $prestation->getId(),
+            ]);
         }
+
+        $resultat = $prestation->getResultatLaboratoire();
+        if (!$resultat || !$this->hasSaisiResultat($resultat)) {
+            $this->addFlash('warning', 'Vous devez saisir le resultat avant de marquer cet examen comme realise.');
+
+            return $this->redirectToRoute('app_laboratoire_show', [
+                'id' => $prestation->getId(),
+            ]);
+        }
+
+        $prestation->setStatut(StatutPrescriptionPrestation::REALISE);
+        $em->flush();
 
         return $this->redirectToRoute('app_laboratoire_show', [
             'id' => $prestation->getId(),
@@ -139,6 +157,23 @@ public function saisirResultat(
 ): Response {
     $this->verifierDestinationLaboratoire($prestation);
 
+    if (!$this->canEditResult($prestation)) {
+        $message = 'Vous devez d\'abord prendre en charge cet examen avant de saisir le resultat.';
+
+        if ($request->isXmlHttpRequest()) {
+            return new Response(sprintf(
+                '<div class="modal-body"><div class="alert alert-warning mb-0">%s</div></div>',
+                htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+            ), Response::HTTP_FORBIDDEN);
+        }
+
+        $this->addFlash('warning', $message);
+
+        return $this->redirectToRoute('app_laboratoire_show', [
+            'id' => $prestation->getId(),
+        ]);
+    }
+
     $resultat = $prestation->getResultatLaboratoire();
     if (!$resultat) {
         $resultat = new ResultatLaboratoire();
@@ -163,17 +198,7 @@ public function saisirResultat(
     if ($request->isXmlHttpRequest()) {
         if ($form->isSubmitted() && $form->isValid()) {
             $resultat->setDateValidation(new \DateTimeImmutable());
-
-            $user = $this->getUser();
-            if ($user && method_exists($user, 'getNomComplet')) {
-                $resultat->setValidePar($user->getNomComplet());
-            } elseif ($user && method_exists($user, 'getUserIdentifier')) {
-                $resultat->setValidePar($user->getUserIdentifier());
-            }
-
-            if ($prestation->getStatut() !== StatutPrescriptionPrestation::REALISE) {
-                $prestation->setStatut(StatutPrescriptionPrestation::REALISE);
-            }
+            $resultat->setValidePar($this->buildLaborantinLabel($this->getUser()));
 
             $em->persist($resultat);
             $em->flush();
@@ -193,17 +218,7 @@ public function saisirResultat(
 
     if ($form->isSubmitted() && $form->isValid()) {
         $resultat->setDateValidation(new \DateTimeImmutable());
-
-        $user = $this->getUser();
-        if ($user && method_exists($user, 'getNomComplet')) {
-            $resultat->setValidePar($user->getNomComplet());
-        } elseif ($user && method_exists($user, 'getUserIdentifier')) {
-            $resultat->setValidePar($user->getUserIdentifier());
-        }
-
-        if ($prestation->getStatut() !== StatutPrescriptionPrestation::REALISE) {
-            $prestation->setStatut(StatutPrescriptionPrestation::REALISE);
-        }
+        $resultat->setValidePar($this->buildLaborantinLabel($this->getUser()));
 
         $em->persist($resultat);
         $em->flush();
@@ -245,6 +260,8 @@ public function saisirResultat(
 
         $code = 'R-' . $resultat->getId();
 
+        $logoBase64 = $this->getEmbeddedLogo();
+
         // also provide a PDF endpoint
         return $this->render('laboratoire/resultat_print.html.twig', [
             'prestation' => $prestation,
@@ -252,6 +269,7 @@ public function saisirResultat(
             'qr_data' => $dataUri2,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
         ]);
     }
 
@@ -279,12 +297,15 @@ public function saisirResultat(
 
         $code = 'R-' . $resultat->getId();
 
+        $logoBase64 = $this->getEmbeddedLogo();
+
         $html = $this->renderView('laboratoire/resultat_print.html.twig', [
             'prestation' => $prestation,
             'resultat' => $resultat,
             'qr_data' => $dataUri2,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
+            'logo_path' => $logoBase64,
         ]);
 
         $options = new Options();
@@ -293,7 +314,7 @@ public function saisirResultat(
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A5', 'portrait');
         $dompdf->render();
 
         $pdfOutput = $dompdf->output();
@@ -332,5 +353,63 @@ public function saisirResultat(
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="resultat_labo-%d.pdf"', $prestation->getId()),
         ]);
+    }
+
+    private function buildLaborantinLabel(?object $user): ?string
+    {
+        if (!$user) {
+            return null;
+        }
+
+        $fullName = method_exists($user, 'getNomComplet') ? trim((string) $user->getNomComplet()) : '';
+        $account = method_exists($user, 'getUserIdentifier') ? trim((string) $user->getUserIdentifier()) : '';
+
+        if ($fullName !== '' && $account !== '') {
+            return sprintf('%s | Compte: %s', $fullName, $account);
+        }
+
+        if ($fullName !== '') {
+            return $fullName;
+        }
+
+        return $account !== '' ? $account : null;
+    }
+
+    private function getEmbeddedLogo(): ?string
+    {
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+
+        if (!file_exists($logoPath)) {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+    }
+
+    private function canEditResult(PrescriptionPrestation $prestation): bool
+    {
+        return \in_array($prestation->getStatut(), [
+            StatutPrescriptionPrestation::EN_COURS,
+            StatutPrescriptionPrestation::REALISE,
+        ], true);
+    }
+
+    private function hasSaisiResultat(ResultatLaboratoire $resultat): bool
+    {
+        if (trim((string) $resultat->getConclusion()) !== '') {
+            return true;
+        }
+
+        if (trim((string) $resultat->getResultat()) !== '') {
+            return true;
+        }
+
+        foreach ($resultat->getLignes() as $ligne) {
+            if (trim((string) $ligne->getResultat()) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

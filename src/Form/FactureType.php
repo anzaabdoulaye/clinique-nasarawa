@@ -4,14 +4,14 @@ namespace App\Form;
 
 use App\Entity\Consultation;
 use App\Entity\Facture;
-use App\Enum\ModePaiement;
-use App\Enum\StatutPaiement;
+use App\Enum\StatutFacture;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
-use Symfony\Component\Form\Extension\Core\Type\EnumType;
-use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class FactureType extends AbstractType
@@ -21,10 +21,9 @@ class FactureType extends AbstractType
         $isEdit = (bool) ($options['is_edit'] ?? false);
 
         $builder
-            ->add('montant', NumberType::class, [
+            ->add('montantTotal', IntegerType::class, [
                 'label' => 'Montant',
                 'required' => true,
-                'scale' => 0, // mets 2 si tu gères les décimales
                 'attr' => [
                     'class' => 'form-control',
                     'min' => 0,
@@ -42,44 +41,12 @@ class FactureType extends AbstractType
                 ],
             ])
 
-            ->add('datePaiement', DateTimeType::class, [
-                'label' => 'Date de paiement',
-                'widget' => 'single_text',
-                'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                ],
-                'help' => 'Laisser vide si la facture n’est pas encore payée.',
-            ])
-
-            // ✅ Si ce sont des PHP enum (recommandé)
-            ->add('statutPaiement', EnumType::class, [
-                'label' => 'Statut de paiement',
-                'class' => StatutPaiement::class,
-                'placeholder' => '— Choisir —',
-                'required' => true,
-                'choice_label' => fn (StatutPaiement $s) => $s->value, // ou ->name
-                'attr' => [
-                    'class' => 'form-select',
-                ],
-            ])
-
-            ->add('modePaiement', EnumType::class, [
-                'label' => 'Mode de paiement',
-                'class' => ModePaiement::class,
-                'placeholder' => '— Choisir —',
-                'required' => false, // souvent on choisit le mode seulement si payé
-                'choice_label' => fn (ModePaiement $m) => $m->value,
-                'attr' => [
-                    'class' => 'form-select',
-                ],
-            ])
-
             ->add('consultation', EntityType::class, [
                 'label' => 'Consultation',
                 'class' => Consultation::class,
                 'placeholder' => '— Sélectionner une consultation —',
                 'required' => true,
+                'disabled' => $isEdit,
                 'choice_label' => function (Consultation $c) {
                     // Adaptation: à ajuster selon tes champs
                     // Exemple lisible: "CONS-12 | Patient X | 05/03/2026"
@@ -107,6 +74,51 @@ class FactureType extends AbstractType
                 ],
             ])
         ;
+
+        $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event): void {
+            $facture = $event->getData();
+
+            if (!$facture instanceof Facture) {
+                return;
+            }
+
+            $montantTotal = max(0, $facture->getMontantTotal());
+            $montantPaye = max(0, $facture->getMontantPaye());
+
+            $facture->setMontantTotal($montantTotal);
+
+            if ($montantPaye > $montantTotal) {
+                $montantPaye = $montantTotal;
+                $facture->setMontantPaye($montantPaye);
+            }
+
+            $reste = max(0, $montantTotal - $montantPaye);
+            $facture->setResteAPayer($reste);
+
+            if ($montantTotal === 0) {
+                $facture->setStatut(StatutFacture::BROUILLON);
+                $facture->setDatePaiement(null);
+                return;
+            }
+
+            if ($montantPaye <= 0) {
+                $facture->setStatut(StatutFacture::NON_PAYE);
+                $facture->setDatePaiement(null);
+                return;
+            }
+
+            if ($reste > 0) {
+                $facture->setStatut(StatutFacture::PARTIELLEMENT_PAYE);
+                $facture->setDatePaiement(null);
+                return;
+            }
+
+            $facture->setStatut(StatutFacture::PAYE);
+
+            if ($facture->getDatePaiement() === null) {
+                $facture->setDatePaiement(new \DateTimeImmutable());
+            }
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void

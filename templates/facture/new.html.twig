@@ -1,124 +1,21 @@
-{# templates/facture/_form.html.twig #}
+{% extends 'base.html.twig' %}
 
-{{ form_start(form, {'attr': {'class': 'js-facture-form', 'novalidate': 'novalidate'}}) }}
+{% block title %}Nouvelle facture{% endblock %}
 
-<style>
-  .f-form .form-label{
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: .35rem;
-  }
-  .f-form .form-text,
-  .f-form .help-text{
-    color: #6b7280;
-    font-size: .85rem;
-  }
-  .f-form .required:after{
-    content: " *";
-    color: #dc3545;
-    font-weight: 900;
-  }
-  .f-form .form-control,
-  .f-form .form-select{
-    border-radius: 12px;
-  }
-  .f-form .form-control:focus,
-  .f-form .form-select:focus{
-    box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
-  }
-  .f-form .field-card{
-    border: 1px solid rgba(0,0,0,.06);
-    border-radius: 14px;
-    padding: 14px;
-    background: #fff;
-  }
-  .f-form .error{
-    color:#dc3545;
-    font-size:.85rem;
-    margin-top:.35rem;
-    font-weight:600;
-  }
-</style>
-
-<div class="f-form">
-
-  {# erreurs globales #}
-  {% if form_errors(form) %}
-    <div class="alert alert-danger d-flex gap-2 align-items-start">
-      <i class="fa fa-triangle-exclamation mt-1"></i>
-      <div>
-        <div class="fw-semibold">Veuillez corriger les erreurs du formulaire.</div>
-        <div class="small">{{ form_errors(form) }}</div>
-      </div>
+{% block body %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Nouvelle facture</h1>
+      <p class="text-muted mb-0">Créez une facture en l'associant à une consultation existante.</p>
     </div>
-  {% endif %}
-
-  <div class="field-card mb-3">
-    <div class="row g-3">
-
-      {# Montant #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.montant, 'Montant', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.montant, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 15000'}}) }}
-        <div class="help-text">Montant total de la facture.</div>
-        {% if form_errors(form.montant) %}<div class="error">{{ form_errors(form.montant) }}</div>{% endif %}
-      </div>
-
-      {# Consultation #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.consultation, 'Consultation', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.consultation, {'attr': {'class': 'form-select'}}) }}
-        <div class="help-text">Associer la facture à une consultation.</div>
-        {% if form_errors(form.consultation) %}<div class="error">{{ form_errors(form.consultation) }}</div>{% endif %}
-      </div>
-
-      {# Date émission #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.dateEmission, 'Date d’émission', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.dateEmission, {'attr': {'class': 'form-control'}}) }}
-        {% if form_errors(form.dateEmission) %}<div class="error">{{ form_errors(form.dateEmission) }}</div>{% endif %}
-      </div>
-
-      {# Statut paiement #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.statutPaiement, 'Statut de paiement', {'label_attr': {'class': 'form-label required'}}) }}
-        {{ form_widget(form.statutPaiement, {'attr': {'class': 'form-select'}}) }}
-        {% if form_errors(form.statutPaiement) %}<div class="error">{{ form_errors(form.statutPaiement) }}</div>{% endif %}
-      </div>
-
-      {# Date paiement #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.datePaiement, 'Date de paiement', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.datePaiement, {'attr': {'class': 'form-control'}}) }}
-        <div class="help-text">Optionnel : renseigner seulement si la facture est payée.</div>
-        {% if form_errors(form.datePaiement) %}<div class="error">{{ form_errors(form.datePaiement) }}</div>{% endif %}
-      </div>
-
-      {# Mode paiement #}
-      <div class="col-12 col-md-6">
-        {{ form_label(form.modePaiement, 'Mode de paiement', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.modePaiement, {'attr': {'class': 'form-select'}}) }}
-        <div class="help-text">Optionnel : choisir le mode si payé.</div>
-        {% if form_errors(form.modePaiement) %}<div class="error">{{ form_errors(form.modePaiement) }}</div>{% endif %}
-      </div>
-
-    </div>
+    <a href="{{ path('app_facture_index') }}" class="btn btn-light border">Retour</a>
   </div>
 
-  {# Champs cachés éventuels #}
-  {{ form_rest(form) }}
-
-  <div class="d-flex justify-content-end gap-2">
-    <button type="submit" class="btn btn-primary">
-      <i class="fa fa-save me-1"></i> {{ button_label|default('Enregistrer') }}
-    </button>
-
-    {# Hors modal seulement (en modal tu as déjà un bouton Fermer) #}
-    <a href="{{ path('app_facture_index') }}" class="btn btn-light border d-none d-md-inline-flex">
-      Annuler
-    </a>
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      {{ include('facture/_form.html.twig', {'button_label': 'Enregistrer'}) }}
+    </div>
   </div>
-
 </div>
-
-{{ form_end(form, {'render_rest': false}) }}
+{% endblock %}
