@@ -499,11 +499,38 @@ public function editAdmin(
     Consultation $consultation,
     EntityManagerInterface $em
 ): Response {
+    $originalRendezVous = $consultation->getRendezVous();
+    $originalDossierMedical = $consultation->getDossierMedical();
+
     $form = $this->createForm(ConsultationType::class, $consultation, [
         'context' => 'admin',
+        'current_user' => $this->getUser(),
     ]);
 
     $form->handleRequest($request);
+
+    if ($form->isSubmitted()) {
+        $selectedRendezVous = $consultation->getRendezVous();
+        $selectedDossierMedical = $consultation->getDossierMedical();
+
+        if ($selectedRendezVous !== null && $selectedDossierMedical !== null) {
+            $rendezVousDossierMedical = $selectedRendezVous->getPatient()->getDossierMedical();
+
+            if ($rendezVousDossierMedical !== null && $rendezVousDossierMedical !== $selectedDossierMedical) {
+                $rendezVousChanged = $originalRendezVous?->getId() !== $selectedRendezVous->getId();
+                $dossierChanged = $originalDossierMedical?->getId() !== $selectedDossierMedical->getId();
+
+                if ($dossierChanged && !$rendezVousChanged) {
+                    $consultation->setRendezVous(null);
+                } elseif ($rendezVousChanged && !$dossierChanged) {
+                    $consultation->setDossierMedical($rendezVousDossierMedical);
+                } else {
+                    $form->get('dossierMedical')->addError(new FormError('Le dossier medical doit correspondre au patient du rendez-vous selectionne.'));
+                    $form->get('rendezVous')->addError(new FormError('Le rendez-vous selectionne est lie a un autre patient.'));
+                }
+            }
+        }
+    }
 
     if ($form->isSubmitted() && $form->isValid()) {
         $em->flush();

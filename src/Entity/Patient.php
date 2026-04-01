@@ -92,6 +92,32 @@ class Patient
 
             $this->setDossierMedical($dossier);
         }
+
+        $this->syncMedicalDataToDossier();
+    }
+
+    #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->syncMedicalDataToDossier();
+    }
+
+    private function syncMedicalDataToDossier(): void
+    {
+        $dossier = $this->dossierMedical;
+
+        if ($dossier === null) {
+            return;
+        }
+
+        $dossier->setGroupeSanguin($this->groupeSanguin);
+        $dossier->setAllergies($this->allergies);
+        $dossier->setAntecedentsMedicaux($this->antecedentsMedicaux);
+        $dossier->setAntecedentsChirurgicaux($this->antecedentsChirurgicaux);
+        $dossier->setMaladiesChroniques($this->maladiesChroniques);
+        $dossier->setTraitementEnCours($this->traitementEnCours);
+        $dossier->setHandicap($this->handicap);
+        $dossier->setGrossesse($this->grossesse);
     }
 
     #[ORM\Column(length: 10)]

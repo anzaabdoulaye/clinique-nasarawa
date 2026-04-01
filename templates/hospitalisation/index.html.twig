@@ -30,13 +30,13 @@
           <table class="table table-hover align-middle mb-0 datatable">
             <thead class="table-light">
               <tr class="text-nowrap">
+                <th class="text-uppercase small text-muted">Patient</th>
+                <th class="text-uppercase small text-muted">N° Dossier</th>
                 <th class="text-uppercase small text-muted">Admission</th>
                 <th class="text-uppercase small text-muted">Sortie</th>
                 <th class="text-uppercase small text-muted">Motif</th>
-                <th class="text-uppercase small text-muted">Histoire</th>
-                <th class="text-uppercase small text-muted">Évolution</th>
-                <th class="text-uppercase small text-muted">Conclusion</th>
                 <th class="text-uppercase small text-muted">Statut</th>
+                <th class="text-uppercase small text-muted">Médecin</th>
                 <th class="text-uppercase small text-muted">Créé</th>
                 <th class="text-uppercase small text-muted">Modifié</th>
                 <th class="text-uppercase small text-muted text-end" style="width: 210px;">Actions</th>
@@ -46,7 +46,25 @@
             <tbody>
             {% for hospitalisation in hospitalisations %}
               {% set statut = hospitalisation.statut.value ?? hospitalisation.statut.name ?? hospitalisation.statut ?? '' %}
+              {% set patient = hospitalisation.dossierMedical ? hospitalisation.dossierMedical.patient : null %}
               <tr>
+                <td class="text-nowrap">
+                  {% if patient %}
+                    <div class="fw-semibold">{{ patient.nom }} {{ patient.prenom }}</div>
+                    <div class="small text-muted">{{ patient.telephone ?? '' }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if hospitalisation.dossierMedical %}
+                    <span class="badge bg-primary-subtle text-primary border">{{ hospitalisation.dossierMedical.numeroDossier }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
                 <td class="text-nowrap">
                   {% if hospitalisation.dateAdmission %}
                     <div class="fw-semibold">{{ hospitalisation.dateAdmission|date('d/m/Y') }}</div>
@@ -69,18 +87,6 @@
                   {{ hospitalisation.motifAdmission ?: '—' }}
                 </td>
 
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.histoireMaladie ? hospitalisation.histoireMaladie|u.truncate(70, '…', false) : '—' }}
-                </td>
-
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.evolution ? hospitalisation.evolution|u.truncate(70, '…', false) : '—' }}
-                </td>
-
-                <td class="text-start" style="min-width: 200px;">
-                  {{ hospitalisation.conclusion ? hospitalisation.conclusion|u.truncate(70, '…', false) : '—' }}
-                </td>
-
                 <td class="text-nowrap">
                   {% if statut %}
                     {% set badgeStatut =
@@ -92,6 +98,14 @@
                     <span class="badge {{ badgeStatut }}">{{ statut }}</span>
                   {% else %}
                     <span class="badge bg-light text-muted border">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-nowrap">
+                  {% if hospitalisation.medecinReferent %}
+                    <div class="fw-semibold">{{ hospitalisation.medecinReferent.nom ?? '' }} {{ hospitalisation.medecinReferent.prenom ?? '' }}</div>
+                  {% else %}
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
 
@@ -141,18 +155,7 @@
                   </div>
                 </td>
               </tr>
-            {% else %}
-              <tr>
-                <td colspan="10">
-                  <div class="py-5 text-center">
-                    <div class="mb-2">
-                      <i class="fa fa-info-circle text-muted" style="font-size:28px;"></i>
-                    </div>
-                    <div class="fw-semibold">Aucune hospitalisation</div>
-                    <div class="text-muted small">Clique sur “Nouvelle hospitalisation” pour ajouter.</div>
-                  </div>
-                </td>
-              </tr>
+
             {% endfor %}
             </tbody>
 
@@ -434,8 +437,12 @@
                 window.location.reload();
                 return;
               }
+              // JSON sans success → recharger le formulaire
+              await loadEditForm(currentUrl);
+              return;
             }
 
+            // HTML → formulaire re-rendu avec erreurs
             body.innerHTML = await res.text();
             focusFirstField();
             bindSubmit();

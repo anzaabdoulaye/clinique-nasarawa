@@ -9,6 +9,7 @@ use App\Form\VenteType;
 use App\Repository\LotRepository;
 use App\Repository\MedicamentRepository;
 use App\Repository\VenteRepository;
+use App\Service\ComptabiliteMatiereService;
 use App\Service\PharmacyService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormError;
@@ -29,85 +30,143 @@ final class CaisseController extends AbstractController
     }
 
     #[Route('/new', name: 'app_caisse_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, LotRepository $lotRepo, PharmacyService $pharmacy): Response
-    {
-        $vente = new Vente();
+public function new(
+    Request $request,
+    EntityManagerInterface $em,
+    LotRepository $lotRepo,
+    PharmacyService $pharmacy,
+    ComptabiliteMatiereService $comptabiliteMatiereService
+): Response {
+    $vente = new Vente();
 
-        if ($vente->getLignes()->isEmpty()) {
-            $vente->addLigne(new VenteLigne());
+    if ($vente->getLignes()->isEmpty()) {
+        $vente->addLigne(new VenteLigne());
+    }
+
+    $form = $this->createForm(VenteType::class, $vente);
+    $form->handleRequest($request);
+
+    if ($form->isSubmitted() && $form->isValid()) {
+        $hasError = false;
+
+        foreach ($vente->getLignes() as $i => $ligne) {
+            $q = $ligne->getQuantite();
+
+            if ($q <= 0) {
+                $form->addError(new FormError(sprintf(
+                    'Quantité invalide pour la ligne %d.',
+                    $i + 1
+                )));
+                $hasError = true;
+                continue;
+            }
+
+            $med = $ligne->getMedicament();
+
+            if (!$med) {
+                $form->addError(new FormError(sprintf(
+                    'Médicament non sélectionné pour la ligne %d.',
+                    $i + 1
+                )));
+                $hasError = true;
+                continue;
+            }
+
+            // Le prix vient toujours du médicament choisi
+            $ligne->setPrixUnitaire((float) $med->getPrixUnitaire());
+
+            $lot = $ligne->getLot();
+
+            // Si aucun lot n'est encore renseigné, on tente une auto-affectation
+            if (!$lot) {
+                $lotsDisponibles = $pharmacy->getAvailableLots($med);
+
+                if (count($lotsDisponibles) === 0) {
+                    $form->addError(new FormError(sprintf(
+                        'Aucun lot disponible pour %s.',
+                        $med->getNom()
+                    )));
+                    $hasError = true;
+                    continue;
+                }
+
+                if (count($lotsDisponibles) === 1) {
+                    $lot = $lotsDisponibles[0];
+                    $ligne->setLot($lot);
+                } else {
+                    $form->addError(new FormError(sprintf(
+                        'Plusieurs lots sont disponibles pour %s. Veuillez choisir explicitement un lot.',
+                        $med->getNom()
+                    )));
+                    $hasError = true;
+                    continue;
+                }
+            }
+
+            // Vérifie cohérence médicament / lot
+            if ($lot->getMedicament()->getId() !== $med->getId()) {
+                $form->addError(new FormError(sprintf(
+                    'Le lot sélectionné pour la ligne %d ne correspond pas au médicament %s.',
+                    $i + 1,
+                    $med->getNom()
+                )));
+                $hasError = true;
+                continue;
+            }
+
+            // Vérifie stock sur le lot choisi
+            if ($lot->getQuantite() < $q) {
+                $form->addError(new FormError(sprintf(
+                    'Le lot %s n\'a pas assez de stock pour %s (demande %d, disponible %d).',
+                    $lot->getNumeroLot() ?: $lot->getId(),
+                    $med->getNom(),
+                    $q,
+                    $lot->getQuantite()
+                )));
+                $hasError = true;
+                continue;
+            }
+
+            if ($ligne->getPrixUnitaire() < 0) {
+                $form->addError(new FormError(sprintf(
+                    'Prix invalide pour la ligne %d.',
+                    $i + 1
+                )));
+                $hasError = true;
+            }
         }
 
-        $form = $this->createForm(VenteType::class, $vente);
-        $form->handleRequest($request);
+        if ($hasError) {
+            return $this->render('pharmacie/caisse/new.html.twig', [
+                'form' => $form,
+            ]);
+        }
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            // Validation côté serveur: disponibilité des quantités et prix
-            $hasError = false;
-            foreach ($vente->getLignes() as $i => $ligne) {
-                $q = $ligne->getQuantite();
-                if ($q <= 0) {
-                    $form->addError(new FormError(sprintf('Quantité invalide pour la ligne %d.', $i + 1)));
-                    $hasError = true;
-                    continue;
-                }
+        try {
+            $currentUser = $this->getUser();
+            $utilisateur = $currentUser instanceof \App\Entity\Utilisateur ? $currentUser : null;
 
-                $med = $ligne->getMedicament();
-                if (!$med) {
-                    $form->addError(new FormError(sprintf('Médicament non sélectionné pour la ligne %d.', $i + 1)));
-                    $hasError = true;
-                    continue;
-                }
-
-                // Le prix vient toujours du médicament choisi, jamais de la saisie utilisateur.
-                $ligne->setPrixUnitaire((float) $med->getPrixUnitaire());
-
-                // Vérifie si un lot est précisé
-                $lot = $ligne->getLot();
-                if ($lot) {
-                    if ($lot->getQuantite() < $q) {
-                        $form->addError(new FormError(sprintf('Le lot %s n\'a pas assez de stock (demande %d, disponible %d).', $lot->getNumeroLot() ?: $lot->getId(), $q, $lot->getQuantite())));
-                        $hasError = true;
-                        continue;
-                    }
-                } else {
-                    // Vérifie la quantité totale disponible pour ce médicament
-                    $available = $pharmacy->getAvailableQuantity($med);
-                    if ($available < $q) {
-                        $form->addError(new FormError(sprintf('Stock insuffisant pour %s (demande %d, disponible %d).', $med->getNom(), $q, $available)));
-                        $hasError = true;
-                        continue;
-                    }
-                }
-
-                // Prix unitaire non négatif
-                if ($ligne->getPrixUnitaire() < 0) {
-                    $form->addError(new FormError(sprintf('Prix invalide pour la ligne %d.', $i + 1)));
-                    $hasError = true;
-                }
-            }
-
-            if ($hasError) {
-                // don't persist, render form with errors
-                return $this->render('pharmacie/caisse/new.html.twig', [
-                    'form' => $form,
-                ]);
-            }
-
-            // Utilise PharmacyService pour gérer correctement le prélèvement de stock
+            $vente->setVendeur($utilisateur);
             $vente->recalcTotal();
+
             $em->persist($vente);
-            $pharmacy->decrementStockFromVente($vente);
             $em->flush();
 
-            $this->addFlash('success', 'Vente enregistrée.');
+            // Source unique d’écriture stock : comptabilité matière
+            $comptabiliteMatiereService->creerEtValiderDepuisVente($vente, $utilisateur);
+
+            $this->addFlash('success', 'Vente enregistrée et bon de sortie définitive généré avec succès.');
 
             return $this->redirectToRoute('app_caisse_index');
+        } catch (\Throwable $e) {
+            $this->addFlash('danger', 'Erreur lors de l’enregistrement de la vente : ' . $e->getMessage());
         }
-
-        return $this->render('pharmacie/caisse/new.html.twig', [
-            'form' => $form,
-        ]);
     }
+
+    return $this->render('pharmacie/caisse/new.html.twig', [
+        'form' => $form,
+    ]);
+}
 
     #[Route('/medicament/search', name: 'app_caisse_medicament_search', methods: ['GET'])]
     public function medicamentSearch(Request $request, MedicamentRepository $medRepo): Response
@@ -145,6 +204,19 @@ final class CaisseController extends AbstractController
                 continue;
             }
 
+            $lots = [];
+            foreach ($medicament->getLots() as $lot) {
+                if ($lot->getQuantite() <= 0) {
+                    continue;
+                }
+                $lots[] = [
+                    'id' => $lot->getId(),
+                    'numeroLot' => $lot->getNumeroLot() ?: 'Lot #' . $lot->getId(),
+                    'datePeremption' => $lot->getDatePeremption() ? $lot->getDatePeremption()->format('d/m/Y') : null,
+                    'quantite' => $lot->getQuantite(),
+                ];
+            }
+
             $results[] = [
                 'id' => $medicament->getId(),
                 'nom' => $medicament->getNom(),
@@ -152,6 +224,7 @@ final class CaisseController extends AbstractController
                 'sku' => $medicament->getSku(),
                 'prixUnitaire' => $medicament->getPrixUnitaire(),
                 'quantite' => (int) ($row['stockQty'] ?? 0),
+                'lots' => $lots,
             ];
         }
 

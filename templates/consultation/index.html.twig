@@ -124,18 +124,6 @@
                   </div>
                 </td>
               </tr>
-            {% else %}
-              <tr>
-                <td colspan="4">
-                  <div class="py-5 text-center">
-                    <div class="mb-2">
-                      <i class="fa fa-info-circle text-muted" style="font-size: 28px;"></i>
-                    </div>
-                    <div class="fw-semibold">Aucune consultation</div>
-                    <div class="text-muted small">Les consultations apparaîtront ici après enregistrement.</div>
-                  </div>
-                </td>
-              </tr>
             {% endfor %}
             </tbody>
 
@@ -312,6 +300,7 @@
 
             const submitHtml = await submitRes.text();
             body.innerHTML = submitHtml;
+            window.initConsultationSelect2?.(body);
             focusFirstField();
             bindForm();
           } catch (err) {
@@ -338,6 +327,7 @@
 
           const html = await res.text();
           body.innerHTML = html;
+          window.initConsultationSelect2?.(body);
 
           loader.classList.add('d-none');
           body.classList.remove('d-none');
@@ -372,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    function initConsultationSelect2(context) {
+  window.initConsultationSelect2 = function initConsultationSelect2(context) {
         const $context = $(context || document);
 
         $context.find('.js-select2-medecin, .js-select2-dossier').each(function () {
@@ -393,12 +383,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 minimumResultsForSearch: 0
             });
         });
-    }
+          };
 
-    initConsultationSelect2(document);
+          window.initConsultationSelect2(document);
 
     document.addEventListener('shown.bs.modal', function (e) {
-        initConsultationSelect2(e.target);
+            window.initConsultationSelect2(e.target);
     });
 });
 </script>

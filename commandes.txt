@@ -6,3 +6,12 @@ php bin/console doctrine:fixtures:load --append
 UPDATE tarif_prestation
 SET service_execution = 'laboratoire'
 WHERE categorie = 'examen_biologique';
+
+composer require endroid/qr-code-bundle
+
+
+Les commandes à executer pour voir les factures et imprimables :
+rmdir /s /q vendor
+del composer.lock
+composer clear-cache
+composer install

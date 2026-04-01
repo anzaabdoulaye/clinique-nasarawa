@@ -128,7 +128,7 @@ class ComptabiliteMatiereService
         return $bon;
     }
 
-public function genererDepuisVente(Vente $vente, ?Utilisateur $user): BonMatiere
+public function genererDepuisVente(Vente $vente, ?Utilisateur $user = null): BonMatiere
 {
     if (!$vente->getId()) {
         throw new \RuntimeException('Impossible de générer un bon matière pour une vente non enregistrée.');
@@ -199,6 +199,13 @@ public function genererDepuisVente(Vente $vente, ?Utilisateur $user): BonMatiere
     return $bon;
 }
 
+public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user = null): BonMatiere
+{
+    $bon = $this->genererDepuisVente($vente, $user);
+
+    return $this->validerBon($bon);
+}
+
     public function validerBon(BonMatiere $bon): BonMatiere
     {
         if ($bon->getStatut() === StatutBonMatiere::VALIDE) {
@@ -234,13 +241,6 @@ public function genererDepuisVente(Vente $vente, ?Utilisateur $user): BonMatiere
         $this->em->flush();
 
         return $bon;
-    }
-
-    public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user): BonMatiere
-    {
-        $bon = $this->genererDepuisVente($vente, $user);
-
-        return $this->validerBon($bon);
     }
 
     private function initialiserBon(

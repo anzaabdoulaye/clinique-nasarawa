@@ -189,7 +189,14 @@
 </head>
 <body>
     {% set consultation = consultation ?? (facture is defined and facture ? facture.consultation : null) %}
-    {% set patient = consultation and consultation.rendezVous ? consultation.rendezVous.patient : null %}
+    {% set patient = null %}
+    {% if consultation %}
+        {% if consultation.rendezVous and consultation.rendezVous.patient %}
+            {% set patient = consultation.rendezVous.patient %}
+        {% elseif consultation.dossierMedical and consultation.dossierMedical.patient %}
+            {% set patient = consultation.dossierMedical.patient %}
+        {% endif %}
+    {% endif %}
 
     <div class="document">
         <div class="top-bar"></div>

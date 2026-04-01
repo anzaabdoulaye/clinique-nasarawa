@@ -288,7 +288,7 @@
                     <p>
                         <span class="label">Vendeur :</span>
                         {% if vente.vendeur %}
-                            {{ vente.vendeur.nomComplet ?? vente.vendeur.userIdentifier ?? '-' }}
+                            {{ vente.vendeur.nom }} {{ vente.vendeur.prenom }}
                         {% else %}
                             -
                         {% endif %}

@@ -106,11 +106,9 @@ final class HospitalisationController extends AbstractController
 
         // === GET AJAX → Charger le formulaire dans le modal
         if ($request->isXmlHttpRequest() && $request->isMethod('GET')) {
-            return new JsonResponse([
-                'form' => $this->renderView('hospitalisation/_form.html.twig', [
-                    'form' => $form->createView(),
-                    'hospitalisation' => $hospitalisation,
-                ])
+            return $this->render('hospitalisation/_form.html.twig', [
+                'form' => $form->createView(),
+                'hospitalisation' => $hospitalisation,
             ]);
         }
 
@@ -124,22 +122,17 @@ final class HospitalisationController extends AbstractController
                 return new JsonResponse(['success' => true]);
             }
 
-            // Récupérer erreurs
-            $errors = [];
-            foreach ($form->getErrors(true) as $error) {
-                $errors[] = $error->getMessage();
-            }
-
-            return new JsonResponse([
-                'success' => false,
-                'errors' => $errors,
+            // Formulaire invalide → renvoyer le formulaire avec les erreurs
+            return $this->render('hospitalisation/_form.html.twig', [
+                'form' => $form->createView(),
+                'hospitalisation' => $hospitalisation,
             ]);
         }
 
-        return new JsonResponse([
-            'success' => false,
-            'message' => 'Requête invalide'
-        ], Response::HTTP_BAD_REQUEST);
+        return $this->render('hospitalisation/_form.html.twig', [
+            'form' => $form->createView(),
+            'hospitalisation' => $hospitalisation,
+        ]);
     }
 
 
