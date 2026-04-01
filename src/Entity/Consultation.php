@@ -286,11 +286,15 @@ class Consultation
         return $this->rendezVous;
     }
 
-    public function setRendezVous(RendezVous $rendezVous): self
+    public function setRendezVous(?RendezVous $rendezVous): self
     {
+        if ($this->rendezVous !== null && $this->rendezVous !== $rendezVous && $this->rendezVous->getConsultation() === $this) {
+            $this->rendezVous->setConsultation(null);
+        }
+
         $this->rendezVous = $rendezVous;
 
-        if ($rendezVous->getConsultation() !== $this) {
+        if ($rendezVous !== null && $rendezVous->getConsultation() !== $this) {
             $rendezVous->setConsultation($this);
         }
 

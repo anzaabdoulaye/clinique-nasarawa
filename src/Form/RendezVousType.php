@@ -53,11 +53,14 @@ class RendezVousType extends AbstractType
                 'choice_label' => function (Patient $p) {
                     $nom = $p->getNom() ?? '';
                     $prenom = $p->getPrenom() ?? '';
+                    $code = $p->getCode() ?? '';
                     $full = trim($nom . ' ' . $prenom);
-                    return ($full !== '' ? $full : 'Patient') . ' (#' . $p->getId() . ')';
+                    $label = $full !== '' ? $full : 'Patient';
+                    return $code !== '' ? $label . ' — ' . $code : $label . ' (#' . $p->getId() . ')';
                 },
                 'attr' => [
-                    'class' => 'form-select',
+                    'class' => 'form-select js-select2-patient',
+                    'data-placeholder' => 'Rechercher un patient...',
                 ],
             ])
 
@@ -67,7 +70,6 @@ class RendezVousType extends AbstractType
                 'placeholder' => '— (optionnel) —',
                 'required' => false,
                 'choice_label' => function (Utilisateur $u) {
-                    // ✅ si tu as getNomComplet()
                     if (method_exists($u, 'getNomComplet') && $u->getNomComplet()) {
                         return $u->getNomComplet();
                     }
@@ -77,7 +79,8 @@ class RendezVousType extends AbstractType
                     return $full !== '' ? $full : ('Utilisateur #' . $u->getId());
                 },
                 'attr' => [
-                    'class' => 'form-select',
+                    'class' => 'form-select js-select2-medecin',
+                    'data-placeholder' => 'Rechercher un médecin...',
                 ],
             ])
         ;

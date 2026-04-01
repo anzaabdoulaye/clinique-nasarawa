@@ -51,11 +51,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'medicament-search-result';
+
+        let lotsInfo = '';
+        if (item.lots && item.lots.length > 0) {
+            lotsInfo = ' · ' + item.lots.length + ' lot(s)';
+        }
+
         button.innerHTML =
             '<span class="medicament-search-result__title">' + item.nom + '</span>' +
             '<span class="medicament-search-result__meta">' +
                 (item.codeBarre ? 'Code: ' + item.codeBarre + ' · ' : '') +
-                'Stock: ' + item.quantite + ' · Prix: ' + item.prixUnitaire + ' FCFA' +
+                'Stock: ' + item.quantite + ' · Prix: ' + item.prixUnitaire + ' FCFA' + lotsInfo +
             '</span>';
         button.addEventListener('mousedown', function (event) {
             event.preventDefault();
@@ -84,12 +90,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const meta = document.createElement('div');
             meta.className = 'medicament-search-meta';
 
+            const lotSelector = document.createElement('div');
+            lotSelector.className = 'lot-selector-wrapper mt-2 d-none';
+
             host.appendChild(dropdown);
             host.insertAdjacentElement('afterend', meta);
+            meta.insertAdjacentElement('afterend', lotSelector);
+
+            const lotInput = entry ? entry.querySelector('.lot-id-input') : null;
 
             let items = [];
             let activeIndex = -1;
             let activeRequest = null;
+            let currentLots = [];
 
             function closeDropdown() {
                 dropdown.classList.add('d-none');
@@ -112,7 +125,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 meta.innerHTML =
                     '<span class="badge bg-success-subtle text-success">Stock: ' + item.quantite + '</span>' +
                     '<span class="badge bg-primary-subtle text-primary">Prix: ' + item.prixUnitaire + ' FCFA</span>' +
-                    (item.codeBarre ? '<span class="badge bg-secondary-subtle text-secondary">Code: ' + item.codeBarre + '</span>' : '');
+                    (item.codeBarre ? '<span class="badge bg-secondary-subtle text-secondary">Code: ' + item.codeBarre + '</span>' : '') +
+                    (item.lots && item.lots.length > 1 ? '<span class="badge bg-warning-subtle text-warning">' + item.lots.length + ' lots</span>' : '');
+            }
+
+            function renderLotSelector(lots) {
+                currentLots = lots || [];
+                lotSelector.innerHTML = '';
+
+                if (!lotInput) {
+                    lotSelector.classList.add('d-none');
+                    return;
+                }
+
+                if (currentLots.length === 0) {
+                    lotInput.value = '';
+                    lotSelector.classList.add('d-none');
+                    return;
+                }
+
+                if (currentLots.length === 1) {
+                    lotInput.value = currentLots[0].id;
+                    lotSelector.classList.add('d-none');
+                    lotSelector.innerHTML = '<small class="text-muted"><i class="ri-checkbox-circle-line text-success"></i> Lot auto-sélectionné : <strong>' +
+                        currentLots[0].numeroLot + '</strong> (Qté: ' + currentLots[0].quantite + ')</small>';
+                    lotSelector.classList.remove('d-none');
+                    return;
+                }
+
+                // Multiple lots — show selector
+                var html = '<label class="form-label fw-semibold small mb-1"><i class="ri-stack-line text-warning me-1"></i>Choisir un lot :</label>';
+                html += '<div class="d-flex flex-column gap-1">';
+
+                currentLots.forEach(function (lot) {
+                    var expiry = lot.datePeremption ? ' · Exp: ' + lot.datePeremption : '';
+                    html += '<button type="button" class="btn btn-sm btn-outline-secondary lot-pick-btn text-start" data-lot-id="' + lot.id + '">' +
+                        '<strong>' + lot.numeroLot + '</strong> — Qté: ' + lot.quantite + expiry +
+                        '</button>';
+                });
+
+                html += '</div>';
+                lotSelector.innerHTML = html;
+                lotSelector.classList.remove('d-none');
+
+                lotSelector.querySelectorAll('.lot-pick-btn').forEach(function (btn) {
+                    btn.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                    });
+                    btn.addEventListener('click', function () {
+                        var lotId = btn.dataset.lotId;
+                        lotInput.value = lotId;
+
+                        lotSelector.querySelectorAll('.lot-pick-btn').forEach(function (b) {
+                            b.classList.remove('btn-primary', 'text-white');
+                            b.classList.add('btn-outline-secondary');
+                        });
+                        btn.classList.remove('btn-outline-secondary');
+                        btn.classList.add('btn-primary', 'text-white');
+                    });
+                });
+
+                // Pre-select if lotInput already has a value
+                if (lotInput.value) {
+                    var preBtn = lotSelector.querySelector('[data-lot-id="' + lotInput.value + '"]');
+                    if (preBtn) {
+                        preBtn.classList.remove('btn-outline-secondary');
+                        preBtn.classList.add('btn-primary', 'text-white');
+                    }
+                }
+            }
+
+            function clearLotSelector() {
+                currentLots = [];
+                if (lotInput) lotInput.value = '';
+                lotSelector.innerHTML = '';
+                lotSelector.classList.add('d-none');
             }
 
             function setActiveResult(index) {
@@ -132,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 setMeta(item);
                 updatePriceInput(entry, item.prixUnitaire);
                 closeDropdown();
+                renderLotSelector(item.lots || []);
             }
 
             function renderResults(results) {
@@ -205,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     input.dataset.selectedPrice = '';
                     setMeta(null);
                     updatePriceInput(entry, '');
+                    clearLotSelector();
                 }
 
                 debouncedFetch(currentValue);
@@ -246,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!hiddenInput.value) {
                         input.value = '';
                         setMeta(null);
+                        clearLotSelector();
                     }
                 }, 150);
             });
@@ -259,10 +349,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     quantite: '?',
                     prixUnitaire: input.dataset.initialPrice || '0',
                     codeBarre: '',
+                    lots: [],
                 });
                 updatePriceInput(entry, input.dataset.initialPrice || '');
+
+                // Restore lot selection if editing
+                if (input.dataset.initialLotId && lotInput) {
+                    lotInput.value = input.dataset.initialLotId;
+                    var lotLbl = input.dataset.initialLotLabel || 'Lot #' + input.dataset.initialLotId;
+                    lotSelector.innerHTML = '<small class="text-muted"><i class="ri-checkbox-circle-line text-success"></i> Lot : <strong>' + lotLbl + '</strong></small>';
+                    lotSelector.classList.remove('d-none');
+                }
             } else {
                 setMeta(null);
+                clearLotSelector();
             }
         });
     }

@@ -14,6 +14,9 @@ class Facture
 {
     use TimestampableTrait;
 
+    private const SEUIL_TIMBRE = 5000;
+    private const MONTANT_TIMBRE = 200;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -91,6 +94,39 @@ class Facture
     {
         $this->montantTotal = max(0, $montantTotal);
         return $this;
+    }
+
+    public function getBaseTotal(): int
+    {
+        if (!$this->lignes->isEmpty()) {
+            $montantBase = 0;
+
+            foreach ($this->lignes as $ligne) {
+                $montantBase += $ligne->getTotal();
+            }
+
+            return $montantBase;
+        }
+
+        $montantTotal = $this->getMontantTotal();
+
+        if ($montantTotal >= self::SEUIL_TIMBRE + self::MONTANT_TIMBRE + 1) {
+            return max(0, $montantTotal - self::MONTANT_TIMBRE);
+        }
+
+        return $montantTotal;
+    }
+
+    public function getTimbreAmount(): int
+    {
+        return $this->computeTimbreAmount($this->getBaseTotal());
+    }
+
+    public function calculerMontantAvecTimbre(int $montantBase): int
+    {
+        $montantBase = max(0, $montantBase);
+
+        return $montantBase + $this->computeTimbreAmount($montantBase);
     }
 
     public function getMontantPaye(): int
@@ -208,10 +244,8 @@ class Facture
 
     public function recalculerMontants(): void
     {
-        $montantTotal = 0;
-        foreach ($this->lignes as $ligne) {
-            $montantTotal += $ligne->getTotal();
-        }
+        $montantBase = $this->getBaseTotal();
+        $montantTotal = $this->calculerMontantAvecTimbre($montantBase);
 
         $montantPaye = 0;
         foreach ($this->paiements as $paiement) {
@@ -243,5 +277,10 @@ class Facture
         $this->statut = StatutFacture::PAYE;
         $this->datePaiement = new \DateTimeImmutable();
         $this->resteAPayer = 0;
+    }
+
+    private function computeTimbreAmount(int $montantBase): int
+    {
+        return $montantBase > self::SEUIL_TIMBRE ? self::MONTANT_TIMBRE : 0;
     }
 }

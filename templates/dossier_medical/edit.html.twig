@@ -1,13 +1,93 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit DossierMedical{% endblock %}
+{% block title %}Modification du dossier médical{% endblock %}
 
 {% block body %}
-    <h1>Edit DossierMedical</h1>
+<div class="container-fluid py-4">
 
-    {{ include('dossier_medical/_form.html.twig', {'button_label': 'Update'}) }}
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
 
-    <a href="{{ path('app_dossier_medical_index') }}">back to list</a>
+            {# Header #}
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <div>
+                    <h1 class="h3 fw-bold mb-1 text-dark">
+                        <i class="fas fa-folder-open text-primary me-2"></i>
+                        Modification du dossier médical
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Modifiez les informations du dossier médical puis enregistrez les changements.
+                    </p>
+                </div>
 
-    {{ include('dossier_medical/_delete_form.html.twig') }}
+                <div>
+                    <a href="{{ path('app_dossier_medical_index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Retour à la liste
+                    </a>
+                </div>
+            </div>
+
+            {# Card principale #}
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 py-4 px-4">
+                    <div class="d-flex align-items-center">
+                        <div
+                            class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary me-3"
+                            style="width: 52px; height: 52px;"
+                        >
+                            <i class="fas fa-pen fs-5"></i>
+                        </div>
+
+                        <div>
+                            <h2 class="h5 fw-semibold mb-1">Formulaire de modification</h2>
+                            <p class="text-muted small mb-0">
+                                Vérifiez soigneusement les données avant validation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+
+                    {{ form_start(form) }}
+
+                    <div class="row g-4">
+                        {% for field in form %}
+                            {% if field.vars.name != '_token' %}
+                                <div class="col-md-6">
+                                    {{ form_row(field) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {# Footer actions #}
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top flex-wrap gap-3">
+                        <a href="{{ path('app_dossier_medical_index') }}" class="btn btn-light border px-4">
+                            <i class="fas fa-times me-2"></i>
+                            Annuler
+                        </a>
+
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold">
+                            <i class="fas fa-save me-2"></i>
+                            Mettre à jour
+                        </button>
+                    </div>
+
+                    {{ form_end(form) }}
+
+                </div>
+            </div>
+
+            {# Footer info #}
+            <div class="mt-3 text-muted small">
+                <i class="fas fa-info-circle me-1"></i>
+                Toute modification doit être effectuée avec rigueur afin de garantir la fiabilité des données médicales.
+            </div>
+
+        </div>
+    </div>
+
+</div>
 {% endblock %}

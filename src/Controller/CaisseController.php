@@ -146,6 +146,7 @@ public function new(
             $currentUser = $this->getUser();
             $utilisateur = $currentUser instanceof \App\Entity\Utilisateur ? $currentUser : null;
 
+            $vente->setVendeur($utilisateur);
             $vente->recalcTotal();
 
             $em->persist($vente);
@@ -203,6 +204,19 @@ public function new(
                 continue;
             }
 
+            $lots = [];
+            foreach ($medicament->getLots() as $lot) {
+                if ($lot->getQuantite() <= 0) {
+                    continue;
+                }
+                $lots[] = [
+                    'id' => $lot->getId(),
+                    'numeroLot' => $lot->getNumeroLot() ?: 'Lot #' . $lot->getId(),
+                    'datePeremption' => $lot->getDatePeremption() ? $lot->getDatePeremption()->format('d/m/Y') : null,
+                    'quantite' => $lot->getQuantite(),
+                ];
+            }
+
             $results[] = [
                 'id' => $medicament->getId(),
                 'nom' => $medicament->getNom(),
@@ -210,6 +224,7 @@ public function new(
                 'sku' => $medicament->getSku(),
                 'prixUnitaire' => $medicament->getPrixUnitaire(),
                 'quantite' => (int) ($row['stockQty'] ?? 0),
+                'lots' => $lots,
             ];
         }
 

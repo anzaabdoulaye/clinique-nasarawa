@@ -41,7 +41,7 @@ class ConsultationRepository extends ServiceEntityRepository
         ->orderBy('c.id', 'DESC');
 
     if ($search) {
-        $qb->andWhere('dm.codeDossier LIKE :search OR p.telephone LIKE :search')
+        $qb->andWhere('dm.numeroDossier LIKE :search OR p.code LIKE :search OR p.telephone LIKE :search')
            ->setParameter('search', '%' . trim($search) . '%');
     }
 

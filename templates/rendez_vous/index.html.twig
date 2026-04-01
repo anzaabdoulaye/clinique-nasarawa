@@ -153,18 +153,6 @@
                   </div>
                 </td>
               </tr>
-            {% else %}
-              <tr>
-                <td colspan="8">
-                  <div class="py-5 text-center">
-                    <div class="mb-2">
-                      <i class="fa fa-info-circle text-muted" style="font-size:28px;"></i>
-                    </div>
-                    <div class="fw-semibold">Aucun rendez-vous enregistré</div>
-                    <div class="text-muted small">Ajoute un rendez-vous pour commencer.</div>
-                  </div>
-                </td>
-              </tr>
             {% endfor %}
             </tbody>
 
@@ -199,16 +187,7 @@
 
           <div class="col-12">{{ form_row(form.motif) }}</div>
 
-          <div class="col-md-6">
-            <label for="rdv-patient-search" class="form-label">Recherche patient</label>
-            <input type="search"
-                   id="rdv-patient-search"
-                   class="form-control js-patient-search"
-                   placeholder="Rechercher par nom, prénom ou identifiant..."
-                   autocomplete="off">
-            <div class="form-text">Tapez quelques lettres pour filtrer la liste des patients.</div>
-            <div class="mt-2">{{ form_row(form.patient) }}</div>
-          </div>
+          <div class="col-md-6">{{ form_row(form.patient) }}</div>
           <div class="col-md-6">{{ form_row(form.medecin) }}</div>
         </div>
 
@@ -262,62 +241,21 @@
   {{ parent() }}
   <script>
     (function () {
-      function initPatientSearch(root) {
-        const scope = root || document;
-
-        scope.querySelectorAll('.js-patient-search').forEach((searchInput) => {
-          if (searchInput.dataset.bound === '1') {
-            return;
-          }
-
-          const container = searchInput.closest('.col-md-6, .col-12, .mb-3, .form-group') || scope;
-          const patientSelect = container.querySelector('select[id$="_patient"]');
-
-          if (!patientSelect) {
-            return;
-          }
-
-          const baseOptions = Array.from(patientSelect.options).map((option) => ({
-            value: option.value,
-            text: option.text,
-            selected: option.selected,
-          }));
-
-          const renderOptions = (term) => {
-            const normalizedTerm = (term || '').trim().toLocaleLowerCase();
-            const selectedValue = patientSelect.value;
-
-            patientSelect.innerHTML = '';
-
-            baseOptions.forEach((optionData) => {
-              const isPlaceholder = optionData.value === '';
-              const matches = isPlaceholder || optionData.text.toLocaleLowerCase().includes(normalizedTerm);
-
-              if (!matches) {
-                return;
-              }
-
-              const option = new Option(optionData.text, optionData.value, false, optionData.value === selectedValue);
-              patientSelect.add(option);
-            });
-
-            if (patientSelect.options.length === 0) {
-              patientSelect.add(new Option('Aucun patient trouvé', '', false, false));
-            }
-          };
-
-          searchInput.addEventListener('input', () => {
-            renderOptions(searchInput.value);
+      function initRdvSelect2(context) {
+        if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') return;
+        const $ctx = $(context || document);
+        $ctx.find('.js-select2-patient, .js-select2-medecin').each(function () {
+          const $el = $(this);
+          if ($el.hasClass('select2-hidden-accessible')) return;
+          const placeholder = $el.data('placeholder') || 'Rechercher...';
+          const $modal = $el.closest('.modal');
+          $el.select2({
+            width: '100%',
+            placeholder: placeholder,
+            allowClear: true,
+            dropdownParent: $modal.length ? $modal : $(document.body),
+            minimumResultsForSearch: 0
           });
-
-          patientSelect.addEventListener('change', () => {
-            baseOptions.forEach((optionData) => {
-              optionData.selected = optionData.value === patientSelect.value;
-            });
-          });
-
-          renderOptions(searchInput.value);
-          searchInput.dataset.bound = '1';
         });
       }
 
@@ -327,7 +265,13 @@
 
       let currentUrl = null;
 
-      initPatientSearch(document.getElementById('addRendezVousModal'));
+      // Init Select2 pour le modal d'ajout
+      document.addEventListener('DOMContentLoaded', function () {
+        initRdvSelect2(document.getElementById('addRendezVousModal'));
+      });
+      document.addEventListener('shown.bs.modal', function (e) {
+        initRdvSelect2(e.target);
+      });
 
       function setLoading() {
         loader.classList.remove('d-none');
@@ -367,7 +311,7 @@
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
-        initPatientSearch(body);
+        initRdvSelect2(body);
         focusFirstField();
         bindEditSubmit();
       }
@@ -414,7 +358,7 @@
 
             // erreurs => HTML
             body.innerHTML = await resp.text();
-            initPatientSearch(body);
+            initRdvSelect2(body);
             focusFirstField();
             bindEditSubmit();
           } catch (err) {

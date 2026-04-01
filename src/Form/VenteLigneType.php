@@ -16,14 +16,17 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class VenteLigneType extends AbstractType
 {
-    public function __construct(private readonly MedicamentToIdTransformer $medicamentToIdTransformer)
-    {
+    public function __construct(
+        private readonly MedicamentToIdTransformer $medicamentToIdTransformer,
+        private readonly LotToIdTransformer $lotToIdTransformer,
+    ) {
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $ligne = $builder->getData();
         $medicament = $ligne instanceof VenteLigne ? $ligne->getMedicament() : null;
+        $lot = $ligne instanceof VenteLigne ? $ligne->getLot() : null;
         $medicamentLabel = null;
 
         if ($medicament instanceof Medicament) {
@@ -32,6 +35,16 @@ class VenteLigneType extends AbstractType
             if ($medicament->getCodeBarre()) {
                 $medicamentLabel .= ' | ' . $medicament->getCodeBarre();
             }
+        }
+
+        $lotLabel = '';
+        if ($lot instanceof Lot) {
+            $parts = [$lot->getNumeroLot() ?: 'Lot #' . $lot->getId()];
+            if ($lot->getDatePeremption()) {
+                $parts[] = 'Exp: ' . $lot->getDatePeremption()->format('d/m/Y');
+            }
+            $parts[] = 'Qté: ' . $lot->getQuantite();
+            $lotLabel = implode(' | ', $parts);
         }
 
         $builder
@@ -47,6 +60,8 @@ class VenteLigneType extends AbstractType
                     'data-initial-label' => $medicamentLabel ?? '',
                     'data-initial-price' => $medicament ? (string) $medicament->getPrixUnitaire() : '',
                     'data-initial-id' => $medicament ? (string) $medicament->getId() : '',
+                    'data-initial-lot-id' => $lot ? (string) $lot->getId() : '',
+                    'data-initial-lot-label' => $lotLabel,
                 ],
             ])
             ->add('medicament', HiddenType::class, [
@@ -54,23 +69,12 @@ class VenteLigneType extends AbstractType
                     'class' => 'medicament-id-input',
                 ],
             ])
-            // ->add('lot', EntityType::class, [
-            //     'class' => Lot::class,
-            //     'choice_label' => function (Lot $l) {
-            //         $parts = [$l->getNumeroLot() ?: '—Lot—'];
-
-            //         if ($l->getDatePeremption()) {
-            //             $parts[] = $l->getDatePeremption()->format('d/m/Y');
-            //         }
-
-            //         $parts[] = 'Qte: ' . $l->getQuantite();
-
-            //         return implode(' | ', $parts);
-            //     },
-            //     'required' => false,
-            //     'placeholder' => '— Optionnel (choisir lot) —',
-            //     'attr' => ['class' => 'form-select'],
-            // ])
+            ->add('lot', HiddenType::class, [
+                'required' => false,
+                'attr' => [
+                    'class' => 'lot-id-input',
+                ],
+            ])
             ->add('quantite', IntegerType::class, [
                 'attr' => [
                     'min' => 1,
@@ -86,6 +90,7 @@ class VenteLigneType extends AbstractType
             ]);
 
             $builder->get('medicament')->addModelTransformer($this->medicamentToIdTransformer);
+            $builder->get('lot')->addModelTransformer($this->lotToIdTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

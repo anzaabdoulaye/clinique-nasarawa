@@ -199,7 +199,7 @@
                 </div>
                 <div class="hs-field">
                     <div class="hs-label">Médecin Référent</div>
-                    <div class="hs-value">{{ hospitalisation.medecinReferent ? hospitalisation.medecinReferent.nom : 'Non assigné' }}</div>
+                    <div class="hs-value">{{ hospitalisation.medecinReferent ? hospitalisation.medecinReferent.nom ~ '  ' ~ hospitalisation.medecinReferent.prenom : 'Non assigné' }}</div>
                 </div>
                 <div class="hs-field">
                     <div class="hs-label">Date Admission</div>
@@ -379,8 +379,7 @@
             const ajaxModal = new bootstrap.Modal(modalElement);
 
             const xhrHeaders = {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             };
 
             document.addEventListener('click', async function (e) {
@@ -406,17 +405,23 @@
                         headers: xhrHeaders
                     });
 
-                    const data = await response.json();
+                    const contentType = response.headers.get('content-type') || '';
 
-                    if (data.form) {
-                        modalBody.innerHTML = data.form;
-                        bindAjaxForm(modalBody.querySelector('form'));
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        if (data.form) {
+                            modalBody.innerHTML = data.form;
+                            bindAjaxForm(modalBody.querySelector('form'));
+                        } else {
+                            modalBody.innerHTML = `
+                                <div class="alert alert-danger mb-0">
+                                    Impossible de charger le formulaire.
+                                </div>
+                            `;
+                        }
                     } else {
-                        modalBody.innerHTML = `
-                            <div class="alert alert-danger mb-0">
-                                Impossible de charger le formulaire.
-                            </div>
-                        `;
+                        modalBody.innerHTML = await response.text();
+                        bindAjaxForm(modalBody.querySelector('form'));
                     }
                 } catch (error) {
                     console.error('Erreur chargement modal :', error);
@@ -449,38 +454,46 @@
                             headers: xhrHeaders
                         });
 
-                        const data = await response.json();
+                        const contentType = response.headers.get('content-type') || '';
 
-                        if (data.success) {
-                            ajaxModal.hide();
-                            window.location.reload();
-                            return;
-                        }
+                        if (contentType.includes('application/json')) {
+                            const data = await response.json();
 
-                        if (data.form) {
-                            modalBody.innerHTML = data.form;
-                            bindAjaxForm(modalBody.querySelector('form'));
-                            return;
-                        }
+                            if (data.success) {
+                                ajaxModal.hide();
+                                window.location.reload();
+                                return;
+                            }
 
-                        let errorsHtml = '';
-                        if (Array.isArray(data.errors) && data.errors.length > 0) {
-                            errorsHtml = `
-                                <div class="alert alert-danger">
-                                    <ul class="mb-0">
-                                        ${data.errors.map(error => `<li>${error}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            `;
+                            if (data.form) {
+                                modalBody.innerHTML = data.form;
+                                bindAjaxForm(modalBody.querySelector('form'));
+                                return;
+                            }
+
+                            let errorsHtml = '';
+                            if (Array.isArray(data.errors) && data.errors.length > 0) {
+                                errorsHtml = `
+                                    <div class="alert alert-danger">
+                                        <ul class="mb-0">
+                                            ${data.errors.map(error => `<li>${error}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                `;
+                            } else {
+                                errorsHtml = `
+                                    <div class="alert alert-danger">
+                                        Le formulaire contient des erreurs.
+                                    </div>
+                                `;
+                            }
+
+                            modalBody.innerHTML = errorsHtml + modalBody.innerHTML;
                         } else {
-                            errorsHtml = `
-                                <div class="alert alert-danger">
-                                    Le formulaire contient des erreurs.
-                                </div>
-                            `;
+                            // HTML response (form re-rendered with errors)
+                            modalBody.innerHTML = await response.text();
+                            bindAjaxForm(modalBody.querySelector('form'));
                         }
-
-                        modalBody.innerHTML = errorsHtml + modalBody.innerHTML;
 
                     } catch (error) {
                         console.error('Erreur soumission formulaire :', error);

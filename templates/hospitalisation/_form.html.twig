@@ -1,13 +1,126 @@
-{{ form_start(form, {
-    attr: {
-        id: 'editHospitalisationForm'
-    }
-}) }}
+<style>
+  .h-form .form-label{ font-weight:700; }
+  .h-form .required:after{ content:" *"; color:#dc3545; font-weight:900; }
+  .h-form .form-control, .h-form .form-select{ border-radius:12px; }
+  .h-form .section{
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:14px;
+    padding:14px;
+    background:#fff;
+    margin-bottom:12px;
+  }
+  .h-form .section-title{
+    font-weight:800;
+    font-size:.95rem;
+    margin-bottom:10px;
+    color:#111827;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+</style>
 
-{{ form_widget(form) }}
+{{ form_start(form, {'attr': {'id': 'editHospitalisationForm', 'class': 'h-form', 'novalidate': 'novalidate'}}) }}
 
-<div class="mt-3 text-end">
-    <button class="btn btn-success">Enregistrer</button>
+{% if form_errors(form) %}
+  <div class="alert alert-danger d-flex gap-2 align-items-start">
+    <i class="fa fa-triangle-exclamation mt-1"></i>
+    <div>
+      <div class="fw-semibold">Veuillez corriger les erreurs du formulaire.</div>
+      <div class="small">{{ form_errors(form) }}</div>
+    </div>
+  </div>
+{% endif %}
+
+<div class="section">
+  <div class="section-title"><i class="fa fa-folder-open text-primary"></i> Informations principales</div>
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      {{ form_label(form.dossierMedical, null, {'label_attr': {'class': 'form-label required'}}) }}
+      {{ form_widget(form.dossierMedical) }}
+      {{ form_errors(form.dossierMedical) }}
+    </div>
+
+    <div class="col-12 col-md-6">
+      {{ form_label(form.medecinReferent, null, {'label_attr': {'class': 'form-label required'}}) }}
+      {{ form_widget(form.medecinReferent) }}
+      {{ form_errors(form.medecinReferent) }}
+    </div>
+
+    <div class="col-12 col-md-6">
+      {{ form_label(form.dateAdmission, null, {'label_attr': {'class': 'form-label required'}}) }}
+      {{ form_widget(form.dateAdmission) }}
+      {{ form_errors(form.dateAdmission) }}
+    </div>
+
+    <div class="col-12 col-md-6">
+      {{ form_label(form.statut, null, {'label_attr': {'class': 'form-label required'}}) }}
+      {{ form_widget(form.statut) }}
+      {{ form_errors(form.statut) }}
+    </div>
+
+    <div class="col-12 col-md-6">
+      {{ form_label(form.dateSortie, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.dateSortie) }}
+      <div class="form-text">{{ form_help(form.dateSortie) }}</div>
+      {{ form_errors(form.dateSortie) }}
+    </div>
+
+    <div class="col-12">
+      {{ form_label(form.motifAdmission, null, {'label_attr': {'class': 'form-label required'}}) }}
+      {{ form_widget(form.motifAdmission) }}
+      {{ form_errors(form.motifAdmission) }}
+    </div>
+  </div>
 </div>
 
-{{ form_end(form) }}
+<div class="section">
+  <div class="section-title"><i class="fa fa-notes-medical text-primary"></i> Détails médicaux</div>
+  <div class="row g-3">
+    <div class="col-12">
+      {{ form_label(form.histoireMaladie, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.histoireMaladie) }}
+      {{ form_errors(form.histoireMaladie) }}
+    </div>
+
+    <div class="col-12">
+      {{ form_label(form.evolution, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.evolution) }}
+      {{ form_errors(form.evolution) }}
+    </div>
+
+    <div class="col-12">
+      {{ form_label(form.conclusion, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.conclusion) }}
+      {{ form_errors(form.conclusion) }}
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><i class="fa fa-stethoscope text-primary"></i> Examens</div>
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      {{ form_label(form.examenClinique, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.examenClinique) }}
+      {{ form_errors(form.examenClinique) }}
+    </div>
+
+    <div class="col-12 col-md-6">
+      {{ form_label(form.examenNeurologique, null, {'label_attr': {'class': 'form-label'}}) }}
+      {{ form_widget(form.examenNeurologique) }}
+      {{ form_errors(form.examenNeurologique) }}
+    </div>
+  </div>
+</div>
+
+{{ form_rest(form) }}
+
+<div class="d-flex justify-content-end mt-3 gap-2">
+  <button type="reset" class="btn btn-light border">Vider</button>
+  <button type="submit" class="btn btn-primary">
+    <i class="fa fa-save me-1"></i> Enregistrer
+  </button>
+</div>
+
+{{ form_end(form, {'render_rest': false}) }}
