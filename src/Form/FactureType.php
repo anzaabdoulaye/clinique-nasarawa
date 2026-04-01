@@ -75,6 +75,16 @@ class FactureType extends AbstractType
             ])
         ;
 
+        $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event): void {
+            $facture = $event->getData();
+
+            if (!$facture instanceof Facture) {
+                return;
+            }
+
+            $event->getForm()->get('montantTotal')->setData($facture->getBaseTotal());
+        });
+
         $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event): void {
             $facture = $event->getData();
 
@@ -82,7 +92,8 @@ class FactureType extends AbstractType
                 return;
             }
 
-            $montantTotal = max(0, $facture->getMontantTotal());
+            $montantBase = max(0, $facture->getMontantTotal());
+            $montantTotal = $facture->calculerMontantAvecTimbre($montantBase);
             $montantPaye = max(0, $facture->getMontantPaye());
 
             $facture->setMontantTotal($montantTotal);

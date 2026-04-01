@@ -118,18 +118,18 @@
           </a>
 
           
-          <a href="{{ path('app_facture_print', {id: facture.id}) }}"
+          {# <a href="{{ path('app_facture_print', {id: facture.id}) }}"
             target="_blank"
             class="btn btn-primary btn-sm"
             onclick="setTimeout(() => window.print(), 500)">
               <i class="ri-printer-line"></i> Imprimer
-          </a>
+          </a> #}
 
           
           <a href="{{ path('app_facture_pdf', {id: facture.id}) }}"
             target="_blank"
             class="btn btn-success btn-sm">
-              <i class="ri-file-pdf-line"></i> PDF
+              <i class="ri-file-pdf-line"></i> Imprimer
           </a>
 
       </div>

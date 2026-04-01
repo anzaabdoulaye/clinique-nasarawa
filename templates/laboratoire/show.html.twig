@@ -54,7 +54,7 @@
                 {% endif %}
             {% endif %}
             {% if prestation.resultatLaboratoire %}
-                <a href="{{ path('app_laboratoire_resultat_print', {id: prestation.id}) }}"
+                <a href="{{ path('app_laboratoire_resultat_pdf', {id: prestation.id}) }}"
                 target="_blank"
                 class="btn btn-outline-primary">
                     <i class="ri-printer-line me-1"></i> Imprimer le résultat

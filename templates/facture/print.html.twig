@@ -281,6 +281,8 @@
 <body>
     {% set consultation = consultation ?? (facture.consultation ?? null) %}
     {% set patient = patient ?? (consultation and consultation.rendezVous ? consultation.rendezVous.patient : null) %}
+    {% set montantBase = facture.baseTotal %}
+    {% set timbre = facture.timbreAmount %}
 
     <div class="document">
         <div class="top-bar"></div>
@@ -399,6 +401,18 @@
 
         <div class="totals-box">
             <table class="totals-table">
+                <tr>
+                    <th>Sous-total</th>
+                    <td class="right">{{ montantBase|number_format(0, '.', ' ') }} FCFA</td>
+                </tr>
+
+                {% if timbre > 0 %}
+                    <tr>
+                        <th>Timbre</th>
+                        <td class="right">{{ timbre|number_format(0, '.', ' ') }} FCFA</td>
+                    </tr>
+                {% endif %}
+
                 <tr>
                     <th>Total facture</th>
                     <td class="right">

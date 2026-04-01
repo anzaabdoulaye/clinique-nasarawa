@@ -97,7 +97,10 @@ public function index(
         }
     }
 
-    $search = $request->query->get('search');
+    $search = trim((string) ($request->query->get('q', $request->query->get('search', ''))));
+    if ($search === '') {
+        $search = null;
+    }
 
     /** @var Utilisateur $user */
     $user = $this->getUser();
