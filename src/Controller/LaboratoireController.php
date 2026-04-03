@@ -164,9 +164,74 @@ final class LaboratoireController extends AbstractController
             throw $this->createNotFoundException('Aucun examen laboratoire imprimable pour cette consultation.');
         }
 
-        return $this->render('laboratoire/bon_print.html.twig', [
+        $verifyUrl = $this->generateUrl('app_laboratoire_bon_show', ['id' => $consultation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 200,
+            margin: 6
+        );
+        $png = (new PngWriter())->write($qrCode)->getString();
+        $dataUri = 'data:image/png;base64,' . base64_encode($png);
+
+        $code = 'BON-' . $consultation->getId();
+
+        $logoBase64 = $this->getEmbeddedLogo();
+
+        $html = $this->renderView('laboratoire/bon_print.html.twig', [
             'consultation' => $consultation,
             'examens' => $examens,
+            'qr_data' => $dataUri,
+            'code_qr' => $code,
+            'logo_path' => $logoBase64,
+            'verifyUrl' => $verifyUrl,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->render();
+
+        $pdfOutput = $dompdf->output();
+
+        $extraPath = $this->getParameter('kernel.project_dir') . '/public/pdf/ANNEXE_LABO_VERSO.pdf';
+        if (file_exists($extraPath)) {
+            $temp = sys_get_temp_dir() . '/bon_labo_' . $consultation->getId() . '.pdf';
+            file_put_contents($temp, $pdfOutput);
+
+            $fpdi = new Fpdi();
+            $count1 = $fpdi->setSourceFile($temp);
+            for ($p = 1; $p <= $count1; $p++) {
+                $tpl = $fpdi->importPage($p);
+                $size = $fpdi->getTemplateSize($tpl);
+                $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tpl);
+            }
+
+            $count2 = $fpdi->setSourceFile($extraPath);
+            for ($p = 1; $p <= $count2; $p++) {
+                $tpl = $fpdi->importPage($p);
+                $size = $fpdi->getTemplateSize($tpl);
+                $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tpl);
+            }
+
+            $merged = $fpdi->Output('S');
+
+            return new Response($merged, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => sprintf('inline; filename="bon_labo-%d.pdf"', $consultation->getId()),
+            ]);
+        }
+
+        return new Response($pdfOutput, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon_labo-%d.pdf"', $consultation->getId()),
         ]);
     }
 

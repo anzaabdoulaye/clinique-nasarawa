@@ -1,0 +1,196 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport de Stock{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# Header #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-archive-drawer-line me-2 text-success"></i>
+                Rapport de Stock
+            </h2>
+            <p class="text-muted mb-0">État du stock et mouvements sur la période sélectionnée.</p>
+        </div>
+        <a href="{{ path('app_rapport_pharmacie_index') }}" class="btn btn-outline-secondary">
+            <i class="ri-arrow-left-line me-1"></i> Retour aux rapports
+        </a>
+    </div>
+
+    {# Formulaire de sélection de période #}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ path('app_rapport_pharmacie_stock') }}" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label for="date_debut" class="form-label fw-semibold">Date début</label>
+                    <input type="date" class="form-control" id="date_debut" name="date_debut"
+                           value="{{ date_debut ? date_debut|date('Y-m-d') : '' }}" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="date_fin" class="form-label fw-semibold">Date fin</label>
+                    <input type="date" class="form-control" id="date_fin" name="date_fin"
+                           value="{{ date_fin ? date_fin|date('Y-m-d') : '' }}" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success flex-fill">
+                            <i class="ri-search-line me-1"></i> Générer
+                        </button>
+                        {% if resultats is not null %}
+                            <a href="{{ path('app_rapport_pharmacie_stock_pdf', {
+                                date_debut: date_debut|date('Y-m-d'),
+                                date_fin: date_fin|date('Y-m-d')
+                            }) }}" class="btn btn-outline-danger" target="_blank">
+                                <i class="ri-file-pdf-2-line me-1"></i> PDF
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Résultats #}
+    {% if resultats is not null %}
+        {% set totalStock = 0 %}
+        {% set totalEntrees = 0 %}
+        {% set totalSorties = 0 %}
+        {% set totalValeur = 0 %}
+        {% for r in resultats %}
+            {% set totalStock = totalStock + r.stock_actuel %}
+            {% set totalEntrees = totalEntrees + r.entrees_periode %}
+            {% set totalSorties = totalSorties + r.sorties_periode %}
+            {% set totalValeur = totalValeur + (r.stock_actuel * r.prix_unitaire) %}
+        {% endfor %}
+
+        {# KPI cards #}
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body text-center py-3">
+                        <small class="text-muted d-block mb-1">Médicaments</small>
+                        <h3 class="fw-bold text-dark mb-0">{{ resultats|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body text-center py-3">
+                        <small class="text-muted d-block mb-1">Entrées (période)</small>
+                        <h3 class="fw-bold text-success mb-0">{{ totalEntrees }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body text-center py-3">
+                        <small class="text-muted d-block mb-1">Sorties (période)</small>
+                        <h3 class="fw-bold text-danger mb-0">{{ totalSorties }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body text-center py-3">
+                        <small class="text-muted d-block mb-1">Valeur stock</small>
+                        <h3 class="fw-bold text-primary mb-0">{{ totalValeur|number_format(0, ',', ' ') }}</h3>
+                        <small class="text-muted">FCFA</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Tableau #}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                <h5 class="fw-semibold mb-0">
+                    Détail du stock — {{ date_debut|date('d/m/Y') }} au {{ date_fin|date('d/m/Y') }}
+                </h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 datatable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-semibold">Médicament</th>
+                                <th class="fw-semibold">SKU</th>
+                                <th class="fw-semibold text-center">Lots</th>
+                                <th class="fw-semibold text-center">Stock actuel</th>
+                                <th class="fw-semibold text-center text-success">Entrées</th>
+                                <th class="fw-semibold text-center text-danger">Sorties</th>
+                                <th class="fw-semibold text-end">Prix unit.</th>
+                                <th class="fw-semibold text-end">Valeur stock</th>
+                                <th class="fw-semibold">Péremption</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in resultats %}
+                                <tr>
+                                    <td class="fw-semibold">{{ r.medicament_nom }}</td>
+                                    <td><span class="text-muted">{{ r.sku ?? '—' }}</span></td>
+                                    <td class="text-center">{{ r.nb_lots }}</td>
+                                    <td class="text-center">
+                                        {% if r.stock_actuel <= 5 %}
+                                            <span class="badge bg-danger-subtle text-danger border px-3 py-2">{{ r.stock_actuel }}</span>
+                                        {% elseif r.stock_actuel <= 20 %}
+                                            <span class="badge bg-warning-subtle text-dark border px-3 py-2">{{ r.stock_actuel }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success border px-3 py-2">{{ r.stock_actuel }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center text-success fw-semibold">
+                                        {% if r.entrees_periode > 0 %}+{{ r.entrees_periode }}{% else %}—{% endif %}
+                                    </td>
+                                    <td class="text-center text-danger fw-semibold">
+                                        {% if r.sorties_periode > 0 %}-{{ r.sorties_periode }}{% else %}—{% endif %}
+                                    </td>
+                                    <td class="text-end">{{ r.prix_unitaire|number_format(0, ',', ' ') }} F</td>
+                                    <td class="text-end fw-bold">{{ (r.stock_actuel * r.prix_unitaire)|number_format(0, ',', ' ') }} F</td>
+                                    <td>
+                                        {% if r.prochaine_peremption %}
+                                            {% set peremption = r.prochaine_peremption|date('U') %}
+                                            {% set now = 'now'|date('U') %}
+                                            {% if peremption < now %}
+                                                <span class="badge bg-danger text-white">{{ r.prochaine_peremption|date('d/m/Y') }}</span>
+                                            {% elseif (peremption - now) < 7776000 %}
+                                                <span class="badge bg-warning text-dark">{{ r.prochaine_peremption|date('d/m/Y') }}</span>
+                                            {% else %}
+                                                <span class="text-muted">{{ r.prochaine_peremption|date('d/m/Y') }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="3">TOTAL</td>
+                                <td class="text-center">{{ totalStock }}</td>
+                                <td class="text-center text-success">{{ totalEntrees }}</td>
+                                <td class="text-center text-danger">{{ totalSorties }}</td>
+                                <td></td>
+                                <td class="text-end text-primary">{{ totalValeur|number_format(0, ',', ' ') }} F</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% elseif resultats is null %}
+        <div class="text-center py-5">
+            <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3"
+                 style="width: 70px; height: 70px;">
+                <i class="ri-calendar-line fs-2 text-muted"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Sélectionnez une période</h5>
+            <p class="text-muted">Choisissez les dates de début et fin pour générer le rapport de stock.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

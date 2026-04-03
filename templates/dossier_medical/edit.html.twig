@@ -21,9 +21,9 @@
                 </div>
 
                 <div>
-                    <a href="{{ path('app_dossier_medical_index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ path('app_dossier_medical_show', {'id': dossier.id}) }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>
-                        Retour à la liste
+                        Retour au dossier
                     </a>
                 </div>
             </div>
@@ -64,7 +64,7 @@
 
                     {# Footer actions #}
                     <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top flex-wrap gap-3">
-                        <a href="{{ path('app_dossier_medical_index') }}" class="btn btn-light border px-4">
+                        <a href="{{ path('app_dossier_medical_show', {'id': dossier.id}) }}" class="btn btn-light border px-4">
                             <i class="fas fa-times me-2"></i>
                             Annuler
                         </a>

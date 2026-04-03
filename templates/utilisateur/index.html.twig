@@ -264,3 +264,77 @@
     </div>
 </div>
 {% endblock %}
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    (function () {
+      const editModalEl = document.getElementById('editUtilisateurModal');
+      if (!editModalEl) return;
+
+      const loader = document.getElementById('editUtilisateurLoader');
+      const body = document.getElementById('editUtilisateurModalBody');
+
+      async function loadEditForm(url) {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await res.text();
+
+        body.innerHTML = html;
+        loader.classList.add('d-none');
+        body.classList.remove('d-none');
+
+        const form = body.querySelector('form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+
+          const formData = new FormData(form);
+          const submitUrl = form.getAttribute('action') || url;
+          const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+          const submitRes = await fetch(submitUrl, {
+            method,
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+
+          const contentType = submitRes.headers.get('content-type') || '';
+
+          if (contentType.includes('application/json')) {
+            const json = await submitRes.json();
+            if (json.success) {
+              bootstrap.Modal.getInstance(editModalEl).hide();
+              window.location.reload();
+              return;
+            }
+          }
+
+          const submitHtml = await submitRes.text();
+          body.innerHTML = submitHtml;
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-utilisateur');
+        if (!btn) return;
+
+        const url = btn.getAttribute('data-url');
+        loadEditForm(url).catch(() => {
+          loader.classList.add('d-none');
+          body.classList.remove('d-none');
+          body.innerHTML = '<div class="alert alert-danger mb-0">Impossible de charger le formulaire.</div>';
+        });
+      });
+
+      editModalEl.addEventListener('hidden.bs.modal', () => {
+        loader.classList.remove('d-none');
+        body.classList.add('d-none');
+        body.innerHTML = '';
+      });
+    })();
+  </script>
+{% endblock %}

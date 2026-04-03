@@ -16,12 +16,12 @@
             <div class="text-muted small">Suivi des factures et des paiements</div>
           </div>
 
-          <button type="button"
+          {# <button type="button"
                   class="btn btn-primary"
                   data-bs-toggle="modal"
                   data-bs-target="#addFactureModal">
             <i class="fa fa-plus me-1"></i> Nouvelle facture
-          </button>
+          </button> #}
         </div>
       </div>
 
@@ -31,6 +31,8 @@
             <thead class="table-light">
               <tr class="text-nowrap">
                 <th class="text-uppercase small text-muted">#</th>
+                <th class="text-uppercase small text-muted">Patient</th>
+                <th class="text-uppercase small text-muted">N° Dossier</th>
                 <th class="text-uppercase small text-muted">Montant</th>
                 <th class="text-uppercase small text-muted">Émission</th>
                 <th class="text-uppercase small text-muted">Paiement</th>
@@ -49,6 +51,15 @@
               <tr>
                 <td class="text-nowrap">
                   <span class="badge bg-light text-dark border">#{{ facture.id }}</span>
+                </td>
+
+                <td class="text-nowrap fw-semibold">
+                  {% set patient = facture.consultation and facture.consultation.dossierMedical ? facture.consultation.dossierMedical.patient : null %}
+                  {{ patient ? patient.nom ~ ' ' ~ patient.prenom : '—' }}
+                </td>
+
+                <td class="text-nowrap">
+                  {{ facture.consultation and facture.consultation.dossierMedical ? facture.consultation.dossierMedical.numeroDossier : '—' }}
                 </td>
 
                 <td class="text-nowrap fw-semibold">

@@ -22,7 +22,7 @@ final class DossierMedicalController extends AbstractController
     public function index(DossierMedicalRepository $dossierMedicalRepository): Response
     {
         return $this->render('dossier_medical/index.html.twig', [
-            'dossiers' => $dossierMedicalRepository->findBy([], ['id' => 'DESC']),
+            'dossier_medicals' => $dossierMedicalRepository->findBy([], ['id' => 'DESC']),
         ]);
     }
 

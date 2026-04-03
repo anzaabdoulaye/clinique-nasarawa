@@ -146,11 +146,8 @@
         <div class="fx-field">
           <div class="fx-label">Patient</div>
           <div class="fx-value">
-            {% if patient %}
-              {{ patient.nom }} {{ patient.prenom }}
-            {% else %}
-              —
-            {% endif %}
+            {% set patient = facture.consultation and facture.consultation.dossierMedical ? facture.consultation.dossierMedical.patient : null %}
+                  {{ patient ? patient.nom ~ ' ' ~ patient.prenom : '—' }}
           </div>
         </div>
 
