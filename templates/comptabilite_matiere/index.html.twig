@@ -23,12 +23,12 @@
                 Tableau de bord
             </a>
             <button class="btn btn-primary shadow-sm"
-        type="button"
-        data-bs-toggle="modal"
-        data-bs-target="#newBonMatiereModal">
-    <i class="ri-add-line me-1"></i>
-    Nouveau bon
-</button>
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#newBonMatiereModal">
+                <i class="ri-add-line me-1"></i>
+                Nouveau bon
+            </button>
         </div>
     </div>
 
@@ -308,4 +308,6 @@
         </div>
     </div>
 </div>
+
+{{ include('comptabilite_matiere/_new_modal.html.twig') }}
 {% endblock %}

@@ -192,6 +192,16 @@
                 </li>
             {% endif %}
 
+            {# {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_PHARMACIE') %}
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') starts with 'app_rapport_pharmacie_' ? 'active' : '' }}"
+                       href="{{ path('app_rapport_pharmacie_index') }}">
+                        <i class="ri-file-chart-line"></i>
+                        <span>Rapports Pharmacie</span>
+                    </a>
+                </li>
+            {% endif %} #}
+
             {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE') %}
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') starts with 'app_comptabilite_matiere_' ? 'active' : '' }}"

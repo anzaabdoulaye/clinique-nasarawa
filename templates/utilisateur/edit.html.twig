@@ -1,18 +1,76 @@
-{# templates/service_medical/edit.html.twig #}
+{# templates/utilisateur/edit.html.twig — fragment AJAX pour le modal d'édition #}
 {{ form_start(form, {
-  'action': path('app_service_medical_edit', {id: service_medical.id}),
-  'attr': {'id': 'ServiceMedicalEditForm'}
+    'action': path('app_utilisateur_edit', {id: utilisateur.id}),
+    'attr': {
+        'id': 'UtilisateurEditForm',
+        'class': 'needs-validation'
+    }
 }) }}
 
-<div class="row g-3">
-  <div class="col-md-12">
-    {{ form_row(form.libelle) }}
-  </div>
+<div class="mb-4">
+    <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary me-3"
+             style="width: 48px; height: 48px;">
+            <i class="ri-user-settings-line fs-5"></i>
+        </div>
+        <div>
+            <h5 class="mb-1 fw-bold">Modifier l’utilisateur</h5>
+            <p class="text-muted mb-0 small">
+                Mettez à jour les informations du compte utilisateur.
+            </p>
+        </div>
+    </div>
 </div>
 
-<div class="d-flex justify-content-end mt-4 gap-2">
-  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-  <button class="btn btn-primary">Mettre à jour</button>
+<div class="row g-3">
+    <div class="col-md-6">
+        {{ form_row(form.nom) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.prenom) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.username) }}
+    </div>
+    <div class="col-md-6">
+        {% if form.plainPassword is defined %}
+            {{ form_row(form.plainPassword) }}
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.statut) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.roles) }}
+    </div>
+</div>
+
+<div class="border-top mt-4 pt-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="text-muted small">
+            <i class="ri-information-line me-1"></i>
+            Vérifiez les informations avant validation.
+        </div>
+
+        <div class="d-flex gap-2">
+            <button
+                type="button"
+                class="btn btn-light border px-4"
+                data-bs-dismiss="modal"
+            >
+                <i class="ri-close-line me-1"></i>
+                Annuler
+            </button>
+
+            <button
+                type="submit"
+                class="btn btn-primary btn-lg px-5 shadow fw-bold"
+            >
+                <i class="ri-save-line me-2"></i>
+                Mettre à jour
+            </button>
+        </div>
+    </div>
 </div>
 
 {{ form_end(form) }}

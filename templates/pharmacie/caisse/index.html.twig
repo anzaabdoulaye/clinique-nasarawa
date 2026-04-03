@@ -16,6 +16,12 @@
                 Consultez l’historique des ventes enregistrées à la caisse.
             </p>
         </div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <a href="{{ path('app_pharmacie_index') }}" class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-1"></i> Retour à la pharmacie
+            </a>
+        </div>
 
         <div>
             <a class="btn btn-primary shadow-sm" href="{{ path('app_caisse_new') }}">
@@ -23,6 +29,7 @@
                 Nouvelle vente
             </a>
         </div>
+    </div>
     </div>
 
     {# ===== Carte principale ===== #}
