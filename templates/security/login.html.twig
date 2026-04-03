@@ -1,214 +1,296 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!doctype html>
+<html lang="fr"
+      data-layout="vertical"
+      data-topbar="light"
+      data-sidebar="dark"
+      data-sidebar-size="lg"
+      data-sidebar-image="none"
+      data-preloader="disable"
+      data-theme="default"
+      data-theme-colors="default">
 <head>
-    <meta charset="UTF-8">
-    <title>Connexion | Clinique Nasarawa</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <title>Connexion | Clinique Nassarawa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="Connexion sécurisée à la plateforme Clinique Nassarawa" name="description" />
+    <meta content="Clinique Nassarawa" name="author" />
 
-    {# Bootstrap 5 CDN #}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
+    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
 
-    <style>
-        :root{
-            --cn-primary:#0d6efd;
-            --cn-muted:#6c757d;
-            --cn-card:#ffffff;
-        }
-        body{
-            background:
-                radial-gradient(1200px 600px at 10% 10%, rgba(13,110,253,.12), transparent 55%),
-                radial-gradient(900px 500px at 90% 20%, rgba(25,135,84,.10), transparent 50%),
-                #f6f8fb;
-        }
-        .auth-shell{
-            min-height: 100vh;
-        }
-        .auth-card{
-            background: var(--cn-card);
-            border: 1px solid rgba(0,0,0,.06);
-            box-shadow: 0 18px 45px rgba(15, 23, 42, .10);
-        }
-        .brand-badge{
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: grid;
-            place-items: center;
-            background: rgba(13,110,253,.10);
-            border: 1px solid rgba(13,110,253,.15);
-        }
-        .form-control:focus{
-            box-shadow: 0 0 0 .25rem rgba(13,110,253,.15);
-            border-color: rgba(13,110,253,.45);
-        }
-        .btn-primary{
-            box-shadow: 0 12px 24px rgba(13,110,253,.20);
-        }
-        .divider{
-            height: 1px;
-            background: rgba(0,0,0,.06);
-        }
-        .small-link{
-            text-decoration: none;
-        }
-        .small-link:hover{
-            text-decoration: underline;
-        }
-    </style>
+    <script src="{{ asset('assets/js/layout.js') }}"></script>
+
+    {% block stylesheets %}
+        <!-- jsvectormap css -->
+        <link href="{{ asset('assets/libs/jsvectormap/jsvectormap.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- Swiper slider css -->
+        <link href="{{ asset('assets/libs/swiper/swiper-bundle.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- Bootstrap Css -->
+        <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- Icons Css -->
+        <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- App Css -->
+        <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- Custom Css -->
+        <link href="{{ asset('assets/css/custom.min.css') }}" rel="stylesheet" type="text/css" />
+        <!-- DataTables CSS -->
+        <link href="{{ asset('assets/libs/datatables/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/libs/datatables/buttons/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
+
+        <style>
+            .auth-logo-text {
+                color: #fff;
+                font-size: 1.35rem;
+                font-weight: 700;
+                letter-spacing: .3px;
+            }
+
+            .auth-subtitle {
+                color: rgba(255,255,255,.8);
+            }
+
+            .password-toggle-btn {
+                border: none;
+                background: transparent;
+                padding: 0 1rem;
+                height: 100%;
+                position: absolute;
+                right: 0;
+                top: 0;
+                z-index: 5;
+                color: #878a99;
+            }
+
+            .password-toggle-btn:hover {
+                color: #405189;
+            }
+
+            .alert-login {
+                border: 1px solid rgba(220, 53, 69, 0.15);
+                background-color: rgba(220, 53, 69, 0.08);
+            }
+
+            .clinic-footer-note {
+                font-size: .85rem;
+            }
+
+            .auth-one-bg {
+    background: linear-gradient(135deg, #f8fbff 0%, #cfe2ff 50%, #0d6efd 100%);
+}
+
+.card-bg-fill {
+    position: relative;
+    margin-top: -80px; /* 👈 fait monter la card */
+    z-index: 10;
+
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+        </style>
+    {% endblock %}
 </head>
 
 <body>
+<div class="auth-page-wrapper pt-5">
+    <!-- Background -->
+    <div class="auth-one-bg-position auth-one-bg" id="auth-particles">
+        <div class="bg-overlay"></div>
 
-<div class="container auth-shell d-flex align-items-center">
-    <div class="row w-100 justify-content-center">
-        <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+        <div class="shape">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 version="1.1"
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 viewBox="0 0 1440 120">
+                <path d="M 0,36 C 144,53.6 432,123.2 720,124 C 1008,124.8 1296,56.8 1440,40L1440 140L0 140z"></path>
+            </svg>
+        </div>
+    </div>
 
-            <div class="card auth-card rounded-4 p-4 p-md-5">
-
-                {# Header / Branding #}
-                <div class="d-flex align-items-center gap-3 mb-4">
-                    <div class="brand-badge">
-                        {# Logo simple style "clinique" (remplaçable) #}
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 6.36 11.54 7.33 12.49.38.37.98.37 1.36 0C13.64 21.54 20 15.25 20 10c0-4.42-3.58-8-8-8Z" stroke="#0d6efd" stroke-width="1.6"/>
-                            <path d="M12 7v6M9 10h6" stroke="#0d6efd" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-
-                    <div class="flex-grow-1">
-                        <h1 class="h4 fw-bold mb-1">Clinique Nasarawa</h1>
-                        <div class="text-muted small">Accès sécurisé au portail</div>
+    <!-- Auth Content -->
+    <div class="auth-page-content">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="text-center mt-sm-5 mb-4 text-white">
+                        <div class="d-flex flex-column align-items-center">
+                            <img src="{{ asset('logo2.png') }}" alt="Clinique Nasarawa" height="180" class="mb-3">
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                {# Message d'erreur #}
-                {% if error %}
-                    <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3" role="alert">
-                        <div class="mt-1">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M10.29 3.86h3.42c.67 0 1.29.35 1.64.93l6.2 10.33c.72 1.2-.14 2.72-1.54 2.72H3.99c-1.4 0-2.26-1.52-1.54-2.72l6.2-10.33c.35-.58.97-.93 1.64-.93Z"
-                                      stroke="currentColor" stroke-width="1.6"/>
-                            </svg>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold">Connexion impossible</div>
-                            <div class="small">
-                                {{ error.messageKey|trans(error.messageData, 'security') }}
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6 col-xl-5">
+                    <div class="card mt-4 card-bg-fill">
+                        <div class="card-body p-4">
+                            <div class="text-center mt-2">
+                                <h5 class="text-primary">Bienvenue</h5>
+                                <p class="text-muted mb-0">
+                                    Connectez-vous pour accéder à votre espace.
+                                </p>
+                            </div>
+
+                            <div class="p-2 mt-4">
+                                {% if error %}
+                                    <div class="alert alert-danger alert-login mb-4" role="alert">
+                                        <strong>Connexion impossible :</strong>
+                                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                                    </div>
+                                {% endif %}
+
+                                <form method="post" novalidate>
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Nom d'utilisateur</label>
+                                        <input
+                                            type="text"
+                                            value="{{ last_username }}"
+                                            name="_username"
+                                            id="username"
+                                            class="form-control"
+                                            placeholder="Entrez votre nom d'utilisateur"
+                                            autocomplete="username"
+                                            required
+                                            autofocus
+                                        >
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="float-end">
+                                            <a href="#" class="text-muted">
+                                                Mot de passe oublié ?
+                                            </a>
+                                        </div>
+                                        <label class="form-label" for="password-input">Mot de passe</label>
+                                        <div class="position-relative auth-pass-inputgroup mb-3">
+                                            <input
+                                                type="password"
+                                                name="_password"
+                                                class="form-control pe-5"
+                                                placeholder="Entrez votre mot de passe"
+                                                id="password-input"
+                                                autocomplete="current-password"
+                                                required
+                                            >
+                                            <button
+                                                class="password-toggle-btn"
+                                                type="button"
+                                                id="password-addon"
+                                                aria-label="Afficher ou masquer le mot de passe"
+                                            >
+                                                <i class="ri-eye-fill align-middle"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            value="1"
+                                            id="auth-remember-check"
+                                            name="_remember_me"
+                                        >
+                                        <label class="form-check-label" for="auth-remember-check">
+                                            Se souvenir de moi
+                                        </label>
+                                    </div>
+
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                                    <div class="mt-4">
+                                        <button class="btn btn-success w-100" type="submit">
+                                            Se connecter
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
-                {% endif %}
 
-                <form method="post" class="mt-2" novalidate>
-
-                    <div class="form-floating mb-3">
-                        <input type="text"
-                               value="{{ last_username }}"
-                               name="_username"
-                               id="username"
-                               class="form-control rounded-3"
-                               placeholder="Nom d'utilisateur"
-                               autocomplete="username"
-                               required autofocus>
-                        <label for="username">Nom d'utilisateur</label>
+                    <div class="mt-4 text-center">
+                        <p class="mb-0 text-muted clinic-footer-note">
+                            Vos informations sont protégées et chiffrées.
+                        </p>
                     </div>
-
-                    <div class="form-floating mb-2">
-                        <input type="password"
-                               name="_password"
-                               id="password"
-                               class="form-control rounded-3"
-                               placeholder="Mot de passe"
-                               autocomplete="current-password"
-                               required>
-                        <label for="password">Mot de passe</label>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="1" id="remember_me" name="_remember_me">
-                            <label class="form-check-label small text-muted" for="remember_me">
-                                Se souvenir de moi
-                            </label>
-                        </div>
-
-                        {# Mets la route que tu veux (ex: app_forgot_password_request si tu utilises reset-password-bundle) #}
-                        <a href="#"
-                           class="small text-primary small-link">
-                            Mot de passe oublié ?
-                        </a>
-                    </div>
-
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-                    <button class="btn btn-primary w-100 py-2 rounded-3 fw-semibold" type="submit">
-                        Se connecter
-                    </button>
-
-                </form>
-
-                <div class="my-4 divider"></div>
-
-                {# Footer #}
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">© {{ "now"|date("Y") }} Clinique Nasarawa</small>
-                    <small class="text-muted">
-                        Assistance : <span class="fw-semibold">Service IT</span>
-                    </small>
                 </div>
-
             </div>
-
-            <div class="text-center mt-3">
-                <small class="text-muted">
-                    Vos informations sont protégées et chiffrées.
-                </small>
-            </div>
-
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="text-center">
+                        <p class="mb-0 text-muted">
+                            &copy; {{ "now"|date("Y") }} Clinique Nassarawa. Assistance : EDMAF Niger.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block javascripts %}
+    <!-- JAVASCRIPT -->
+    <script src="{{ asset('assets/libs/datatables/jquery-3.6.4.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/plugins/lord-icon-2.1.0.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins.js') }}"></script>
+
+    <script src="{{ asset('assets/js/pages/select2.min.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/select2.init.js') }}"></script>
+
+    <!-- apexcharts -->
+    <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+    <!-- Vector map-->
+    <script src="{{ asset('assets/libs/jsvectormap/jsvectormap.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/jsvectormap/maps/world-merc.js') }}"></script>
+    <!-- Swiper slider js -->
+    <script src="{{ asset('assets/libs/swiper/swiper-bundle.min.js') }}"></script>
+
+    <!-- App js -->
+    <script src="{{ asset('assets/js/app.js') }}"></script>
+    <!-- DataTables JS -->
+    <script src="{{ asset('assets/libs/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/datatables/buttons/dataTables.buttons.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/jszip/jszip.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ asset('assets/libs/datatables/buttons/buttons.html5.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/datatables/buttons/buttons.print.min.js') }}"></script>
+
+    <!-- particles js -->
+    <script src="{{ asset('assets/libs/particles.js/particles.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/particles.app.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordInput = document.getElementById('password-input');
+            const passwordToggle = document.getElementById('password-addon');
+
+            if (passwordInput && passwordToggle) {
+                passwordToggle.addEventListener('click', function () {
+                    const isPassword = passwordInput.getAttribute('type') === 'password';
+                    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('ri-eye-fill', !isPassword);
+                        icon.classList.toggle('ri-eye-off-fill', isPassword);
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
 </body>
 </html>
-{# 
-{% block title %}Log in!{% endblock %}
-
-{% block body %}
-    <form method="post">
-        {% if error %}
-            <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-        {% endif %}
-
-        {% if app.user %}
-            <div class="mb-3">
-                You are logged in as {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}">Logout</a>
-            </div>
-        {% endif %}
-
-        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-        <label for="username">Username</label>
-        <input type="text" value="{{ last_username }}" name="_username" id="username" class="form-control" autocomplete="username" required autofocus>
-        <label for="password">Password</label>
-        <input type="password" name="_password" id="password" class="form-control" autocomplete="current-password" required>
-        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
-
-        {#
-            Uncomment this section and add a remember_me option below your firewall to activate remember me functionality.
-            See https://symfony.com/doc/current/security/remember_me.html
-
-            <div class="checkbox mb-3">
-                <input type="checkbox" name="_remember_me" id="_remember_me">
-                <label for="_remember_me">Remember me</label>
-            </div>
-        #}
-{# 
-        <button class="btn btn-lg btn-primary" type="submit">
-            Sign in
-        </button>
-    </form>
-{% endblock %} #} 
