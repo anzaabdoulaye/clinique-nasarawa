@@ -264,6 +264,27 @@ public function param(
         ]);
     }
 
+    #[Route('/{id<\d+>}/reset-password', name: 'app_utilisateur_reset_password', methods: ['POST'])]
+    public function resetPassword(
+        Request $request,
+        Utilisateur $utilisateur,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response {
+        $submittedToken = $request->request->get('_token');
+
+        if ($this->isCsrfTokenValid('reset_password' . $utilisateur->getId(), (string) $submittedToken)) {
+            $tempPassword = '1234';
+            $utilisateur->setPassword($passwordHasher->hashPassword($utilisateur, $tempPassword));
+            $utilisateur->setForcePasswordChange(true);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : ' . $tempPassword);
+        }
+
+        return $this->redirectToRoute('app_utilisateur_show', ['id' => $utilisateur->getId()]);
+    }
+
     #[Route('/{id<\d+>}', name: 'app_utilisateur_delete', methods: ['POST'])]
     public function delete(Request $request, Utilisateur $utilisateur, EntityManagerInterface $entityManager): Response
     {
