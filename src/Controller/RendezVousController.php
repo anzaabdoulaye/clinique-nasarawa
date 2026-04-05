@@ -11,6 +11,7 @@ use App\Repository\ConsultationRepository;
 use App\Repository\RendezVousRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -59,7 +60,7 @@ final class RendezVousController extends AbstractController
 }
 
         return $this->render('rendez_vous/index.html.twig', [
-            'rendezVous' => $rendezVousRepository->findAll(),  
+            'rendezVous' => $rendezVousRepository->findBy([], ['dateHeure' => 'DESC']),
             'form' => $form->createView(),
         ]);
     }
@@ -103,6 +104,49 @@ final class RendezVousController extends AbstractController
         // Hors AJAX: page normale
         return $this->render('rendez_vous/edit.html.twig', [
             'form' => $form->createView(),
+        ]);
+    }
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
+))]
+    #[Route('/{id}/edit-statut', name: 'app_rendez_vous_edit_statut', methods: ['GET', 'POST'])]
+    public function editStatut(Request $request, RendezVous $rendezVous, EntityManagerInterface $em): Response
+    {
+        $form = $this->createFormBuilder($rendezVous, [
+            'action' => $this->generateUrl('app_rendez_vous_edit_statut', ['id' => $rendezVous->getId()]),
+        ])
+            ->add('statut', EnumType::class, [
+                'class' => StatutRendezVous::class,
+                'label' => 'Statut',
+                'choice_label' => static fn (StatutRendezVous $statut): string => match ($statut) {
+                    StatutRendezVous::EN_ATTENTE => 'En attente',
+                    StatutRendezVous::PLANIFIE => 'Planifié',
+                    StatutRendezVous::CONFIRME => 'Confirmé',
+                    StatutRendezVous::ANNULE => 'Annulé',
+                    StatutRendezVous::TERMINE => 'Terminé',
+                },
+                'attr' => [
+                    'class' => 'form-select',
+                ],
+            ])
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => true]);
+            }
+
+            return $this->redirectToRoute('app_rendez_vous_index');
+        }
+
+        return $this->render('rendez_vous/edit_statut.html.twig', [
+            'form' => $form->createView(),
+            'rendezVous' => $rendezVous,
         ]);
     }
 

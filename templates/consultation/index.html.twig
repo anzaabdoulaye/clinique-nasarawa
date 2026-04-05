@@ -51,7 +51,7 @@
 
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0 datatable">
+          <table class="table table-hover align-middle mb-0 datatable-a">
             <thead class="table-light">
               <tr class="text-nowrap">
                 <th class="text-uppercase small text-muted">Date</th>
@@ -64,7 +64,7 @@
             <tbody>
             {% for c in consultations %}
               <tr>
-                <td class="text-nowrap">
+                <td class="text-nowrap"{% if c.createdAt %} data-order="{{ c.createdAt|date('Y-m-d H:i:s') }}"{% endif %}>
                   {% if c.createdAt %}
                     <div class="fw-semibold">{{ c.createdAt|date('d/m/Y') }}</div>
                     <div class="small text-muted">{{ c.createdAt|date('H:i') }}</div>
