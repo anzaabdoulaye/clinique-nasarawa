@@ -259,7 +259,8 @@
 <body>
     {% set consultation = prestation.consultation %}
     {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-    {% set patient = rdv ? rdv.patient|default(null) : null %}
+    {% set patient = patient|default(consultation and consultation.dossierMedical ? consultation.dossierMedical.patient|default(null) : null) %}
+    {% set patient = patient ?: (rdv ? rdv.patient|default(null) : null) %}
     {% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
 
     <div class="document">

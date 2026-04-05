@@ -73,7 +73,7 @@ class TreatmentAlertService
                     $heure = (int) $heure;
                     $alreadyAdministered = $traitement->isAdministeredAt($today, $heure);
 
-                    if ($heure < (int) $now->format('G') && !$alreadyAdministered) {
+                    if ($traitement->isLateSlotAt($today, $heure, $now) && !$alreadyAdministered) {
                         $missedTreatmentsCount++;
 
                         $treatmentAlertItems[] = [
@@ -88,10 +88,7 @@ class TreatmentAlertService
 
                     if (
                         !$alreadyAdministered &&
-                        (
-                            $heure === (int) $now->format('G') ||
-                            $heure === (int) $now->modify('+1 hour')->format('G')
-                        )
+                        $traitement->isAdministrationWindowOpenAt($today, $heure, $now)
                     ) {
                         $upcomingTreatmentsCount++;
 

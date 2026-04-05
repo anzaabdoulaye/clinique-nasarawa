@@ -13,6 +13,7 @@ use App\Form\PrescriptionPrestationType;
 use App\Repository\ConsultationRepository;
 use App\Repository\BonExamenRepository;
 use App\Repository\DossierMedicalRepository;
+use App\Repository\RendezVousRepository;
 use App\Repository\UtilisateurRepository;
 use App\Service\BillingService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -84,6 +85,18 @@ public function index(
 
             if (null === $consultation->getDossierMedical()) {
                 $form->addError(new FormError('Le dossier médical est requis.'));
+            }
+
+            $selectedRendezVous = $consultation->getRendezVous();
+            $selectedDossierMedical = $consultation->getDossierMedical();
+
+            if ($selectedRendezVous !== null && $selectedDossierMedical !== null) {
+                $rendezVousDossierMedical = $selectedRendezVous->getPatient()->getDossierMedical();
+
+                if ($rendezVousDossierMedical !== null && $rendezVousDossierMedical !== $selectedDossierMedical) {
+                    $form->get('dossierMedical')->addError(new FormError('Le dossier medical doit correspondre au patient du rendez-vous selectionne.'));
+                    $form->get('rendezVous')->addError(new FormError('Le rendez-vous selectionne est lie a un autre patient.'));
+                }
             }
 
             if (0 === count($form->getErrors(true))) {
@@ -488,6 +501,54 @@ public function laboBonModal(
         'consultation' => $consultation,
         'patient' => $patient,
     ]);
+}
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
+#[Route('/rendez-vous/options', name: 'app_consultation_rendezvous_options', methods: ['GET'])]
+public function rendezVousOptions(
+    Request $request,
+    DossierMedicalRepository $dossierMedicalRepository,
+    RendezVousRepository $rendezVousRepository
+): Response {
+    $dossierMedicalId = $request->query->getInt('dossierMedicalId');
+    $currentRendezVousId = $request->query->getInt('currentRendezVousId');
+
+    if ($dossierMedicalId <= 0) {
+        return $this->json(['options' => []]);
+    }
+
+    $dossierMedical = $dossierMedicalRepository->find($dossierMedicalId);
+
+    if ($dossierMedical === null) {
+        return $this->json(['options' => []], 404);
+    }
+
+    $currentRendezVous = $currentRendezVousId > 0
+        ? $rendezVousRepository->find($currentRendezVousId)
+        : null;
+
+    $options = array_map(static function ($rendezVous): array {
+        $patient = $rendezVous->getPatient();
+        $date = $rendezVous->getDateHeure()->format('d/m/Y H:i');
+        $patientLabel = trim(sprintf(
+            '%s %s',
+            $patient->getNom() ?? '',
+            $patient->getPrenom() ?? ''
+        ));
+
+        if ($patient->getCode()) {
+            $patientLabel = trim($patient->getCode() . ' - ' . $patientLabel, ' -');
+        }
+
+        return [
+            'value' => (string) $rendezVous->getId(),
+            'label' => 'RDV #' . $rendezVous->getId() . ' - ' . $date . ($patientLabel !== '' ? ' - ' . $patientLabel : ''),
+        ];
+    }, $rendezVousRepository->findSelectableForDossierMedical($dossierMedical, $currentRendezVous));
+
+    return $this->json(['options' => $options]);
 }
 
 #[IsGranted(new Expression(

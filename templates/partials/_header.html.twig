@@ -1,4 +1,26 @@
 <header id="page-topbar">
+    {% set currentUser = app.user %}
+    {% set displayName = currentUser ? (currentUser.nomComplet|default(((currentUser.nom|default('') ~ ' ' ~ currentUser.prenom|default(''))|trim))) : 'Invité' %}
+    {% set userRoles = currentUser ? currentUser.roles|default([]) : [] %}
+    {% set primaryRole = 'Visiteur' %}
+    {% if 'ROLE_ADMIN' in userRoles %}
+        {% set primaryRole = 'Administrateur' %}
+    {% elseif 'ROLE_MEDECIN' in userRoles %}
+        {% set primaryRole = 'Médecin' %}
+    {% elseif 'ROLE_LABO' in userRoles %}
+        {% set primaryRole = 'Laboratoire' %}
+    {% elseif 'ROLE_PERCEPTION' in userRoles %}
+        {% set primaryRole = 'Perception' %}
+    {% elseif 'ROLE_ACCUEIL' in userRoles %}
+        {% set primaryRole = 'Accueil' %}
+    {% elseif 'ROLE_INFIRMIER' in userRoles %}
+        {% set primaryRole = 'Infirmier' %}
+    {% elseif 'ROLE_PHARMACIE' in userRoles %}
+        {% set primaryRole = 'Pharmacie' %}
+    {% elseif 'ROLE_USER' in userRoles %}
+        {% set primaryRole = 'Utilisateur' %}
+    {% endif %}
+
     <div class="layout-width">
         <div class="navbar-header">
             <div class="d-flex">
@@ -212,17 +234,20 @@
                         <span class="d-flex align-items-center">
                             <img class="rounded-circle header-profile-user" src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Header Avatar">
                             <span class="text-start ms-xl-2">
-                               {#  <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">
-                                    {{ app.user ? app.user.fullName : 'Invité' }}
+                                <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">
+                                    {{ displayName ?: 'Invité' }}
                                 </span>
                                 <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text">
-                                    {{ app.user ? app.user.role : 'Visiteur' }}
-                                </span> #}
+                                    {{ primaryRole }}
+                                </span>
                             </span>
                         </span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end">
-                        {# <h6 class="dropdown-header">Welcome {{ app.user ? app.user.firstName : 'Guest' }}!</h6> #}
+                        <h6 class="dropdown-header">
+                            {{ displayName ?: 'Invité' }}
+                            <div class="text-muted fs-12 fw-normal mt-1">{{ primaryRole }}</div>
+                        </h6>
                         <a class="dropdown-item" href="#">
                             <i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> 
                             <span class="align-middle">Profile</span>

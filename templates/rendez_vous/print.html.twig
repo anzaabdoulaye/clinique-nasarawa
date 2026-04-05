@@ -20,14 +20,22 @@
         width: 100%;
     }
 
+    .sheet {
+        border: 1px solid #d7dee7;
+        padding: 6px;
+        background: #ffffff;
+    }
+
     .top-bar {
-        height: 4px;
-        background: #0f4c81;
-        margin-bottom: 6px;
+        height: 6px;
+        background: linear-gradient(90deg, #0f4c81 0%, #1d6fa5 55%, #7db4d8 100%);
+        margin-bottom: 8px;
+        border-radius: 4px;
     }
 
     .header-table,
     .meta-table,
+    .summary-table,
     .footer-table,
     .signature-table {
         width: 100%;
@@ -36,155 +44,252 @@
 
     .header-table td,
     .meta-table td,
+    .summary-table td,
     .footer-table td,
     .signature-table td {
         vertical-align: top;
     }
 
     .clinic-logo {
-        width: 24mm;
-        height: 24mm;
-        border: 1px solid #d1d5db;
+        width: 23mm;
+        height: 23mm;
+        border: 1px solid #cfd8e3;
         padding: 2px;
         background: #ffffff;
         border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.08);
     }
 
     .clinic h1 {
-        margin: 0 0 3px 0;
-        font-size: 13px;
+        margin: 0 0 4px 0;
+        font-size: 13.5px;
         font-weight: bold;
         color: #0f4c81;
         text-transform: uppercase;
-        line-height: 1.2;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
     }
 
     .clinic .sub {
-        font-size: 8px;
-        line-height: 1.35;
-        color: #6b7280;
+        font-size: 7.8px;
+        line-height: 1.45;
+        color: #4b5563;
     }
 
     .badge {
         display: inline-block;
-        padding: 3px 8px;
-        border-radius: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
         font-size: 8px;
         font-weight: bold;
+        letter-spacing: 0.04em;
         border: 1px solid #d1d5db;
         background: #f8fafc;
         color: #374151;
+        text-transform: uppercase;
+    }
+
+    .badge-soft-success {
+        background: #ecfdf5;
+        border-color: #b7ebcf;
+        color: #166534;
+    }
+
+    .badge-soft-warning {
+        background: #fffbeb;
+        border-color: #f6dd9b;
+        color: #92400e;
+    }
+
+    .badge-soft-danger {
+        background: #fef2f2;
+        border-color: #f1b3b3;
+        color: #b91c1c;
     }
 
     .separator {
-        border-bottom: 1px solid #d1d5db;
-        margin: 6px 0;
+        border-bottom: 1px solid #d7dee7;
+        margin: 8px 0;
     }
 
     .title-box {
         text-align: center;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
 
     .title-box .title {
-        font-size: 12px;
+        font-size: 12.5px;
         font-weight: bold;
         color: #0f4c81;
         text-transform: uppercase;
+        letter-spacing: 0.08em;
     }
 
     .title-box .subtitle {
-        margin-top: 2px;
-        font-size: 7px;
+        margin-top: 3px;
+        font-size: 7.4px;
         color: #6b7280;
     }
 
     .meta-box,
+    .summary-box,
     .box {
-        border: 1px solid #d1d5db;
+        border: 1px solid #d7dee7;
+        border-radius: 8px;
     }
 
     .meta-box {
-        padding: 5px;
-        margin-bottom: 6px;
+        padding: 6px;
+        margin-bottom: 7px;
+        background: #fbfdff;
     }
 
     .meta-table td {
         width: 50%;
-        padding: 2px 4px;
-        line-height: 1.3;
-    }
-
-    .section {
-        margin-top: 5px;
-    }
-
-    .section-title {
-        padding: 4px 6px;
-        font-size: 9px;
-        font-weight: bold;
-        color: #0f4c81;
-        background: #f8fafc;
-        border: 1px solid #d1d5db;
-        border-bottom: none;
-        text-transform: uppercase;
-    }
-
-    .box {
-        padding: 6px;
+        padding: 4px 5px;
         line-height: 1.35;
     }
 
+    .meta-label {
+        display: block;
+        font-size: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+        margin-bottom: 1px;
+    }
+
+    .meta-value {
+        display: block;
+        font-size: 9.4px;
+        font-weight: bold;
+        color: #111827;
+    }
+
+    .summary-box {
+        margin-bottom: 7px;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .summary-table td {
+        width: 33.33%;
+        padding: 6px 7px;
+        border-right: 1px solid #e5ebf2;
+        background: #ffffff;
+    }
+
+    .summary-table td:last-child {
+        border-right: none;
+    }
+
+    .summary-kicker {
+        font-size: 7px;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+    }
+
+    .summary-value {
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f172a;
+        line-height: 1.35;
+    }
+
+    .section {
+        margin-top: 6px;
+    }
+
+    .section-title {
+        padding: 5px 7px;
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f4c81;
+        background: #f5f9fc;
+        border: 1px solid #d7dee7;
+        border-bottom: none;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .box {
+        padding: 7px;
+        line-height: 1.45;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        background: #ffffff;
+    }
+
     .notes-box {
-        min-height: 70px;
+        min-height: 64px;
+    }
+
+    .notes-lines {
+        margin-top: 2px;
+    }
+
+    .notes-line {
+        height: 15px;
+        border-bottom: 1px dashed #d9e1ea;
     }
 
     .footer-block {
         border-top: 1px dashed #d1d5db;
-        margin-top: 6px;
-        padding-top: 6px;
+        margin-top: 8px;
+        padding-top: 7px;
     }
 
     .footer-left {
         font-size: 8px;
         color: #6b7280;
-        line-height: 1.3;
-        padding-right: 6px;
+        line-height: 1.45;
+        padding-right: 8px;
     }
 
     .qr-box {
-        width: 28mm;
+        width: 30mm;
         text-align: center;
-        border: 1px solid #d1d5db;
-        padding: 3px;
-        background: #f8fafc;
+        border: 1px solid #d7dee7;
+        border-radius: 8px;
+        padding: 4px;
+        background: #f8fbfe;
     }
 
     .qr-box img {
-        width: 20mm;
-        height: 20mm;
+        width: 21mm;
+        height: 21mm;
         border: 1px solid #e5e7eb;
         background: #fff;
         padding: 2px;
     }
 
     .qr-label {
-        margin-top: 2px;
+        margin-top: 3px;
         font-size: 7px;
-        line-height: 1.2;
+        line-height: 1.3;
         color: #6b7280;
         word-break: break-word;
     }
 
     .signature-table {
-        margin-top: 10px;
+        margin-top: 12px;
     }
 
     .signature-block {
         text-align: center;
         vertical-align: bottom;
-        height: 65px;
-        padding: 0 8px;
+        height: 62px;
+        padding: 0 10px;
+    }
+
+    .signature-title {
+        font-size: 8px;
+        color: #6b7280;
+        margin-bottom: 38px;
     }
 
     .line {
@@ -195,13 +300,14 @@
     }
 
     .footer-note {
-        margin-top: 6px;
-        padding-top: 4px;
+        margin-top: 8px;
+        padding: 5px 4px 0;
         text-align: center;
-        font-size: 9px;
+        font-size: 8.6px;
         font-weight: bold;
         color: #0f4c81;
         border-top: 1px dashed #d1d5db;
+        letter-spacing: 0.03em;
     }
 
     .no-print {
@@ -216,10 +322,8 @@
         .document {
             max-width: 148mm;
             margin: 12px auto;
-            background: #fff;
-            border: 1px solid #e5e7eb;
             padding: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,.06);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
         }
 
         .no-print {
@@ -278,16 +382,23 @@
 {% set telephone = rendez_vous.patient and rendez_vous.patient.telephone is defined ? rendez_vous.patient.telephone : '—' %}
 {% set sexe = rendez_vous.patient and rendez_vous.patient.sexe is defined ? rendez_vous.patient.sexe : '—' %}
 {% set age = rendez_vous.patient and rendez_vous.patient.age is defined ? rendez_vous.patient.age ~ ' ans' : '—' %}
+{% set badgeClass = 'badge-soft-warning' %}
+{% if statut in ['CONFIRME', 'VALIDE', 'PLANIFIE'] %}
+    {% set badgeClass = 'badge-soft-success' %}
+{% elseif statut in ['ANNULE', 'REPORTE', 'ABSENT'] %}
+    {% set badgeClass = 'badge-soft-danger' %}
+{% endif %}
 
 {% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
 {% set showUrl = verifyUrl is defined ? verifyUrl : absolute_url(path('app_rendez_vous_show', {'id': rendez_vous.id})) %}
 
 <div class="document">
+    <div class="sheet">
 
-    <div class="no-print">
+    {# <div class="no-print">
         <a href="{{ path('app_rendez_vous_show', {'id': rendez_vous.id}) }}" class="btn-back">Retour</a>
         <button type="button" onclick="window.print()" class="btn-print btn-primary">Imprimer</button>
-    </div>
+    </div> #}
 
     <div class="top-bar"></div>
 
@@ -314,7 +425,7 @@
             </td>
 
             <td style="width:24%; text-align:right;">
-                <span class="badge">{{ statut }}</span>
+                <span class="badge {{ badgeClass }}">{{ statut }}</span>
             </td>
         </tr>
     </table>
@@ -324,27 +435,60 @@
     <div class="title-box">
         <div class="title">Fiche de rendez-vous</div>
         <div class="subtitle">
-            Référence : RDV-{{ rendez_vous.id }} — Généré le {{ "now"|date('d/m/Y H:i') }}
+            Référence : RDV-{{ rendez_vous.id }} | Généré le {{ "now"|date('d/m/Y H:i') }}
         </div>
     </div>
 
     <div class="meta-box">
         <table class="meta-table">
             <tr>
-                <td><strong>Patient :</strong> {{ patientNom }}</td>
-                <td><strong>Dossier médical :</strong> {{ dossier }}</td>
+                <td>
+                    <span class="meta-label">Patient</span>
+                    <span class="meta-value">{{ patientNom }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Dossier médical</span>
+                    <span class="meta-value">{{ dossier }}</span>
+                </td>
             </tr>
             <tr>
-                <td><strong>Médecin :</strong> {{ medecinNom }}</td>
-                <td><strong>Date & heure :</strong> {{ dt }}</td>
+                <td>
+                    <span class="meta-label">Médecin</span>
+                    <span class="meta-value">{{ medecinNom }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Date et heure</span>
+                    <span class="meta-value">{{ dt }}</span>
+                </td>
             </tr>
             <tr>
-                <td><strong>Téléphone :</strong> {{ telephone }}</td>
-                <td><strong>Statut :</strong> {{ statut }}</td>
+                <td>
+                    <span class="meta-label">Téléphone</span>
+                    <span class="meta-value">{{ telephone }}</span>
+                </td>
+                <td>
+                    <span class="meta-label">Statut</span>
+                    <span class="meta-value">{{ statut }}</span>
+                </td>
             </tr>
+        </table>
+    </div>
+
+    <div class="summary-box">
+        <table class="summary-table">
             <tr>
-                <td><strong>Sexe :</strong> {{ sexe }}</td>
-                <td><strong>Âge :</strong> {{ age }}</td>
+                <td>
+                    <div class="summary-kicker">Sexe</div>
+                    <div class="summary-value">{{ sexe }}</div>
+                </td>
+                <td>
+                    <div class="summary-kicker">Âge</div>
+                    <div class="summary-value">{{ age }}</div>
+                </td>
+                <td>
+                    <div class="summary-kicker">Référence</div>
+                    <div class="summary-value">RDV-{{ rendez_vous.id }}</div>
+                </td>
             </tr>
         </table>
     </div>
@@ -359,7 +503,12 @@
     <div class="section">
         <div class="section-title">Observations / Notes</div>
         <div class="box notes-box">
-            —
+            <div class="notes-lines">
+                <div class="notes-line"></div>
+                <div class="notes-line"></div>
+                <div class="notes-line"></div>
+                <div class="notes-line"></div>
+            </div>
         </div>
     </div>
 
@@ -390,9 +539,11 @@
     <table class="signature-table">
         <tr>
             <td class="signature-block" style="width:50%;">
+                <div class="signature-title">Médecin / Cachet</div>
                 <div class="line">Signature / Cachet</div>
             </td>
             <td class="signature-block" style="width:50%;">
+                <div class="signature-title">Service accueil</div>
                 <div class="line">Visa / Accueil</div>
             </td>
         </tr>
@@ -400,6 +551,7 @@
 
     <div class="footer-note">
         Merci de conserver cette fiche et de la présenter en cas de besoin
+    </div>
     </div>
 </div>
 {% endblock %}

@@ -1,272 +1,801 @@
 
 
-{% block title %}Fiche Hospitalisation{% endblock %}
-
 {% block body %}
 <style>
-  .sheet { max-width: 900px; margin: 0 auto; }
-  .box { border: 1px solid #000; border-radius: 6px; padding: 10px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .line { border-bottom: 1px dotted #333; display: inline-block; min-width: 220px; }
-  .h { font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: .5px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-  @media print {
-    .no-print { display:none !important; }
-    body { background:#fff !important; }
-  }
+    @page {
+        size: A5 portrait;
+        margin: 5mm;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: DejaVu Sans, Arial, sans-serif;
+        font-size: 9.5px;
+        color: #1f2937;
+        background: #ffffff;
+    }
+
+    .document {
+        width: 100%;
+    }
+
+    .sheet {
+        border: 1px solid #d7dee7;
+        padding: 6px;
+        background: #ffffff;
+    }
+
+    .top-bar {
+        height: 6px;
+        background: linear-gradient(90deg, #0f4c81 0%, #1d6fa5 55%, #7db4d8 100%);
+        margin-bottom: 8px;
+        border-radius: 4px;
+    }
+
+    .header-table,
+    .meta-table,
+    .summary-table,
+    .footer-table,
+    .signature-table,
+    .vitals-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .header-table td,
+    .meta-table td,
+    .summary-table td,
+    .footer-table td,
+    .signature-table td {
+        vertical-align: top;
+    }
+
+    .clinic-logo {
+        width: 23mm;
+        height: 23mm;
+        border: 1px solid #cfd8e3;
+        padding: 2px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.08);
+    }
+
+    .clinic h1 {
+        margin: 0 0 4px 0;
+        font-size: 13.5px;
+        font-weight: bold;
+        color: #0f4c81;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+    }
+
+    .clinic .sub {
+        font-size: 7.8px;
+        line-height: 1.45;
+        color: #4b5563;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 8px;
+        font-weight: bold;
+        letter-spacing: 0.04em;
+        border: 1px solid #d1d5db;
+        background: #f8fafc;
+        color: #374151;
+        text-transform: uppercase;
+    }
+
+    .badge-soft-success {
+        background: #ecfdf5;
+        border-color: #b7ebcf;
+        color: #166534;
+    }
+
+    .badge-soft-warning {
+        background: #fffbeb;
+        border-color: #f6dd9b;
+        color: #92400e;
+    }
+
+    .badge-soft-danger {
+        background: #fef2f2;
+        border-color: #f1b3b3;
+        color: #b91c1c;
+    }
+
+    .badge-soft-primary {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .separator {
+        border-bottom: 1px solid #d7dee7;
+        margin: 8px 0;
+    }
+
+    .title-box {
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .title-box .title {
+        font-size: 12.5px;
+        font-weight: bold;
+        color: #0f4c81;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .title-box .subtitle {
+        margin-top: 3px;
+        font-size: 7.4px;
+        color: #6b7280;
+    }
+
+    .meta-box,
+    .summary-box,
+    .box {
+        border: 1px solid #d7dee7;
+        border-radius: 8px;
+    }
+
+    .meta-box {
+        padding: 6px;
+        margin-bottom: 7px;
+        background: #fbfdff;
+    }
+
+    .meta-table td {
+        width: 50%;
+        padding: 4px 5px;
+        line-height: 1.35;
+    }
+
+    .meta-label {
+        display: block;
+        font-size: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+        margin-bottom: 1px;
+    }
+
+    .meta-value {
+        display: block;
+        font-size: 9.4px;
+        font-weight: bold;
+        color: #111827;
+    }
+
+    .summary-box {
+        margin-bottom: 7px;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .summary-table td {
+        width: 25%;
+        padding: 6px 7px;
+        border-right: 1px solid #e5ebf2;
+        background: #ffffff;
+    }
+
+    .summary-table td:last-child {
+        border-right: none;
+    }
+
+    .summary-kicker {
+        font-size: 7px;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+    }
+
+    .summary-value {
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f172a;
+        line-height: 1.35;
+    }
+
+    .section {
+        margin-top: 6px;
+    }
+
+    .section-title {
+        padding: 5px 7px;
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f4c81;
+        background: #f5f9fc;
+        border: 1px solid #d7dee7;
+        border-bottom: none;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .box {
+        padding: 7px;
+        line-height: 1.45;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        background: #ffffff;
+    }
+
+    .box p {
+        margin: 0 0 4px 0;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 10px;
+    }
+
+    .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px 10px;
+    }
+
+    .field-label {
+        display: block;
+        font-size: 7px;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 1px;
+        letter-spacing: 0.04em;
+    }
+
+    .field-value {
+        display: block;
+        font-size: 9px;
+        font-weight: bold;
+        color: #111827;
+    }
+
+    .vitals-table th,
+    .vitals-table td {
+        border: 1px solid #d7dee7;
+        padding: 4px;
+        text-align: center;
+        font-size: 8.4px;
+    }
+
+    .vitals-table th {
+        background: #f8fbfe;
+        color: #0f4c81;
+        font-weight: bold;
+    }
+
+    .footer-block {
+        border-top: 1px dashed #d1d5db;
+        margin-top: 8px;
+        padding-top: 7px;
+    }
+
+    .footer-left {
+        font-size: 8px;
+        color: #6b7280;
+        line-height: 1.45;
+        padding-right: 8px;
+    }
+
+    .qr-box {
+        width: 30mm;
+        text-align: center;
+        border: 1px solid #d7dee7;
+        border-radius: 8px;
+        padding: 4px;
+        background: #f8fbfe;
+    }
+
+    .qr-box img {
+        width: 21mm;
+        height: 21mm;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        padding: 2px;
+    }
+
+    .qr-label {
+        margin-top: 3px;
+        font-size: 7px;
+        line-height: 1.3;
+        color: #6b7280;
+        word-break: break-word;
+    }
+
+    .signature-table {
+        margin-top: 12px;
+    }
+
+    .signature-block {
+        text-align: center;
+        vertical-align: bottom;
+        height: 62px;
+        padding: 0 8px;
+    }
+
+    .signature-title {
+        font-size: 8px;
+        color: #6b7280;
+        margin-bottom: 38px;
+    }
+
+    .line {
+        border-top: 1px solid #000;
+        padding-top: 4px;
+        font-size: 8px;
+        color: #6b7280;
+    }
+
+    .footer-note {
+        margin-top: 8px;
+        padding: 5px 4px 0;
+        text-align: center;
+        font-size: 8.6px;
+        font-weight: bold;
+        color: #0f4c81;
+        border-top: 1px dashed #d1d5db;
+        letter-spacing: 0.03em;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    @media screen {
+        body {
+            background: #f9fafb;
+        }
+
+        .document {
+            max-width: 148mm;
+            margin: 12px auto;
+            padding: 10px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .no-print {
+            display: block;
+            margin-bottom: 10px;
+            text-align: right;
+        }
+
+        .btn-print,
+        .btn-back {
+            display: inline-block;
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            text-decoration: none;
+            font-size: 11px;
+            cursor: pointer;
+            background: #fff;
+            color: #111827;
+            margin-left: 8px;
+        }
+
+        .btn-primary {
+            background: #0f4c81;
+            color: #fff;
+            border-color: #0f4c81;
+        }
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
 </style>
 
-<div class="sheet my-3">
+{# ===== Données clinique ===== #}
+{% set clinic_name = 'CLINIQUE MÉDICALE NASSARAWA' %}
+{% set clinic_nif = '120402/R' %}
+{% set clinic_rccm = 'NE-NIM-01-2024-B12-00145' %}
+{% set clinic_addr = 'Yantala Haut, Avenue du Daoura YN 187, Niamey - Niger' %}
+{% set clinic_phone = '20 75 51 02 / 88 05 22 20' %}
+{% set clinic_bp = 'BP : 2120 Niamey' %}
+{% set clinic_email = 'nassrawaclinique@gmail.com' %}
 
-  <div class="d-flex justify-content-between align-items-start">
-    <div>
-      <div class="h">CLINIQUE NASSARAWA</div>
-      <div class="small">Adresse : ______________________________</div>
-      <div class="small">Tél : __________________  Email : __________________</div>
+{# ===== Données hospitalisation ===== #}
+{% set patient = hospitalisation.dossierMedical.patient ?? null %}
+{% set patientNom = patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '—' %}
+{% set dossier = hospitalisation.dossierMedical.numeroDossier ?? (patient.code ?? '—') %}
+{% set telephone = patient and patient.telephone is defined ? patient.telephone : '—' %}
+{% set sexe = patient and patient.sexe is defined ? patient.sexe : '—' %}
+{% set age = patient and patient.age is defined ? patient.age : '—' %}
+{% set medecinNom = medecin.nomComplet ?? (hospitalisation.medecinReferent.nomComplet ?? '—') %}
+{% set dateAdmission = hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('d/m/Y H:i') : '—' %}
+{% set dateSortie = hospitalisation.dateSortie ? hospitalisation.dateSortie|date('d/m/Y H:i') : '—' %}
+{% set numeroHosp = hospitalisation.numero ?? ('HOSP-' ~ hospitalisation.id) %}
+{% set statut = hospitalisation.statut is defined and hospitalisation.statut ? hospitalisation.statut.value : (hospitalisation.dateSortie ? 'SORTIE' : 'EN COURS') %}
+{% set chambreLit = (hospitalisation.chambre ?? '—') ~ ' / ' ~ (hospitalisation.lit ?? '—') %}
+{% set badgeClass = 'badge-soft-warning' %}
+
+{% if statut in ['EN_COURS', 'ACTIVE', 'ACTIF', 'HOSPITALISE'] %}
+    {% set badgeClass = 'badge-soft-primary' %}
+{% elseif statut in ['TERMINE', 'SORTIE', 'CLOTURE'] %}
+    {% set badgeClass = 'badge-soft-success' %}
+{% elseif statut in ['ANNULE', 'REFUSE'] %}
+    {% set badgeClass = 'badge-soft-danger' %}
+{% endif %}
+
+{% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
+{% set motif = hospitalisation.motif ?? '—' %}
+{% set diagnosticEntree = hospitalisation.diagnosticEntree ?? '—' %}
+{% set diagnosticRetenu = hospitalisation.diagnosticRetenu ?? '—' %}
+{% set traitements = hospitalisation.traitementsPrescrits ?? '—' %}
+{% set notesInf = hospitalisation.notesInfirmieres ?? '—' %}
+{% set showUrl = verifyUrl is defined ? verifyUrl : absolute_url(path('app_hospitalisation_show', {'id': hospitalisation.id})) %}
+
+<div class="document">
+    <div class="sheet">
+
+        {# <div class="no-print">
+            <a href="{{ path('app_hospitalisation_show', {'id': hospitalisation.id}) }}" class="btn-back">Retour</a>
+            <button type="button" onclick="window.print()" class="btn-print btn-primary">Imprimer</button>
+        </div> #}
+
+        <div class="top-bar"></div>
+
+        <table class="header-table">
+            <tr>
+                <td style="width:18%;">
+                    {% if logo_path is defined and logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
+                    {% endif %}
+                </td>
+
+                <td style="width:58%;">
+                    <div class="clinic">
+                        <h1>{{ clinic_name }}</h1>
+                        <div class="sub">
+                            <strong>NIF :</strong> {{ clinic_nif }}<br>
+                            <strong>RCCM :</strong> {{ clinic_rccm }}<br>
+                            <strong>Adresse :</strong> {{ clinic_addr }}<br>
+                            <strong>Tél :</strong> {{ clinic_phone }}<br>
+                            <strong>{{ clinic_bp }}</strong><br>
+                            <strong>Email :</strong> {{ clinic_email }}
+                        </div>
+                    </div>
+                </td>
+
+                <td style="width:24%; text-align:right;">
+                    <span class="badge {{ badgeClass }}">{{ statut }}</span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="separator"></div>
+
+        <div class="title-box">
+            <div class="title">Fiche d’hospitalisation</div>
+            <div class="subtitle">
+                Référence : {{ numeroHosp }} | Généré le {{ "now"|date('d/m/Y H:i') }}
+            </div>
+        </div>
+
+        <div class="meta-box">
+            <table class="meta-table">
+                <tr>
+                    <td>
+                        <span class="meta-label">Patient</span>
+                        <span class="meta-value">{{ patientNom }}</span>
+                    </td>
+                    <td>
+                        <span class="meta-label">Dossier médical</span>
+                        <span class="meta-value">{{ dossier }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="meta-label">Médecin référent</span>
+                        <span class="meta-value">{{ medecinNom }}</span>
+                    </td>
+                    <td>
+                        <span class="meta-label">Date d’admission</span>
+                        <span class="meta-value">{{ dateAdmission }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="meta-label">Téléphone</span>
+                        <span class="meta-value">{{ telephone }}</span>
+                    </td>
+                    <td>
+                        <span class="meta-label">Date de sortie</span>
+                        <span class="meta-value">{{ dateSortie }}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="summary-box">
+            <table class="summary-table">
+                <tr>
+                    <td>
+                        <div class="summary-kicker">Sexe</div>
+                        <div class="summary-value">{{ sexe }}</div>
+                    </td>
+                    <td>
+                        <div class="summary-kicker">Âge</div>
+                        <div class="summary-value">{{ age }}</div>
+                    </td>
+                    <td>
+                        <div class="summary-kicker">Chambre / Lit</div>
+                        <div class="summary-value">{{ chambreLit }}</div>
+                    </td>
+                    <td>
+                        <div class="summary-kicker">Service</div>
+                        <div class="summary-value">{{ hospitalisation.service ?? '—' }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Admission</div>
+            <div class="box">
+                <div class="grid-2">
+                    <div>
+                        <span class="field-label">Mode d’admission</span>
+                        <span class="field-value">{{ hospitalisation.modeAdmission ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Contexte</span>
+                        <span class="field-value">{{ hospitalisation.contexte ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Unité</span>
+                        <span class="field-value">{{ hospitalisation.unite ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Infirmier(ère)</span>
+                        <span class="field-value">{{ hospitalisation.infirmierGarde ?? '—' }}</span>
+                    </div>
+                </div>
+                <div style="margin-top:6px;">
+                    <span class="field-label">Motif d’hospitalisation</span>
+                    <span class="field-value">{{ motif }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Anamnèse et antécédents</div>
+            <div class="box">
+                <div style="margin-bottom:6px;">
+                    <span class="field-label">Histoire de la maladie</span>
+                    <span class="field-value">{{ hospitalisation.histoireMaladie ?? '—' }}</span>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <span class="field-label">Antécédents médicaux</span>
+                        <span class="field-value">{{ hospitalisation.antecedentsMedicaux ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Antécédents chirurgicaux</span>
+                        <span class="field-value">{{ hospitalisation.antecedentsChirurgicaux ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Allergies</span>
+                        <span class="field-value">{{ hospitalisation.allergies ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Traitements habituels</span>
+                        <span class="field-value">{{ hospitalisation.traitementsHabituels ?? '—' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Constantes et examen clinique</div>
+            <div class="box">
+                <table class="vitals-table">
+                    <tr>
+                        <th>T°</th>
+                        <th>TA</th>
+                        <th>FC</th>
+                        <th>FR</th>
+                        <th>SpO2</th>
+                        <th>Poids</th>
+                        <th>Taille</th>
+                        <th>Glycémie</th>
+                    </tr>
+                    <tr>
+                        <td>{{ hospitalisation.temperature ?? '—' }}</td>
+                        <td>{{ hospitalisation.tension ?? '—' }}</td>
+                        <td>{{ hospitalisation.fc ?? '—' }}</td>
+                        <td>{{ hospitalisation.fr ?? '—' }}</td>
+                        <td>{{ hospitalisation.spo2 ?? '—' }}</td>
+                        <td>{{ hospitalisation.poids ?? '—' }}</td>
+                        <td>{{ hospitalisation.taille ?? '—' }}</td>
+                        <td>{{ hospitalisation.glycemie ?? '—' }}</td>
+                    </tr>
+                </table>
+
+                <div class="grid-2" style="margin-top:7px;">
+                    <div>
+                        <span class="field-label">Conscience / Glasgow</span>
+                        <span class="field-value">{{ hospitalisation.conscience ?? '—' }} / {{ hospitalisation.glasgow ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Douleur EVA</span>
+                        <span class="field-value">{{ hospitalisation.eva ?? '—' }}/10</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Hydratation</span>
+                        <span class="field-value">{{ hospitalisation.hydratation ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Signes généraux</span>
+                        <span class="field-value">{{ hospitalisation.signesGeneraux ?? '—' }}</span>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top:7px;">
+                    <div>
+                        <span class="field-label">Examen cardio</span>
+                        <span class="field-value">{{ hospitalisation.examenCardio ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Examen respiratoire</span>
+                        <span class="field-value">{{ hospitalisation.examenResp ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Examen digestif</span>
+                        <span class="field-value">{{ hospitalisation.examenDigestif ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Examen neurologique</span>
+                        <span class="field-value">{{ hospitalisation.examenNeuro ?? '—' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Diagnostics et soins</div>
+            <div class="box">
+                <div style="margin-bottom:5px;">
+                    <span class="field-label">Diagnostic d’entrée</span>
+                    <span class="field-value">{{ diagnosticEntree }}</span>
+                </div>
+                <div style="margin-bottom:5px;">
+                    <span class="field-label">Diagnostic retenu</span>
+                    <span class="field-value">{{ diagnosticRetenu }}</span>
+                </div>
+                <div style="margin-bottom:5px;">
+                    <span class="field-label">Diagnostics associés</span>
+                    <span class="field-value">{{ hospitalisation.diagnosticsAssocies ?? '—' }}</span>
+                </div>
+                <div>
+                    <span class="field-label">Plan de soins</span>
+                    <span class="field-value">{{ hospitalisation.planSoins ?? '—' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Prescriptions et surveillance</div>
+            <div class="box">
+                <div style="margin-bottom:5px;">
+                    <span class="field-label">Traitements prescrits</span>
+                    <span class="field-value">{{ traitements }}</span>
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <span class="field-label">Perfusions / Solutés</span>
+                        <span class="field-value">{{ hospitalisation.perfusions ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Régime</span>
+                        <span class="field-value">{{ hospitalisation.regime ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Actes / Procédures</span>
+                        <span class="field-value">{{ hospitalisation.actes ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Examens de contrôle</span>
+                        <span class="field-value">{{ hospitalisation.examensControle ?? '—' }}</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:7px;">
+                    <span class="field-label">Notes infirmières</span>
+                    <span class="field-value">{{ notesInf }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Sortie / fin d’hospitalisation</div>
+            <div class="box">
+                <div class="grid-2">
+                    <div>
+                        <span class="field-label">Date / Heure sortie</span>
+                        <span class="field-value">{{ dateSortie }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Mode de sortie</span>
+                        <span class="field-value">{{ hospitalisation.modeSortie ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Diagnostic final</span>
+                        <span class="field-value">{{ hospitalisation.diagnosticFinal ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="field-label">Durée de séjour</span>
+                        <span class="field-value">{{ hospitalisation.dureeSejour ?? '—' }} jours</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:6px;">
+                    <span class="field-label">Recommandations</span>
+                    <span class="field-value">{{ hospitalisation.recommandations ?? '—' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-block">
+            <table class="footer-table">
+                <tr>
+                    <td style="width:60%;" class="footer-left">
+                        <div><strong>Document :</strong> Fiche d’hospitalisation générée automatiquement par le système de gestion de la clinique.</div>
+                        <div><strong>Référence :</strong> {{ numeroHosp }}</div>
+                        <div><strong>Vérification :</strong> Scanner le QR code ci-contre.</div>
+                    </td>
+
+                    <td style="width:40%; text-align:right;">
+                        <div class="qr-box" style="float:right;">
+                            {% if _qr %}
+                                <img src="{{ _qr }}" alt="QR Code">
+                            {% endif %}
+                            <div class="qr-label">Vérifier l’hospitalisation</div>
+                            {% if code_qr is defined and code_qr %}
+                                <div class="qr-label">Code : {{ code_qr }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="signature-table">
+            <tr>
+                <td class="signature-block" style="width:33.33%;">
+                    <div class="signature-title">Médecin / Cachet</div>
+                    <div class="line">Signature / Cachet</div>
+                </td>
+                <td class="signature-block" style="width:33.33%;">
+                    <div class="signature-title">Infirmier(ère)</div>
+                    <div class="line">Visa infirmier</div>
+                </td>
+                <td class="signature-block" style="width:33.33%;">
+                    <div class="signature-title">Administration</div>
+                    <div class="line">Visa / Accueil</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="footer-note">
+            Merci de conserver cette fiche dans le dossier du patient
+        </div>
     </div>
-    <div class="text-end">
-      <div class="h">FICHE D’HOSPITALISATION</div>
-      <div><strong>N° :</strong> {{ hospitalisation.numero ?? '—' }}</div>
-      <div class="small"><strong>Édité le :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
-    </div>
-  </div>
-
-  <hr>
-
-  {# A. Identification #}
-  <div class="box mb-2">
-    <div class="h mb-2">A. Identification patient</div>
-    <div class="grid">
-      <div><strong>Nom & Prénom :</strong> {{ hospitalisation.dossierMedical.patient.nom }} {{ hospitalisation.dossierMedical.patient.prenom }}</div>
-      <div><strong>Sexe :</strong> {{ hospitalisation.dossierMedical.patient.sexe ?? '—' }} | <strong>Âge :</strong> {{ hospitalisation.dossierMedical.patient.age ?? '—' }}</div>
-      {# <div><strong>Date naissance :</strong> {{ hospitalisation.dossierMedical.patient.dateNaissance ? hospitalisation.dossierMedical.patient.dateNaissance|date('d/m/Y') : '—' }}</div> #}
-      <div><strong>N° dossier :</strong> {{ hospitalisation.dossierMedical.patient.code ?? '—' }}</div>
-      <div><strong>Téléphone :</strong> {{ hospitalisation.dossierMedical.patient.telephone ?? '—' }}</div>
-      <div><strong>Adresse :</strong> {{ hospitalisation.dossierMedical.patient.adresse ?? '—' }}</div>
-      <div><strong>Personne à prévenir :</strong> {{ hospitalisation.dossierMedical.patient.emergencyContactName ?? '—' }}</div>
-      <div><strong>Tél contact :</strong> {{ hospitalisation.dossierMedical.patient.emergencyContactPhone ?? '—' }}</div>
-      <div><strong>Assurance / Mutuelle :</strong> {{ hospitalisation.dossierMedical.patient.assurance ?? '—' }}</div>
-      <div><strong>N° police :</strong> {{ hospitalisation.dossierMedical.patient.numeroPolice ?? '—' }}</div>
-    </div>
-  </div>
-
-  {# B. Admission #}
-  <div class="box mb-2">
-    <div class="h mb-2">B. Admission</div>
-    <div class="grid">
-      <div><strong>Date/Heure :</strong> {{ hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('d/m/Y H:i') : '—' }}</div>
-      <div><strong>Mode :</strong> {{ hospitalisation.modeAdmission ?? '—' }}</div>
-      <div><strong>Service :</strong> {{ hospitalisation.service ?? '—' }}</div>
-      <div><strong>Unité :</strong> {{ hospitalisation.unite ?? '—' }}</div>
-      <div><strong>Médecin référent :</strong> {{ medecin.nomComplet ?? '—' }}</div>
-      <div><strong>Infirmier(ère) :</strong> {{ hospitalisation.infirmierGarde ?? '—' }}</div>
-      <div><strong>Chambre / Lit :</strong> {{ hospitalisation.chambre ?? '—' }} / {{ hospitalisation.lit ?? '—' }}</div>
-      <div><strong>Contexte :</strong> {{ hospitalisation.contexte ?? '—' }}</div>
-    </div>
-    <div class="mt-2"><strong>Motif :</strong> {{ hospitalisation.motif ?? '—' }}</div>
-    <div class="mt-1"><strong>Diagnostic d’entrée :</strong> {{ hospitalisation.diagnosticEntree ?? '—' }}</div>
-  </div>
-
-  {# C. Anamnèse #}
-  <div class="box mb-2">
-    <div class="h mb-2">C. Anamnèse / historique</div>
-    <div><strong>Histoire de la maladie :</strong><br>{{ hospitalisation.histoireMaladie ?? '—' }}</div>
-    <hr>
-    <div class="grid">
-      <div><strong>Antécédents médicaux :</strong> {{ hospitalisation.antecedentsMedicaux ?? '—' }}</div>
-      <div><strong>Antécédents chirurgicaux :</strong> {{ hospitalisation.antecedentsChirurgicaux ?? '—' }}</div>
-      <div><strong>Allergies :</strong> {{ hospitalisation.allergies ?? (patient.allergies ?? '—') }}</div>
-      <div><strong>Traitements habituels :</strong> {{ hospitalisation.traitementsHabituels ?? (patient.traitementEnCours ?? '—') }}</div>
-      <div><strong>Habitudes :</strong> {{ hospitalisation.habitudes ?? '—' }}</div>
-      <div><strong>Vaccins :</strong> {{ hospitalisation.statutVaccinal ?? '—' }}</div>
-    </div>
-  </div>
-
-  {# D. Examen clinique #}
-  <div class="box mb-2">
-    <div class="h mb-2">D. Examen clinique à l’admission</div>
-
-    <table class="mb-2">
-      <tr>
-        <th>T°</th><th>TA</th><th>FC</th><th>FR</th><th>SpO2</th><th>Poids</th><th>Taille</th><th>Glycémie</th>
-      </tr>
-      <tr>
-        <td>{{ hospitalisation.temperature ?? '—' }}</td>
-        <td>{{ hospitalisation.tension ?? '—' }}</td>
-        <td>{{ hospitalisation.fc ?? '—' }}</td>
-        <td>{{ hospitalisation.fr ?? '—' }}</td>
-        <td>{{ hospitalisation.spo2 ?? '—' }}</td>
-        <td>{{ hospitalisation.poids ?? (patient.poids ?? '—') }}</td>
-        <td>{{ hospitalisation.taille ?? (patient.taille ?? '—') }}</td>
-        <td>{{ hospitalisation.glycemie ?? '—' }}</td>
-      </tr>
-    </table>
-
-    <div class="grid">
-      <div><strong>Conscience :</strong> {{ hospitalisation.conscience ?? '—' }} (Glasgow : {{ hospitalisation.glasgow ?? '—' }}/15)</div>
-      <div><strong>Douleur EVA :</strong> {{ hospitalisation.eva ?? '—' }}/10</div>
-      <div><strong>Hydratation :</strong> {{ hospitalisation.hydratation ?? '—' }}</div>
-      <div><strong>Signes :</strong> {{ hospitalisation.signesGeneraux ?? '—' }}</div>
-    </div>
-
-    <hr>
-    <div><strong>Examen cardio :</strong> {{ hospitalisation.examenCardio ?? '—' }}</div>
-    <div><strong>Examen respiratoire :</strong> {{ hospitalisation.examenResp ?? '—' }}</div>
-    <div><strong>Examen digestif :</strong> {{ hospitalisation.examenDigestif ?? '—' }}</div>
-    <div><strong>Examen neurologique :</strong> {{ hospitalisation.examenNeuro ?? '—' }}</div>
-    <div><strong>Examen uro-génital :</strong> {{ hospitalisation.examenUro ?? '—' }}</div>
-    <div><strong>Peau / ostéo-articulaire :</strong> {{ hospitalisation.examenPeauOsteo ?? '—' }}</div>
-  </div>
-
-  {# E. Examens complémentaires #}
-  <div class="box mb-2">
-    <div class="h mb-2">E. Examens complémentaires</div>
-    <div><strong>Demandés :</strong> {{ hospitalisation.examensDemandes ?? '—' }}</div>
-    <div class="mt-1"><strong>Résultats / synthèse :</strong><br>{{ hospitalisation.resultatsExamens ?? '—' }}</div>
-  </div>
-
-  {# F. Diagnostics & plan de soins #}
-  <div class="box mb-2">
-    <div class="h mb-2">F. Diagnostics et plan de soins</div>
-    <div><strong>Diagnostic retenu :</strong> {{ hospitalisation.diagnosticRetenu ?? '—' }}</div>
-    <div><strong>Associés :</strong> {{ hospitalisation.diagnosticsAssocies ?? '—' }}</div>
-    <div><strong>Plan :</strong> {{ hospitalisation.planSoins ?? '—' }}</div>
-    <div><strong>Précautions :</strong> {{ hospitalisation.precautions ?? '—' }}</div>
-  </div>
-
-  {# G. Prescriptions #}
-  <div class="box mb-2">
-    <div class="h mb-2">G. Prescriptions médicales</div>
-    <div><strong>Traitements :</strong><br>{{ hospitalisation.traitementsPrescrits ?? '—' }}</div>
-    <div class="mt-1"><strong>Perfusions / solutés :</strong> {{ hospitalisation.perfusions ?? '—' }}</div>
-    <div class="mt-1"><strong>Régime :</strong> {{ hospitalisation.regime ?? '—' }}</div>
-    <div class="mt-1"><strong>Actes / procédures :</strong> {{ hospitalisation.actes ?? '—' }}</div>
-    <div class="mt-1"><strong>Contrôles :</strong> {{ hospitalisation.examensControle ?? '—' }}</div>
-  </div>
-
-  {# H. Surveillance #}
-  <div class="box mb-2">
-    <div class="h mb-2">H. Surveillance infirmière</div>
-    <div class="grid">
-      <div><strong>Constantes :</strong> {{ hospitalisation.frequenceConstantes ?? '—' }}</div>
-      <div><strong>Diurèse :</strong> {{ hospitalisation.diurese ?? '—' }}</div>
-      <div><strong>Entrées/Sorties :</strong> {{ hospitalisation.entreesSorties ?? '—' }}</div>
-      <div><strong>Pansements :</strong> {{ hospitalisation.pansements ?? '—' }}</div>
-    </div>
-    <div class="mt-1"><strong>Notes infirmières :</strong><br>{{ hospitalisation.notesInfirmieres ?? '—' }}</div>
-  </div>
-
-  {# I. Évolution #}
-  <div class="box mb-2">
-    <div class="h mb-2">I. Évolution / visites médicales</div>
-    <div class="small text-muted">Section à compléter quotidiennement (observations, décisions, modifications traitement).</div>
-    <div style="height: 70px;"></div>
-  </div>
-
-  {# J. Sortie #}
-  <div class="box mb-2">
-    <div class="h mb-2">J. Sortie / fin d’hospitalisation</div>
-    <div class="grid">
-      <div><strong>Date/Heure sortie :</strong> {{ hospitalisation.dateSortie ? hospitalisation.dateSortie|date('d/m/Y H:i') : '—' }}</div>
-      <div><strong>Mode :</strong> {{ hospitalisation.modeSortie ?? '—' }}</div>
-      <div><strong>Diagnostic final :</strong> {{ hospitalisation.diagnosticFinal ?? '—' }}</div>
-      <div><strong>Durée séjour :</strong> {{ hospitalisation.dureeSejour ?? '—' }} jours</div>
-    </div>
-    <div class="mt-1"><strong>Recommandations :</strong><br>{{ hospitalisation.recommandations ?? '—' }}</div>
-  </div>
-
-  {# Signatures #}
-  <div class="box">
-    <div class="h mb-2">Signatures</div>
-    <div class="grid">
-      <div><strong>Médecin</strong> : ____________________  Cachet : ____________________</div>
-      <div><strong>Infirmier(ère)</strong> : ____________________</div>
-      <div><strong>Patient/Parent</strong> : ____________________</div>
-      <div><strong>Date</strong> : ____/____/______</div>
-    </div>
-  </div>
-
-  <div class="no-print mt-3 d-flex gap-2">
-    <button class="btn btn-primary" onclick="window.print()"><i class="ri-printer-line me-1"></i> Imprimer</button>
-    <a href="{{ path('app_hospitalisation_show', {id: hospitalisation.id}) }}" class="btn btn-soft-secondary">Retour</a>
-  </div>
-
 </div>
 {% endblock %}
-
-{# 
-
-{% block title %}Fiche hospitalisation - {{ hospitalisation.id }}{% endblock %}
-
-{% block body %}
-<style>
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #222; }
-  .header { text-align: center; margin-bottom: 12px; }
-  .meta { margin-bottom: 8px; }
-  .section { margin-bottom: 10px; }
-  .label { font-weight: 600; width: 180px; display: inline-block; }
-  .value { display: inline-block; }
-  .boxed { border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
-</style>
-
-<div class="header">
-  <h2>Fiche d'hospitalisation</h2>
-  <div>Clinique Nassarawa</div>
-</div>
-
-<div class="boxed">
-  <div class="meta">
-    <div><span class="label">N° hospitalisation :</span> <span class="value">{{ hospitalisation.id }}</span></div>
-    <div><span class="label">Date admission :</span> <span class="value">{{ hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('Y-m-d H:i') : '-' }}</span></div>
-    <div><span class="label">Date sortie :</span> <span class="value">{{ hospitalisation.dateSortie ? hospitalisation.dateSortie|date('Y-m-d H:i') : '-' }}</span></div>
-  </div>
-
-  <div class="section">
-    <div><span class="label">Patient :</span>
-      <span class="value">
-        {% if hospitalisation.dossierMedical and hospitalisation.dossierMedical.patient %}
-          {{ hospitalisation.dossierMedical.patient.nom }} {{ hospitalisation.dossierMedical.patient.prenom }}
-          ({{ hospitalisation.dossierMedical.patient.code }})
-        {% else %}
-          -
-        {% endif %}
-      </span>
-    </div>
-    <div><span class="label">Médecin référent :</span> <span class="value">{{ hospitalisation.medecinReferent ? hospitalisation.medecinReferent.nom ~ ' ' ~ hospitalisation.medecinReferent.prenom : '-' }}</span></div>
-  </div>
-
-  <hr />
-
-  <div class="section">
-    <div><span class="label">Motif d'admission :</span></div>
-    <div class="value">{{ hospitalisation.motifAdmission }}</div>
-  </div>
-
-  <div class="section">
-    <div><span class="label">Histoire de la maladie :</span></div>
-    <div class="value">{{ hospitalisation.histoireMaladie }}</div>
-  </div>
-
-  <div class="section">
-    <div><span class="label">Évolution :</span></div>
-    <div class="value">{{ hospitalisation.evolution }}</div>
-  </div>
-
-  <div class="section">
-    <div><span class="label">Conclusion :</span></div>
-    <div class="value">{{ hospitalisation.conclusion }}</div>
-  </div>
-
-  <div class="section">
-    <div><span class="label">Statut :</span> <span class="value">{{ hospitalisation.statut.value }}</span></div>
-  </div>
-
-  <hr />
-  <div class="section">
-    <div><span class="label">Créé le :</span> <span class="value">{{ hospitalisation.createdAt ? hospitalisation.createdAt|date('Y-m-d H:i') : '-' }}</span></div>
-    <div><span class="label">Modifié le :</span> <span class="value">{{ hospitalisation.modifiedAt ? hospitalisation.modifiedAt|date('Y-m-d H:i') : '-' }}</span></div>
-  </div>
-</div>
-
-{% endblock %} #}

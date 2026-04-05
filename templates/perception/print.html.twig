@@ -280,7 +280,16 @@
 </head>
 <body>
     {% set consultation = consultation ?? (facture.consultation ?? null) %}
-    {% set patient = patient ?? (consultation and consultation.rendezVous ? consultation.rendezVous.patient : null) %}
+    {% set patient = null %}
+    {% if patient is not defined or patient is null %}
+        {% if consultation %}
+            {% if consultation.rendezVous and consultation.rendezVous.patient %}
+                {% set patient = consultation.rendezVous.patient %}
+            {% elseif consultation.dossierMedical and consultation.dossierMedical.patient %}
+                {% set patient = consultation.dossierMedical.patient %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
     {% set montantBase = facture.baseTotal %}
     {% set timbre = facture.timbreAmount %}
 
@@ -356,8 +365,16 @@
                 {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
                 <br>
 
-                <strong>Dossier :</strong>
+                <strong>Code patient :</strong>
                 {{ patient and patient.code ? patient.code : '—' }}
+                <br>
+
+                <strong>N° dossier médical :</strong>
+                {{ consultation and consultation.dossierMedical and consultation.dossierMedical.numeroDossier ? consultation.dossierMedical.numeroDossier : '-' }}
+                <br>
+
+                <strong>Téléphone :</strong>
+                {{ patient and patient.telephone ? patient.telephone : '-' }}
                 <br>
 
                 {% if consultation and consultation.rendezVous %}

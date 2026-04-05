@@ -174,12 +174,14 @@ public function startConsultation(
         $dataUri = 'data:image/png;base64,' . base64_encode($png);
 
         $code = 'RV-' . $rendezVous->getId();
+        $logoBase64 = $this->getPrintLogoDataUri();
 
         return $this->render('rendez_vous/print.html.twig', [
             'rendez_vous' => $rendezVous,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $showUrl,
+            'logo_path' => $logoBase64,
         ]);
     }
 
@@ -201,12 +203,14 @@ public function startConsultation(
         $dataUri = 'data:image/png;base64,' . base64_encode($png);
 
         $code = 'RV-' . $rendezVous->getId();
+        $logoBase64 = $this->getPrintLogoDataUri();
 
         $html = $this->renderView('rendez_vous/print.html.twig', [
             'rendez_vous' => $rendezVous,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $showUrl,
+            'logo_path' => $logoBase64,
         ]);
 
         $options = new Options();
@@ -254,5 +258,36 @@ public function startConsultation(
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="rendez_vous-%d.pdf"', $rendezVous->getId()),
         ]);
+    }
+
+    private function getPrintLogoDataUri(): ?string
+    {
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $candidates = [
+            $projectDir . '/public/logo.jpeg',
+            $projectDir . '/public/logo.png',
+            $projectDir . '/public/logo2.png',
+        ];
+
+        foreach ($candidates as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+
+            $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+            $mimeType = match ($extension) {
+                'png' => 'image/png',
+                'jpg', 'jpeg' => 'image/jpeg',
+                default => null,
+            };
+
+            if ($mimeType === null) {
+                continue;
+            }
+
+            return sprintf('data:%s;base64,%s', $mimeType, base64_encode((string) file_get_contents($path)));
+        }
+
+        return null;
     }
 }

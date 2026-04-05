@@ -229,6 +229,116 @@
   {{ parent() }}
   <script>
     (() => {
+      function refreshRendezVousSelect(rendezVousField) {
+        if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+          return;
+        }
+
+        const $field = $(rendezVousField);
+
+        if ($field.hasClass('select2-hidden-accessible')) {
+          $field.select2('destroy');
+        }
+
+        window.initConsultationSelect2?.(rendezVousField.closest('.modal') || rendezVousField.closest('form') || document);
+        $field.trigger('change');
+      }
+
+      function updateRendezVousOptions(form) {
+        if (!form) return;
+
+        const dossierField = form.querySelector('[name$="[dossierMedical]"]');
+        const rendezVousField = form.querySelector('[name$="[rendezVous]"]');
+
+        if (!dossierField || !rendezVousField) return;
+
+        const endpoint = rendezVousField.dataset.rendezvousUrl;
+        if (!endpoint) return;
+
+        const selectedDossierId = dossierField.value;
+        const currentRendezVousId = rendezVousField.dataset.currentRendezvousId || '';
+        const previousValue = rendezVousField.value;
+
+        const applyOptions = (options) => {
+          rendezVousField.innerHTML = '';
+
+          const placeholderOption = document.createElement('option');
+          placeholderOption.value = '';
+          placeholderOption.textContent = '— Aucun rendez-vous —';
+          rendezVousField.appendChild(placeholderOption);
+
+          options.forEach((option) => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option.value;
+            optionEl.textContent = option.label;
+
+            if (previousValue && previousValue === option.value) {
+              optionEl.selected = true;
+            }
+
+            rendezVousField.appendChild(optionEl);
+          });
+
+          refreshRendezVousSelect(rendezVousField);
+        };
+
+        if (!selectedDossierId) {
+          applyOptions([]);
+          return;
+        }
+
+        const url = new URL(endpoint, window.location.origin);
+        url.searchParams.set('dossierMedicalId', selectedDossierId);
+
+        if (currentRendezVousId) {
+          url.searchParams.set('currentRendezVousId', currentRendezVousId);
+        }
+
+        rendezVousField.disabled = true;
+
+        fetch(url.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('HTTP ' + response.status);
+            }
+
+            return response.json();
+          })
+          .then((payload) => {
+            applyOptions(Array.isArray(payload.options) ? payload.options : []);
+          })
+          .catch(() => {
+            applyOptions([]);
+          })
+          .finally(() => {
+            rendezVousField.disabled = false;
+          });
+      }
+
+      function bindRendezVousFiltering(root) {
+        const context = root || document;
+
+        context.querySelectorAll('form').forEach((form) => {
+          const dossierField = form.querySelector('[name$="[dossierMedical]"]');
+          const rendezVousField = form.querySelector('[name$="[rendezVous]"]');
+
+          if (!dossierField || !rendezVousField || dossierField.dataset.rendezvousBound === '1') {
+            return;
+          }
+
+          dossierField.dataset.rendezvousBound = '1';
+          dossierField.addEventListener('change', () => updateRendezVousOptions(form));
+
+          if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+            $(dossierField).on('select2:select select2:clear', () => updateRendezVousOptions(form));
+          }
+
+          updateRendezVousOptions(form);
+        });
+      }
+
       const editModalEl = document.getElementById('editConsultationModal');
       const loader = document.getElementById('editConsultationLoader');
       const body = document.getElementById('editConsultationModalBody');
@@ -328,6 +438,7 @@
           const html = await res.text();
           body.innerHTML = html;
           window.initConsultationSelect2?.(body);
+          bindRendezVousFiltering(body);
 
           loader.classList.add('d-none');
           body.classList.remove('d-none');
@@ -353,19 +464,20 @@
         currentUrl = null;
         setLoading();
       });
+
+      window.bindConsultationRendezVousFiltering = bindRendezVousFiltering;
     })();
   </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  window.initConsultationSelect2 = function initConsultationSelect2(context) {
     if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
-        console.error('jQuery ou Select2 non chargé');
-        return;
+      return;
     }
 
-  window.initConsultationSelect2 = function initConsultationSelect2(context) {
         const $context = $(context || document);
 
-        $context.find('.js-select2-medecin, .js-select2-dossier').each(function () {
+        $context.find('.js-select2-medecin, .js-select2-dossier, .js-select2-rendezvous').each(function () {
             const $el = $(this);
 
             if ($el.hasClass('select2-hidden-accessible')) {
@@ -386,9 +498,11 @@ document.addEventListener('DOMContentLoaded', function () {
           };
 
           window.initConsultationSelect2(document);
+          window.bindConsultationRendezVousFiltering?.(document);
 
     document.addEventListener('shown.bs.modal', function (e) {
             window.initConsultationSelect2(e.target);
+            window.bindConsultationRendezVousFiltering?.(e.target);
     });
 });
 </script>
@@ -408,8 +522,10 @@ document.addEventListener('DOMContentLoaded', function () {
         form.reset();
 
         if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-            $(form).find('.js-select2-medecin, .js-select2-dossier').val(null).trigger('change');
+          $(form).find('.js-select2-medecin, .js-select2-dossier, .js-select2-rendezvous').val(null).trigger('change');
         }
+
+        window.bindConsultationRendezVousFiltering?.(form.closest('.modal') || form);
     });
 });
 </script>

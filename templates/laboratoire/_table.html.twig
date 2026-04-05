@@ -17,7 +17,8 @@
         {% for prestation in prestations %}
             {% set consultation = prestation.consultation %}
             {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-            {% set patient = rdv ? rdv.patient|default(null) : null %}
+            {% set dossier = consultation ? consultation.dossierMedical|default(null) : null %}
+            {% set patient = dossier and dossier.patient is defined and dossier.patient ? dossier.patient : (rdv ? rdv.patient|default(null) : null) %}
             {% set statut = prestation.statut.value %}
 
             {% set patientNom = patient
@@ -45,10 +46,14 @@
                                 {{ patientNom ?: '-' }}
                             </div>
                             <div class="text-muted small">
-                                {% if rdv %}
+                                {% if patient and patient.code is defined and patient.code %}
+                                    Code : {{ patient.code }}
+                                {% elseif rdv %}
                                     Rendez-vous #{{ rdv.id }}
+                                {% elseif dossier %}
+                                    Dossier {{ dossier.numeroDossier|default('#' ~ dossier.id) }}
                                 {% else %}
-                                    Aucun rendez-vous
+                                    Patient non lié
                                 {% endif %}
                             </div>
                         </div>

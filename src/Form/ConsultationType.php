@@ -20,14 +20,19 @@ use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ConsultationType extends AbstractType
 {
     public function __construct(
     private UtilisateurRepository $utilisateurRepository,
-    private DossierMedicalRepository $dossierMedicalRepository
+    private DossierMedicalRepository $dossierMedicalRepository,
+    private RendezVousRepository $rendezVousRepository,
+    private UrlGeneratorInterface $urlGenerator,
 ) {
 }
 
@@ -100,6 +105,7 @@ class ConsultationType extends AbstractType
 
         if ($context === 'admin') {
             $currentRendezVous = $builder->getData()?->getRendezVous();
+            $currentDossierMedical = $builder->getData()?->getDossierMedical();
             $doctorChoices = $this->utilisateurRepository->findDoctors();
 
 
@@ -156,39 +162,87 @@ class ConsultationType extends AbstractType
                 'class' => 'js-select2-dossier',
                 'data-placeholder' => 'Rechercher un dossier médical...',
             ],
-        ])
-                ->add('rendezVous', EntityType::class, [
+        ]);
+
+            $addRendezVousField = function ($form, ?DossierMedical $dossierMedical, ?RendezVous $selectedRendezVous = null): void {
+                $form->add('rendezVous', EntityType::class, [
                     'class' => RendezVous::class,
-                    'query_builder' => static function (RendezVousRepository $repository) use ($currentRendezVous) {
-                        $queryBuilder = $repository->createQueryBuilder('r')
-                            ->where('r.dateHeure >= :now')
-                            ->andWhere('r.statut NOT IN (:excludedStatuses)')
-                            ->setParameter('now', new \DateTimeImmutable())
-                            ->setParameter('excludedStatuses', [
-                                StatutRendezVous::ANNULE,
-                                StatutRendezVous::TERMINE,
-                            ])
-                            ->orderBy('r.dateHeure', 'ASC');
-
-                        if ($currentRendezVous?->getId()) {
-                            $queryBuilder
-                                ->orWhere('r.id = :currentRendezVousId')
-                                ->setParameter('currentRendezVousId', $currentRendezVous->getId());
-                        }
-
-                        return $queryBuilder;
-                    },
+                    'choices' => $this->rendezVousRepository->findSelectableForDossierMedical(
+                        $dossierMedical,
+                        $selectedRendezVous,
+                    ),
                     'choice_label' => function (RendezVous $rdv) {
+                        $patient = $rdv->getPatient();
                         $date = method_exists($rdv, 'getDateHeure') && $rdv->getDateHeure()
                             ? $rdv->getDateHeure()->format('d/m/Y H:i')
                             : 'Sans date';
+                        $patientLabel = trim(sprintf(
+                            '%s %s',
+                            $patient->getNom() ?? '',
+                            $patient->getPrenom() ?? ''
+                        ));
 
-                        return 'RDV #' . $rdv->getId() . ' - ' . $date;
+                        if ($patient->getCode()) {
+                            $patientLabel = trim($patient->getCode() . ' - ' . $patientLabel, ' -');
+                        }
+
+                        return 'RDV #' . $rdv->getId() . ' - ' . $date . ($patientLabel !== '' ? ' - ' . $patientLabel : '');
                     },
                     'required' => false,
                     'placeholder' => '— Aucun rendez-vous —',
                     'label' => 'Rendez-vous',
+                    'attr' => [
+                        'class' => 'js-select2-rendezvous js-rendezvous-by-dossier',
+                        'data-placeholder' => 'Rechercher un rendez-vous...',
+                        'data-rendezvous-url' => $this->urlGenerator->generate('app_consultation_rendezvous_options'),
+                        'data-current-rendezvous-id' => $selectedRendezVous?->getId(),
+                    ],
                 ]);
+            };
+
+            $addRendezVousField($builder, $currentDossierMedical, $currentRendezVous);
+
+            $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($addRendezVousField): void {
+                $consultation = $event->getData();
+                $form = $event->getForm();
+
+                if (!$consultation instanceof Consultation) {
+                    $addRendezVousField($form, null, null);
+                    return;
+                }
+
+                $addRendezVousField(
+                    $form,
+                    $consultation->getDossierMedical(),
+                    $consultation->getRendezVous(),
+                );
+            });
+
+            $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) use ($addRendezVousField): void {
+                $data = $event->getData();
+                $form = $event->getForm();
+
+                if (!is_array($data)) {
+                    $addRendezVousField($form, null, null);
+                    return;
+                }
+
+                $dossierMedical = null;
+                $selectedRendezVous = null;
+
+                $dossierMedicalId = isset($data['dossierMedical']) ? (int) $data['dossierMedical'] : 0;
+                $selectedRendezVousId = isset($data['rendezVous']) ? (int) $data['rendezVous'] : 0;
+
+                if ($dossierMedicalId > 0) {
+                    $dossierMedical = $this->dossierMedicalRepository->find($dossierMedicalId);
+                }
+
+                if ($selectedRendezVousId > 0) {
+                    $selectedRendezVous = $this->rendezVousRepository->find($selectedRendezVousId);
+                }
+
+                $addRendezVousField($form, $dossierMedical, $selectedRendezVous);
+            });
 
             if ($builder->getData() && property_exists($builder->getData(), 'dateConsultation')) {
                 $builder->add('dateConsultation', DateTimeType::class, [
