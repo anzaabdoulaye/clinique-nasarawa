@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport perception</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 10px;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .header {
+            width: 100%;
+            border-bottom: 2px solid #0f4c81;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+
+        .header-table,
+        .summary-table,
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logo-cell {
+            width: 70px;
+            vertical-align: top;
+        }
+
+        .logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #d1d5db;
+        }
+
+        .title-cell {
+            vertical-align: top;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0f4c81;
+            margin-bottom: 4px;
+        }
+
+        .subtitle,
+        .meta {
+            color: #6b7280;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .section-title {
+            margin: 14px 0 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f4c81;
+        }
+
+        .summary-table td {
+            width: 33.33%;
+            border: 1px solid #d1d5db;
+            background: #f8fafc;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .summary-label {
+            color: #6b7280;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .filters {
+            border: 1px solid #d1d5db;
+            padding: 8px;
+            background: #fcfcfd;
+            line-height: 1.6;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            background: #0f4c81;
+            color: #ffffff;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .small {
+            font-size: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    {% if logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo" class="logo">
+                    {% endif %}
+                </td>
+                <td class="title-cell">
+                    <div class="title">Rapport de perception</div>
+                    <div class="subtitle">
+                        {% if is_granted('ROLE_ADMIN') %}
+                            Synthèse globale des encaissements par agent.
+                        {% else %}
+                            Synthèse de vos encaissements personnels.
+                        {% endif %}
+                    </div>
+                    <div class="meta">Généré le {{ generatedAt|date('Y-m-d H:i') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section-title">Synthèse</div>
+    <table class="summary-table">
+        <tr>
+            <td>
+                <div class="summary-label">Encaissements filtrés</div>
+                <div class="summary-value">{{ totalEncaisseFiltre|number_format(0, ',', ' ') }} FCFA</div>
+            </td>
+            <td>
+                <div class="summary-label">Paiements filtrés</div>
+                <div class="summary-value">{{ nbPaiements }}</div>
+            </td>
+            <td>
+                <div class="summary-label">Agents actifs</div>
+                <div class="summary-value">{{ nbAgentsActifs }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Filtres appliqués</div>
+    <div class="filters">
+        <div><strong>Recherche :</strong> {{ search is not empty ? search : 'Aucun filtre' }}</div>
+        <div><strong>Agent :</strong>
+            {% if selectedAgentId > 0 %}
+                {% set selectedAgent = null %}
+                {% for agent in agents %}
+                    {% if agent.id == selectedAgentId %}
+                        {% set selectedAgent = agent %}
+                    {% endif %}
+                {% endfor %}
+                {{ selectedAgent ? selectedAgent.nomComplet ~ (selectedAgent.username ? ' | ' ~ selectedAgent.username : '') : 'Compte filtré' }}
+            {% else %}
+                Tous les agents
+            {% endif %}
+        </div>
+        <div><strong>Période :</strong> {{ dateDebut is not empty ? dateDebut : 'Début non défini' }} au {{ dateFin is not empty ? dateFin : 'Aujourd\'hui' }}</div>
+    </div>
+
+    <div class="section-title">Recettes par agent</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th>Compte</th>
+                <th>Nombre d'encaissements</th>
+                <th class="right">Montant total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in rapportAgents %}
+                <tr>
+                    <td>{{ ligne.libelle }}</td>
+                    <td>{{ ligne.username }}</td>
+                    <td>{{ ligne.nombrePaiements }}</td>
+                    <td class="right">{{ ligne.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="muted">Aucune recette trouvée pour ces filtres.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Journal des encaissements</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Facture</th>
+                <th>Patient</th>
+                <th>Agent</th>
+                <th>Mode</th>
+                <th class="right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paiement in paiements %}
+                {% set facturePaiement = paiement.facture %}
+                {% set consultationPaiement = facturePaiement ? facturePaiement.consultation|default(null) : null %}
+                {% set patientPaiement = null %}
+                {% if consultationPaiement %}
+                    {% if consultationPaiement.rendezVous and consultationPaiement.rendezVous.patient %}
+                        {% set patientPaiement = consultationPaiement.rendezVous.patient %}
+                    {% elseif consultationPaiement.dossierMedical and consultationPaiement.dossierMedical.patient %}
+                        {% set patientPaiement = consultationPaiement.dossierMedical.patient %}
+                    {% endif %}
+                {% endif %}
+                <tr>
+                    <td>{{ paiement.payeLe|date('Y-m-d H:i') }}</td>
+                    <td>{% if facturePaiement %}#{{ facturePaiement.id }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if patientPaiement %}
+                            {{ patientPaiement.nomComplet|default((patientPaiement.nom|default('') ~ ' ' ~ patientPaiement.prenom|default(''))|trim) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if paiement.effectuePar %}
+                            {{ paiement.effectuePar.nomComplet }}
+                            <div class="muted small">{{ paiement.effectuePar.username }}</div>
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </td>
+                    <td>{{ paiement.mode.value|replace({'_':' '})|title }}</td>
+                    <td class="right">{{ paiement.montant|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" class="muted">Aucun encaissement trouvé.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

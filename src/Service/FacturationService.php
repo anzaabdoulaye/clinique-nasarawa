@@ -7,6 +7,7 @@ use App\Entity\Facture;
 use App\Entity\FactureLigne;
 use App\Entity\Paiement;
 use App\Entity\PrescriptionPrestation;
+use App\Entity\Utilisateur;
 use App\Enum\ModePaiement;
 use App\Enum\StatutFacture;
 use App\Enum\StatutPrescriptionPrestation;
@@ -16,6 +17,10 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class FacturationService
 {
+    private const CONSULTATION_LINE_TYPE = 'CONSULTATION';
+    private const CONSULTATION_LINE_LABEL = 'Consultation';
+    private const CONSULTATION_PRICE = 7000;
+
     public function __construct(
         private EntityManagerInterface $em,
         private FactureRepository $factureRepository,
@@ -27,18 +32,19 @@ class FacturationService
     {
         $facture = $consultation->getFacture();
 
-        if ($facture instanceof Facture) {
-            return $facture;
+        if (!$facture instanceof Facture) {
+            $facture = new Facture();
+            $facture->setConsultation($consultation);
+            $facture->setStatut(StatutFacture::BROUILLON);
+            $facture->setDateEmission(new \DateTimeImmutable());
+
+            $consultation->setFacture($facture);
+
+            $this->em->persist($facture);
         }
 
-        $facture = new Facture();
-        $facture->setConsultation($consultation);
-        $facture->setStatut(StatutFacture::BROUILLON);
-        $facture->setDateEmission(new \DateTimeImmutable());
-
-        $consultation->setFacture($facture);
-
-        $this->em->persist($facture);
+        $this->assurerLigneConsultation($facture);
+        $this->recalculerFacture($facture);
 
         return $facture;
     }
@@ -122,7 +128,7 @@ class FacturationService
         return $facture;
     }
 
-    public function ajouterPaiement(Facture $facture, int $montant, ModePaiement $mode): Paiement
+    public function ajouterPaiement(Facture $facture, int $montant, ModePaiement $mode, ?Utilisateur $effectuePar = null): Paiement
     {
         if ($montant <= 0) {
             throw new \InvalidArgumentException('Le montant du paiement doit être supérieur à zéro.');
@@ -137,6 +143,7 @@ class FacturationService
         $paiement->setMontant($montant);
         $paiement->setMode($mode);
         $paiement->setPayeLe(new \DateTimeImmutable());
+        $paiement->setEffectuePar($effectuePar);
 
         $facture->addPaiement($paiement);
 
@@ -207,6 +214,33 @@ class FacturationService
         return $this->factureLigneRepository->findOneBy([
             'prescriptionPrestation' => $prescription,
         ]);
+    }
+
+    private function assurerLigneConsultation(Facture $facture): void
+    {
+        $ligneConsultation = null;
+
+        foreach ($facture->getLignes() as $ligne) {
+            if (
+                $ligne->getPrescriptionPrestation() === null
+                && $ligne->getType() === self::CONSULTATION_LINE_TYPE
+            ) {
+                $ligneConsultation = $ligne;
+                break;
+            }
+        }
+
+        if (!$ligneConsultation instanceof FactureLigne) {
+            $ligneConsultation = new FactureLigne();
+            $ligneConsultation->setFacture($facture);
+            $facture->addLigne($ligneConsultation);
+            $this->em->persist($ligneConsultation);
+        }
+
+        $ligneConsultation->setLibelle(self::CONSULTATION_LINE_LABEL);
+        $ligneConsultation->setQuantite(1);
+        $ligneConsultation->setPrixUnitaire(self::CONSULTATION_PRICE);
+        $ligneConsultation->setType(self::CONSULTATION_LINE_TYPE);
     }
     
     public function supprimerDepuisPrescription(PrescriptionPrestation $prescription): void

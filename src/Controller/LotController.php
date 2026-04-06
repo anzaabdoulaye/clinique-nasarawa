@@ -23,23 +23,11 @@ final class LotController extends AbstractController
     }
 
     #[Route('/new', name: 'app_lot_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(): Response
     {
-        $lot = new Lot();
-        $form = $this->createForm(LotType::class, $lot);
-        $form->handleRequest($request);
+        $this->addFlash('info', 'La création d’un lot se fait désormais via un bon d’entrée pour garantir la traçabilité du stock.');
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($lot);
-            $em->flush();
-
-            $this->addFlash('success', 'Lot ajouté.');
-            return $this->redirectToRoute('app_lot_index');
-        }
-
-        return $this->render('pharmacie/lot/new.html.twig', [
-            'form' => $form,
-        ]);
+        return $this->redirectToRoute('app_comptabilite_matiere_new');
     }
 
     #[Route('/{id}', name: 'app_lot_show', methods: ['GET'])]

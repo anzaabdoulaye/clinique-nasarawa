@@ -29,6 +29,21 @@ class UtilisateurRepository extends ServiceEntityRepository
         ));
     }
 
+    /**
+     * @param list<string> $roles
+     *
+     * @return list<Utilisateur>
+     */
+    public function findUsersByRoles(array $roles): array
+    {
+        $utilisateurs = $this->findBy([], ['nom' => 'ASC', 'prenom' => 'ASC']);
+
+        return array_values(array_filter(
+            $utilisateurs,
+            static fn (Utilisateur $utilisateur) => array_intersect($roles, $utilisateur->getRoles()) !== []
+        ));
+    }
+
     //    /**
     //     * @return Utilisateur[] Returns an array of Utilisateur objects
     //     */

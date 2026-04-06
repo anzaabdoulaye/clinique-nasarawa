@@ -15,3 +15,5 @@ rmdir /s /q vendor
 del composer.lock
 composer clear-cache
 composer install
+
+"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U postgres -d clinique -f "C:\backup\clinique-nassarawa.sql"

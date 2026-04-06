@@ -41,7 +41,14 @@ class Lot
     public function setNumeroLot(?string $numeroLot): self { $this->numeroLot = $numeroLot; return $this; }
 
     public function getDatePeremption(): ?\DateTimeInterface { return $this->datePeremption; }
-    public function setDatePeremption(?\DateTimeInterface $datePeremption): self { $this->datePeremption = $datePeremption; return $this; }
+    public function setDatePeremption(?\DateTimeInterface $datePeremption): self
+    {
+        $this->datePeremption = $datePeremption instanceof \DateTimeImmutable
+            ? \DateTime::createFromInterface($datePeremption)
+            : $datePeremption;
+
+        return $this;
+    }
 
     public function getQuantite(): int { return $this->quantite; }
     public function setQuantite(int $quantite): self { $this->quantite = $quantite; return $this; }

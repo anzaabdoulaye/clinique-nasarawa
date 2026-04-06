@@ -136,6 +136,18 @@
                                     </div>
                                 </a>
 
+                                {% if is_granted('ROLE_ADMIN') %}
+                                    <a href="{{ path('app_perception_rapport_agents') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="rapport perception agent recettes encaissement admin">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary-subtle text-primary">Admin</span>
+                                            <div>
+                                                <div class="fw-semibold text-dark">Rapport perception</div>
+                                                <div class="text-muted small">Filtres et recettes par agent</div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                {% endif %}
+
                                 <a href="{{ path('app_hospitalisation_index') }}" class="dropdown-item px-2 py-2 rounded-3 search-shortcut-item" data-search-text="hospitalisation chambre admission sejour">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge bg-primary-subtle text-primary">Hospitalisation</span>

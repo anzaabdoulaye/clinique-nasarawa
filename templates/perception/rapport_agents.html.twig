@@ -1,0 +1,198 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport Perception{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Rapport des recettes par agent</h3>
+            <p class="text-muted mb-0">
+                {% if is_granted('ROLE_ADMIN') %}
+                    Vue globale des encaissements par agent.
+                {% else %}
+                    Vue de vos encaissements personnels.
+                {% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('app_perception_rapport_agents_pdf', app.request.query.all) }}" target="_blank" class="btn btn-outline-dark">
+                Export PDF
+            </a>
+            <a href="{{ path('app_perception_index') }}" class="btn btn-outline-secondary">Retour à la perception</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Encaissements filtrés</div>
+                    <div class="fs-4 fw-bold">{{ totalEncaisseFiltre|number_format(0, ',', ' ') }} FCFA</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Paiements filtrés</div>
+                    <div class="fs-3 fw-bold">{{ nbPaiements }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Agents actifs</div>
+                    <div class="fs-3 fw-bold">{{ nbAgentsActifs }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Filtres des encaissements</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label for="search" class="form-label">Recherche patient / dossier</label>
+                    <input type="text" id="search" name="search" value="{{ search }}" class="form-control" placeholder="Code, téléphone, dossier, nom">
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label for="agent" class="form-label">Compte agent</label>
+                    <select id="agent" name="agent" class="form-select" {{ agentFilterLocked ? 'disabled' : '' }}>
+                        <option value="">Tous les agents</option>
+                        {% for agent in agents %}
+                            <option value="{{ agent.id }}" {{ selectedAgentId == agent.id ? 'selected' : '' }}>
+                                {{ agent.nomComplet }}{% if agent.username %} | {{ agent.username }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if agentFilterLocked %}
+                        <input type="hidden" name="agent" value="{{ selectedAgentId }}">
+                        <div class="form-text">Votre compte est appliqué automatiquement.</div>
+                    {% endif %}
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label for="dateDebut" class="form-label">Du</label>
+                    <input type="date" id="dateDebut" name="dateDebut" value="{{ dateDebut }}" class="form-control">
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label for="dateFin" class="form-label">Au</label>
+                    <input type="date" id="dateFin" name="dateFin" value="{{ dateFin }}" class="form-control">
+                </div>
+                <div class="col-12 col-md-6 col-lg-1 d-grid">
+                    <button type="submit" class="btn btn-primary">Filtrer</button>
+                </div>
+                <div class="col-12">
+                    <a href="{{ path('app_perception_rapport_agents') }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Rapport des recettes par agent</h5>
+            <span class="text-muted small">Basé sur les paiements filtrés</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Agent</th>
+                            <th>Compte</th>
+                            <th>Nombre d'encaissements</th>
+                            <th class="text-end">Montant total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for ligne in rapportAgents %}
+                        <tr>
+                            <td>{{ ligne.libelle }}</td>
+                            <td>{{ ligne.username }}</td>
+                            <td>{{ ligne.nombrePaiements }}</td>
+                            <td class="text-end fw-semibold">{{ ligne.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Aucune recette trouvée pour ces filtres.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Journal des encaissements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Facture</th>
+                            <th>Patient</th>
+                            <th>Agent</th>
+                            <th>Mode</th>
+                            <th class="text-end">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for paiement in paiements %}
+                        {% set facturePaiement = paiement.facture %}
+                        {% set consultationPaiement = facturePaiement ? facturePaiement.consultation|default(null) : null %}
+                        {% set patientPaiement = null %}
+                        {% if consultationPaiement %}
+                            {% if consultationPaiement.rendezVous and consultationPaiement.rendezVous.patient %}
+                                {% set patientPaiement = consultationPaiement.rendezVous.patient %}
+                            {% elseif consultationPaiement.dossierMedical and consultationPaiement.dossierMedical.patient %}
+                                {% set patientPaiement = consultationPaiement.dossierMedical.patient %}
+                            {% endif %}
+                        {% endif %}
+                        <tr>
+                            <td>{{ paiement.payeLe|date('Y-m-d H:i') }}</td>
+                            <td>
+                                {% if facturePaiement %}
+                                    <a href="{{ path('app_perception_facture_show', {id: facturePaiement.id}) }}">#{{ facturePaiement.id }}</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if patientPaiement %}
+                                    {{ patientPaiement.nomComplet|default((patientPaiement.nom|default('') ~ ' ' ~ patientPaiement.prenom|default(''))|trim) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if paiement.effectuePar %}
+                                    {{ paiement.effectuePar.nomComplet }}
+                                    <div class="text-muted small">{{ paiement.effectuePar.username }}</div>
+                                {% else %}
+                                    <span class="text-muted">Non renseigné</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ paiement.mode.value|replace({'_':' '})|title }}</td>
+                            <td class="text-end fw-semibold">{{ paiement.montant|number_format(0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Aucun encaissement trouvé.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
