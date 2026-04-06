@@ -3,8 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Facture;
+use App\Entity\Paiement;
+use App\Entity\Utilisateur;
 use App\Form\EncaissementType;
 use App\Repository\FactureRepository;
+use App\Repository\PaiementRepository;
+use App\Repository\UtilisateurRepository;
 use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,7 +36,11 @@ final class PerceptionController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
 ))]
 #[Route('', name: 'app_perception_index', methods: ['GET'])]
-public function index(Request $request, FactureRepository $factureRepository): Response
+public function index(
+    Request $request,
+    FactureRepository $factureRepository,
+    PaiementRepository $paiementRepository
+): Response
 {
     $search = trim((string) $request->query->get('search', ''));
 
@@ -55,13 +63,22 @@ public function index(Request $request, FactureRepository $factureRepository): R
     $factures = $qb->orderBy('f.createdAt', 'DESC')
         ->getQuery()
         ->getResult();
+    $today = new \DateTimeImmutable('today');
+    $tomorrow = $today->modify('+1 day');
+
+    $paiementsDuJour = $paiementRepository->createQueryBuilder('pa')
+        ->select('COALESCE(SUM(pa.montant), 0)')
+        ->andWhere('pa.payeLe >= :today')
+        ->andWhere('pa.payeLe < :tomorrow')
+        ->setParameter('today', $today)
+        ->setParameter('tomorrow', $tomorrow)
+        ->getQuery()
+        ->getSingleScalarResult();
 
     $nbNonPayees = 0;
     $nbPartielles = 0;
     $nbPayees = 0;
-    $totalEncaisseJour = 0;
-
-    $today = (new \DateTimeImmutable())->format('Y-m-d');
+    $totalEncaisseJour = (int) $paiementsDuJour;
 
     foreach ($factures as $facture) {
         $statut = $facture->getStatut()->value;
@@ -73,12 +90,6 @@ public function index(Request $request, FactureRepository $factureRepository): R
         } elseif ($statut === 'paye') {
             $nbPayees++;
         }
-
-        foreach ($facture->getPaiements() as $paiement) {
-            if ($paiement->getPayeLe()->format('Y-m-d') === $today) {
-                $totalEncaisseJour += $paiement->getMontant();
-            }
-        }
     }
 
     return $this->render('perception/index.html.twig', [
@@ -88,6 +99,59 @@ public function index(Request $request, FactureRepository $factureRepository): R
         'nbPayees' => $nbPayees,
         'totalEncaisseJour' => $totalEncaisseJour,
         'search' => $search,
+    ]);
+}
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
+#[Route('/rapport-agents', name: 'app_perception_rapport_agents', methods: ['GET'])]
+public function rapportAgents(
+    Request $request,
+    PaiementRepository $paiementRepository,
+    UtilisateurRepository $utilisateurRepository
+): Response
+{
+    return $this->render('perception/rapport_agents.html.twig', $this->buildEncaissementReportData(
+        $request,
+        $paiementRepository,
+        $utilisateurRepository
+    ));
+}
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
+))]
+#[Route('/rapport-agents/pdf', name: 'app_perception_rapport_agents_pdf', methods: ['GET'])]
+public function rapportAgentsPdf(
+    Request $request,
+    PaiementRepository $paiementRepository,
+    UtilisateurRepository $utilisateurRepository
+): Response
+{
+    $data = $this->buildEncaissementReportData(
+        $request,
+        $paiementRepository,
+        $utilisateurRepository
+    );
+
+    $html = $this->renderView('perception/rapport_agents_pdf.html.twig', array_merge($data, [
+        'generatedAt' => new \DateTimeImmutable(),
+        'logo_path' => $this->getEmbeddedLogo(),
+    ]));
+
+    $options = new Options();
+    $options->set('isRemoteEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans');
+
+    $dompdf = new Dompdf($options);
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+
+    return new Response($dompdf->output(), 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="rapport-perception.pdf"',
     ]);
 }
 
@@ -125,12 +189,15 @@ public function index(Request $request, FactureRepository $factureRepository): R
         if ($request->isXmlHttpRequest()) {
             if ($form->isSubmitted() && $form->isValid()) {
                 $data = $form->getData();
+                $currentUser = $this->getUser();
+                $effectuePar = $currentUser instanceof Utilisateur ? $currentUser : null;
 
                 try {
                     $facturationService->ajouterPaiement(
                         $facture,
                         (int) $data['montant'],
-                        $data['mode']
+                        $data['mode'],
+                        $effectuePar
                     );
                 } catch (\InvalidArgumentException $exception) {
                     $form->get('montant')->addError(new FormError($exception->getMessage()));
@@ -160,12 +227,15 @@ public function index(Request $request, FactureRepository $factureRepository): R
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
+            $currentUser = $this->getUser();
+            $effectuePar = $currentUser instanceof Utilisateur ? $currentUser : null;
 
             try {
                 $facturationService->ajouterPaiement(
                     $facture,
                     (int) $data['montant'],
-                    $data['mode']
+                    $data['mode'],
+                    $effectuePar
                 );
             } catch (\InvalidArgumentException $exception) {
                 $form->get('montant')->addError(new FormError($exception->getMessage()));
@@ -297,5 +367,149 @@ public function index(Request $request, FactureRepository $factureRepository): R
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="facture-%d.pdf"', $facture->getId()),
         ]);
+    }
+
+    private function parseDateFilter(string $value, bool $endOfDay): ?\DateTimeImmutable
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        if (!$date instanceof \DateTimeImmutable) {
+            return null;
+        }
+
+        return $endOfDay ? $date->setTime(23, 59, 59) : $date->setTime(0, 0, 0);
+    }
+
+    private function getEmbeddedLogo(): ?string
+    {
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+
+        if (!file_exists($logoPath)) {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,' . base64_encode((string) file_get_contents($logoPath));
+    }
+
+    /**
+     * @return array{
+     *     paiements: list<Paiement>,
+     *     agents: list<Utilisateur>,
+     *     rapportAgents: list<array{agent: ?Utilisateur, libelle: string, username: string, nombrePaiements: int, montantTotal: int}>,
+     *     selectedAgentId: int,
+     *     dateDebut: string,
+     *     dateFin: string,
+     *     totalEncaisseFiltre: int,
+     *     nbPaiements: int,
+     *     nbAgentsActifs: int,
+     *     search: string
+     * }
+     */
+    private function buildEncaissementReportData(
+        Request $request,
+        PaiementRepository $paiementRepository,
+        UtilisateurRepository $utilisateurRepository
+    ): array {
+        $search = trim((string) $request->query->get('search', ''));
+        $agentId = max(0, (int) $request->query->get('agent', 0));
+        $dateDebutInput = trim((string) $request->query->get('dateDebut', ''));
+        $dateFinInput = trim((string) $request->query->get('dateFin', ''));
+        $dateDebut = $this->parseDateFilter($dateDebutInput, false);
+        $dateFin = $this->parseDateFilter($dateFinInput, true);
+        $currentUser = $this->getUser();
+        $connectedUser = $currentUser instanceof Utilisateur ? $currentUser : null;
+        $agentFilterLocked = !$this->isGranted('ROLE_ADMIN') && $connectedUser instanceof Utilisateur;
+
+        if ($agentFilterLocked) {
+            $agentId = $connectedUser->getId() ?? 0;
+        }
+
+        $paiementQb = $paiementRepository->createQueryBuilder('pa')
+            ->leftJoin('pa.facture', 'f')->addSelect('f')
+            ->leftJoin('pa.effectuePar', 'agent')->addSelect('agent')
+            ->leftJoin('f.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('c.dossierMedical', 'cdm')->addSelect('cdm')
+            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('cdm.patient', 'dmp')->addSelect('dmp')
+            ->leftJoin('p.dossierMedical', 'pdm')->addSelect('pdm');
+
+        if ($search !== '') {
+            $paiementQb->andWhere(
+                'LOWER(COALESCE(p.code, dmp.code, \'\')) LIKE :search
+                OR LOWER(COALESCE(p.telephone, dmp.telephone, \'\')) LIKE :search
+                OR LOWER(COALESCE(pdm.numeroDossier, cdm.numeroDossier, \'\')) LIKE :search
+                OR LOWER(CONCAT(COALESCE(p.nom, dmp.nom, \'\'), \' \', COALESCE(p.prenom, dmp.prenom, \'\'))) LIKE :search'
+            )
+            ->setParameter('search', '%' . mb_strtolower($search) . '%');
+        }
+
+        if ($agentId > 0) {
+            $paiementQb->andWhere('agent.id = :agentId')
+                ->setParameter('agentId', $agentId);
+        }
+
+        if ($dateDebut instanceof \DateTimeImmutable) {
+            $paiementQb->andWhere('pa.payeLe >= :dateDebut')
+                ->setParameter('dateDebut', $dateDebut);
+        }
+
+        if ($dateFin instanceof \DateTimeImmutable) {
+            $paiementQb->andWhere('pa.payeLe <= :dateFin')
+                ->setParameter('dateFin', $dateFin);
+        }
+
+        /** @var list<Paiement> $paiements */
+        $paiements = $paiementQb->orderBy('pa.payeLe', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $totalEncaisseFiltre = 0;
+        $rapportAgents = [];
+
+        foreach ($paiements as $paiement) {
+            $totalEncaisseFiltre += $paiement->getMontant();
+
+            $agent = $paiement->getEffectuePar();
+            $agentKey = $agent?->getId() !== null ? (string) $agent->getId() : 'inconnu';
+
+            if (!isset($rapportAgents[$agentKey])) {
+                $rapportAgents[$agentKey] = [
+                    'agent' => $agent,
+                    'libelle' => $agent instanceof Utilisateur ? $agent->getNomComplet() : 'Compte non renseigné',
+                    'username' => $agent instanceof Utilisateur ? $agent->getUserIdentifier() : '-',
+                    'nombrePaiements' => 0,
+                    'montantTotal' => 0,
+                ];
+            }
+
+            $rapportAgents[$agentKey]['nombrePaiements']++;
+            $rapportAgents[$agentKey]['montantTotal'] += $paiement->getMontant();
+        }
+
+        $rapportAgents = array_values($rapportAgents);
+        usort(
+            $rapportAgents,
+            static fn (array $gauche, array $droite) => $droite['montantTotal'] <=> $gauche['montantTotal']
+        );
+
+        return [
+            'paiements' => $paiements,
+            'agents' => $agentFilterLocked && $connectedUser instanceof Utilisateur
+                ? [$connectedUser]
+                : $utilisateurRepository->findUsersByRoles(['ROLE_ADMIN', 'ROLE_PERCEPTION']),
+            'rapportAgents' => $rapportAgents,
+            'agentFilterLocked' => $agentFilterLocked,
+            'selectedAgentId' => $agentId,
+            'dateDebut' => $dateDebutInput,
+            'dateFin' => $dateFinInput,
+            'totalEncaisseFiltre' => $totalEncaisseFiltre,
+            'nbPaiements' => count($paiements),
+            'nbAgentsActifs' => count($rapportAgents),
+            'search' => $search,
+        ];
     }
 }

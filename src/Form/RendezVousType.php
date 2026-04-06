@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Patient;
 use App\Entity\RendezVous;
 use App\Entity\Utilisateur;
+use App\Repository\UtilisateurRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -14,6 +15,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class RendezVousType extends AbstractType
 {
+    public function __construct(private UtilisateurRepository $utilisateurRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -69,6 +74,7 @@ class RendezVousType extends AbstractType
                 'class' => Utilisateur::class,
                 'placeholder' => '— (optionnel) —',
                 'required' => false,
+                'choices' => $this->utilisateurRepository->findDoctors(),
                 'choice_label' => function (Utilisateur $u) {
                     if (method_exists($u, 'getNomComplet') && $u->getNomComplet()) {
                         return $u->getNomComplet();

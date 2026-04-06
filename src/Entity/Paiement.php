@@ -30,6 +30,10 @@ class Paiement
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $payeLe;
 
+    #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Utilisateur $effectuePar = null;
+
     public function __construct()
     {
         $this->payeLe = new \DateTimeImmutable();
@@ -89,6 +93,17 @@ class Paiement
     public function setPayeLe(\DateTimeImmutable $payeLe): static
     {
         $this->payeLe = $payeLe;
+        return $this;
+    }
+
+    public function getEffectuePar(): ?Utilisateur
+    {
+        return $this->effectuePar;
+    }
+
+    public function setEffectuePar(?Utilisateur $effectuePar): static
+    {
+        $this->effectuePar = $effectuePar;
         return $this;
     }
 }

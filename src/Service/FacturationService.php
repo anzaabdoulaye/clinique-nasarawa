@@ -7,6 +7,7 @@ use App\Entity\Facture;
 use App\Entity\FactureLigne;
 use App\Entity\Paiement;
 use App\Entity\PrescriptionPrestation;
+use App\Entity\Utilisateur;
 use App\Enum\ModePaiement;
 use App\Enum\StatutFacture;
 use App\Enum\StatutPrescriptionPrestation;
@@ -127,7 +128,7 @@ class FacturationService
         return $facture;
     }
 
-    public function ajouterPaiement(Facture $facture, int $montant, ModePaiement $mode): Paiement
+    public function ajouterPaiement(Facture $facture, int $montant, ModePaiement $mode, ?Utilisateur $effectuePar = null): Paiement
     {
         if ($montant <= 0) {
             throw new \InvalidArgumentException('Le montant du paiement doit être supérieur à zéro.');
@@ -142,6 +143,7 @@ class FacturationService
         $paiement->setMontant($montant);
         $paiement->setMode($mode);
         $paiement->setPayeLe(new \DateTimeImmutable());
+        $paiement->setEffectuePar($effectuePar);
 
         $facture->addPaiement($paiement);
 

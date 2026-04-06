@@ -141,6 +141,16 @@
                 </li>
             {% endif %}
 
+            {# {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION') %}
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ app.request.attributes.get('_route') == 'app_perception_rapport_agents' ? 'active' : '' }}"
+                       href="{{ path('app_perception_rapport_agents') }}">
+                        <i class="ri-bar-chart-box-line"></i>
+                        <span>Rapport perception</span>
+                    </a>
+                </li>
+            {% endif %} #}
+
             {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN') %}
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ app.request.attributes.get('_route') starts with 'app_laboratoire_' ? 'active' : '' }}"

@@ -86,10 +86,13 @@
 
     <div class="consultation-hero mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    
+    <!-- LEFT : titre + infos -->
             <div>
                 <h3 class="mb-1">
                     Consultation <span class="text-muted">#{{ consultation.id }}</span>
                 </h3>
+
                 <div class="text-muted small">
                     {% if rdv %}
                         Consultation issue du rendez-vous #{{ rdv.id }}
@@ -104,15 +107,32 @@
                 </div>
             </div>
 
-            <div class="d-flex flex-wrap gap-2">
-                <span class="badge {{ badgeClass }}">{{ st ?: 'N/A' }}</span>
-                {% if nbResultatsLabo > 0 %}
-                    <span class="badge bg-success-subtle text-success border">
-                        <i class="ri-flask-line me-1"></i>
-                        {{ nbResultatsLabo }} résultat{{ nbResultatsLabo > 1 ? 's' : '' }} labo disponible{{ nbResultatsLabo > 1 ? 's' : '' }}
-                    </span>
-                {% endif %}
+            <!-- RIGHT : boutons + badges -->
+            <div class="d-flex flex-column align-items-end gap-2">
+
+                <!-- boutons -->
+                <div class="d-flex gap-2">
+                    <a href="{{ path('app_consultation_index') }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-arrow-left me-1"></i> Retour
+                    </a>
+
+                    {{ include('consultation/_delete_form.html.twig') }}
+                </div>
+
+                <!-- badges -->
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <span class="badge {{ badgeClass }}">{{ st ?: 'N/A' }}</span>
+
+                    {% if nbResultatsLabo > 0 %}
+                        <span class="badge bg-success-subtle text-success border">
+                            <i class="ri-flask-line me-1"></i>
+                            {{ nbResultatsLabo }} résultat{{ nbResultatsLabo > 1 ? 's' : '' }} labo disponible{{ nbResultatsLabo > 1 ? 's' : '' }}
+                        </span>
+                    {% endif %}
+                </div>
+
             </div>
+
         </div>
 
         <div class="row g-3 align-items-stretch">
@@ -183,11 +203,7 @@
         <div class="consultation-action-panel mt-3">
             <div class="consultation-meta-label mb-3">Actions</div>
             <div class="row g-2">
-                <div class="col-12 col-md-6 col-xl-3 d-grid">
-                    <a href="{{ path('app_consultation_index') }}" class="btn btn-outline-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Retour
-                    </a>
-                </div>
+                
                 {% if dossier %}
                     <div class="col-12 col-md-6 col-xl-3 d-grid">
                         <a href="{{ path('app_dossier_medical_show', {'id': dossier.id}) }}" class="btn btn-outline-info">
@@ -213,9 +229,7 @@
                         <i class="fa fa-print me-1"></i> Fiche consultation
                     </a>
                 </div>
-                <div class="col-12 col-xl-3 d-grid">
-                    {{ include('consultation/_delete_form.html.twig') }}
-                </div>
+                
             </div>
         </div>
     </div>

@@ -102,6 +102,13 @@
                                 <div><strong>Montant :</strong> {{ paiement.montant|number_format(0, ',', ' ') }} FCFA</div>
                                 <div><strong>Mode :</strong> {{ paiement.mode.value|replace({'_':' '})|title }}</div>
                                 <div><strong>Date :</strong> {{ paiement.payeLe|date('Y-m-d H:i') }}</div>
+                                <div><strong>Perçu par :</strong>
+                                    {% if paiement.effectuePar %}
+                                        {{ paiement.effectuePar.nomComplet }}{% if paiement.effectuePar.username %} | {{ paiement.effectuePar.username }}{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endfor %}
                     {% else %}
