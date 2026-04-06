@@ -71,6 +71,13 @@ class TarifPrestation
     public function setCategorie(CategorieTarif $categorie): static
     {
         $this->categorie = $categorie;
+
+        if ($categorie === CategorieTarif::EXAMEN_BIOLOGIQUE) {
+            $this->serviceExecution = 'laboratoire';
+        } elseif ($this->serviceExecution === 'laboratoire') {
+            $this->serviceExecution = null;
+        }
+
         return $this;
     }
 

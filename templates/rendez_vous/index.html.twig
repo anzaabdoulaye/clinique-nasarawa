@@ -27,7 +27,7 @@
 
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0 datatable">
+          <table class="table table-hover align-middle mb-0 datatable-a">
             <thead class="table-light">
               <tr class="text-nowrap">
                 <th class="text-uppercase small text-muted">Date / Heure</th>
@@ -37,7 +37,7 @@
                 <th class="text-uppercase small text-muted">Médecin</th>
                 <th class="text-uppercase small text-muted">Consultation</th>
                 <th class="text-uppercase small text-muted">Créé le</th>
-                <th class="text-uppercase small text-muted text-end" style="width: 170px;">Actions</th>
+                <th class="text-uppercase small text-muted text-end" style="width: 250px;">Actions</th>
               </tr>
             </thead>
 
@@ -46,7 +46,7 @@
               {% set statut = rv.statut.name ?? '' %}
 
               <tr>
-                <td class="text-nowrap">
+                <td class="text-nowrap"{% if rv.dateHeure %} data-order="{{ rv.dateHeure|date('Y-m-d H:i:s') }}"{% endif %}>
                   {% if rv.dateHeure %}
                     <div class="fw-semibold">{{ rv.dateHeure|date('d/m/Y') }}</div>
                     <div class="small text-muted">{{ rv.dateHeure|date('H:i') }}</div>
@@ -119,7 +119,7 @@
                   {% endif %}
                 </td>
 
-                <td class="text-nowrap">
+                <td class="text-nowrap"{% if rv.createdAt %} data-order="{{ rv.createdAt|date('Y-m-d H:i:s') }}"{% endif %}>
                   {% if rv.createdAt %}
                     <div class="small">{{ rv.createdAt|date('d/m/Y H:i') }}</div>
                   {% else %}
@@ -129,6 +129,15 @@
 
                 <td class="text-end">
                   <div class="btn-group btn-group-sm" role="group" aria-label="Actions RDV">
+                    <button type="button"
+                            class="btn btn-outline-success js-edit-rdv-status"
+                            title="Modifier le statut"
+                            data-url="{{ path('app_rendez_vous_edit_statut', {id: rv.id}) }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editRdvStatusModal">
+                      <i class="fa fa-refresh me-1"></i> Statut
+                    </button>
+
                     <a class="btn btn-outline-secondary"
                        title="Voir"
                        href="{{ path('app_rendez_vous_show', {'id': rv.id}) }}">
@@ -235,6 +244,33 @@
     </div>
   </div>
 </div>
+
+{# =========================
+   MODAL EDIT STATUT RDV (AJAX)
+========================= #}
+<div class="modal fade" id="editRdvStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="fa fa-refresh me-2 text-primary"></i> Modifier le statut
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="editRdvStatusLoader" class="py-4 text-center">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="mt-2 text-muted small">Chargement du formulaire…</div>
+        </div>
+
+        <div id="editRdvStatusModalBody" class="d-none"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -262,8 +298,12 @@
       const modalEl = document.getElementById('editRdvModal');
       const loader  = document.getElementById('editRdvLoader');
       const body    = document.getElementById('editRdvModalBody');
+      const statusModalEl = document.getElementById('editRdvStatusModal');
+      const statusLoader = document.getElementById('editRdvStatusLoader');
+      const statusBody = document.getElementById('editRdvStatusModalBody');
 
       let currentUrl = null;
+      let currentStatusUrl = null;
 
       // Init Select2 pour le modal d'ajout
       document.addEventListener('DOMContentLoaded', function () {
@@ -277,6 +317,12 @@
         loader.classList.remove('d-none');
         body.classList.add('d-none');
         body.innerHTML = '';
+      }
+
+      function setStatusLoading() {
+        statusLoader.classList.remove('d-none');
+        statusBody.classList.add('d-none');
+        statusBody.innerHTML = '';
       }
 
       function showError(msg) {
@@ -293,8 +339,27 @@
         `;
       }
 
+      function showStatusError(msg) {
+        statusLoader.classList.add('d-none');
+        statusBody.classList.remove('d-none');
+        statusBody.innerHTML = `
+          <div class="alert alert-danger d-flex align-items-start gap-2 mb-0">
+            <i class="fa fa-exclamation-triangle mt-1"></i>
+            <div>
+              <div class="fw-semibold">Erreur</div>
+              <div class="small">${msg || "Impossible de charger le formulaire."}</div>
+            </div>
+          </div>
+        `;
+      }
+
       function focusFirstField() {
         const first = body.querySelector('input, select, textarea');
+        if (first) first.focus();
+      }
+
+      function focusFirstStatusField() {
+        const first = statusBody.querySelector('input, select, textarea');
         if (first) first.focus();
       }
 
@@ -314,6 +379,22 @@
         initRdvSelect2(body);
         focusFirstField();
         bindEditSubmit();
+      }
+
+      async function loadStatusEdit(url) {
+        currentStatusUrl = url;
+        setStatusLoading();
+
+        const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+        statusBody.innerHTML = await resp.text();
+
+        statusLoader.classList.add('d-none');
+        statusBody.classList.remove('d-none');
+
+        focusFirstStatusField();
+        bindStatusEditSubmit();
       }
 
       function bindEditSubmit() {
@@ -372,6 +453,59 @@
         });
       }
 
+      function bindStatusEditSubmit() {
+        const form = statusBody.querySelector('#RdvStatusForm') || statusBody.querySelector('form');
+        if (!form) return;
+
+        if (form.dataset.bound === '1') return;
+        form.dataset.bound = '1';
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const submitBtn = form.querySelector('[type="submit"]');
+          const oldHtml = submitBtn ? submitBtn.innerHTML : null;
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Mise à jour...`;
+          }
+
+          try {
+            const action = form.getAttribute('action') || currentStatusUrl;
+            const formData = new FormData(form);
+
+            const resp = await fetch(action, {
+              method: (form.getAttribute('method') || 'POST').toUpperCase(),
+              body: formData,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const contentType = resp.headers.get('content-type') || '';
+
+            if (contentType.includes('application/json')) {
+              const data = await resp.json();
+              if (data.success) {
+                bootstrap.Modal.getInstance(statusModalEl)?.hide();
+                window.location.reload();
+                return;
+              }
+            }
+
+            statusBody.innerHTML = await resp.text();
+            focusFirstStatusField();
+            bindStatusEditSubmit();
+          } catch (err) {
+            showStatusError("Une erreur est survenue lors de la mise à jour du statut.");
+          } finally {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = oldHtml;
+            }
+          }
+        });
+      }
+
       // Délégation => pas besoin de querySelectorAll
       document.addEventListener('click', (e) => {
         const btn = e.target.closest('.js-edit-rdv');
@@ -383,9 +517,24 @@
         loadEdit(url).catch(() => showError("Impossible de charger le formulaire. Vérifie la route et la réponse AJAX."));
       });
 
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-edit-rdv-status');
+        if (!btn) return;
+
+        const url = btn.getAttribute('data-url');
+        if (!url) return;
+
+        loadStatusEdit(url).catch(() => showStatusError("Impossible de charger le formulaire de statut."));
+      });
+
       modalEl?.addEventListener('hidden.bs.modal', () => {
         currentUrl = null;
         setLoading();
+      });
+
+      statusModalEl?.addEventListener('hidden.bs.modal', () => {
+        currentStatusUrl = null;
+        setStatusLoading();
       });
     })();
   </script>

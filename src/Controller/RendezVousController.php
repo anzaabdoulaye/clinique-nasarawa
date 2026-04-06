@@ -11,6 +11,7 @@ use App\Repository\ConsultationRepository;
 use App\Repository\RendezVousRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -59,7 +60,7 @@ final class RendezVousController extends AbstractController
 }
 
         return $this->render('rendez_vous/index.html.twig', [
-            'rendezVous' => $rendezVousRepository->findAll(),  
+            'rendezVous' => $rendezVousRepository->findBy([], ['dateHeure' => 'DESC']),
             'form' => $form->createView(),
         ]);
     }
@@ -103,6 +104,49 @@ final class RendezVousController extends AbstractController
         // Hors AJAX: page normale
         return $this->render('rendez_vous/edit.html.twig', [
             'form' => $form->createView(),
+        ]);
+    }
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL')"
+))]
+    #[Route('/{id}/edit-statut', name: 'app_rendez_vous_edit_statut', methods: ['GET', 'POST'])]
+    public function editStatut(Request $request, RendezVous $rendezVous, EntityManagerInterface $em): Response
+    {
+        $form = $this->createFormBuilder($rendezVous, [
+            'action' => $this->generateUrl('app_rendez_vous_edit_statut', ['id' => $rendezVous->getId()]),
+        ])
+            ->add('statut', EnumType::class, [
+                'class' => StatutRendezVous::class,
+                'label' => 'Statut',
+                'choice_label' => static fn (StatutRendezVous $statut): string => match ($statut) {
+                    StatutRendezVous::EN_ATTENTE => 'En attente',
+                    StatutRendezVous::PLANIFIE => 'Planifié',
+                    StatutRendezVous::CONFIRME => 'Confirmé',
+                    StatutRendezVous::ANNULE => 'Annulé',
+                    StatutRendezVous::TERMINE => 'Terminé',
+                },
+                'attr' => [
+                    'class' => 'form-select',
+                ],
+            ])
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => true]);
+            }
+
+            return $this->redirectToRoute('app_rendez_vous_index');
+        }
+
+        return $this->render('rendez_vous/edit_statut.html.twig', [
+            'form' => $form->createView(),
+            'rendezVous' => $rendezVous,
         ]);
     }
 
@@ -174,12 +218,14 @@ public function startConsultation(
         $dataUri = 'data:image/png;base64,' . base64_encode($png);
 
         $code = 'RV-' . $rendezVous->getId();
+        $logoBase64 = $this->getPrintLogoDataUri();
 
         return $this->render('rendez_vous/print.html.twig', [
             'rendez_vous' => $rendezVous,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $showUrl,
+            'logo_path' => $logoBase64,
         ]);
     }
 
@@ -201,12 +247,14 @@ public function startConsultation(
         $dataUri = 'data:image/png;base64,' . base64_encode($png);
 
         $code = 'RV-' . $rendezVous->getId();
+        $logoBase64 = $this->getPrintLogoDataUri();
 
         $html = $this->renderView('rendez_vous/print.html.twig', [
             'rendez_vous' => $rendezVous,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $showUrl,
+            'logo_path' => $logoBase64,
         ]);
 
         $options = new Options();
@@ -254,5 +302,36 @@ public function startConsultation(
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="rendez_vous-%d.pdf"', $rendezVous->getId()),
         ]);
+    }
+
+    private function getPrintLogoDataUri(): ?string
+    {
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $candidates = [
+            $projectDir . '/public/logo.jpeg',
+            $projectDir . '/public/logo.png',
+            $projectDir . '/public/logo2.png',
+        ];
+
+        foreach ($candidates as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+
+            $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+            $mimeType = match ($extension) {
+                'png' => 'image/png',
+                'jpg', 'jpeg' => 'image/jpeg',
+                default => null,
+            };
+
+            if ($mimeType === null) {
+                continue;
+            }
+
+            return sprintf('data:%s;base64,%s', $mimeType, base64_encode((string) file_get_contents($path)));
+        }
+
+        return null;
     }
 }

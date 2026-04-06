@@ -120,7 +120,7 @@ class Consultation
         return $this->dossierMedical;
     }
 
-    public function setDossierMedical(DossierMedical $dossierMedical): self
+    public function setDossierMedical(?DossierMedical $dossierMedical): self
     {
         $this->dossierMedical = $dossierMedical;
 
@@ -231,11 +231,7 @@ class Consultation
 
     public function removePrescription(Prescription $prescription): self
     {
-        if ($this->prescriptions->removeElement($prescription)) {
-            if ($prescription->getConsultation() === $this) {
-                $prescription->setConsultation(null);
-            }
-        }
+        $this->prescriptions->removeElement($prescription);
 
         return $this;
     }

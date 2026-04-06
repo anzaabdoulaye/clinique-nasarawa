@@ -65,6 +65,7 @@ final class DossierMedicalController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $dossierMedical->syncMedicalDataToPatient();
             $entityManager->flush();
 
             $this->addFlash('success', 'Le dossier médical a été mis à jour avec succès.');

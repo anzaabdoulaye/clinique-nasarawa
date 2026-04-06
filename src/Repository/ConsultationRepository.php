@@ -38,7 +38,8 @@ class ConsultationRepository extends ServiceEntityRepository
         ->leftJoin('dm.patient', 'p')
         ->leftJoin('c.medecin', 'm')
         ->addSelect('dm', 'p', 'm')
-        ->orderBy('c.id', 'DESC');
+        ->orderBy('c.createdAt', 'DESC')
+        ->addOrderBy('c.id', 'DESC');
 
     if ($search) {
         $qb->andWhere('dm.numeroDossier LIKE :search OR p.code LIKE :search OR p.telephone LIKE :search')

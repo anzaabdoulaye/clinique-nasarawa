@@ -333,6 +333,9 @@ public function saisirResultat(
         $this->verifierDestinationLaboratoire($prestation);
 
         $resultat = $prestation->getResultatLaboratoire();
+        $consultation = $prestation->getConsultation();
+        $patient = $consultation?->getDossierMedical()?->getPatient() ?? $consultation?->getRendezVous()?->getPatient();
+
         if (!$resultat) {
             throw $this->createNotFoundException('Aucun résultat laboratoire disponible pour cette prestation.');
         }
@@ -358,6 +361,7 @@ public function saisirResultat(
         return $this->render('laboratoire/resultat_print.html.twig', [
             'prestation' => $prestation,
             'resultat' => $resultat,
+            'patient' => $patient,
             'qr_data' => $dataUri2,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
@@ -374,6 +378,9 @@ public function saisirResultat(
         $this->verifierDestinationLaboratoire($prestation);
 
         $resultat = $prestation->getResultatLaboratoire();
+        $consultation = $prestation->getConsultation();
+        $patient = $consultation?->getDossierMedical()?->getPatient() ?? $consultation?->getRendezVous()?->getPatient();
+
         if (!$resultat) {
             throw $this->createNotFoundException('Aucun résultat laboratoire disponible pour cette prestation.');
         }
@@ -397,6 +404,7 @@ public function saisirResultat(
         $html = $this->renderView('laboratoire/resultat_print.html.twig', [
             'prestation' => $prestation,
             'resultat' => $resultat,
+            'patient' => $patient,
             'qr_data' => $dataUri2,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,

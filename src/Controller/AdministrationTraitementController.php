@@ -23,6 +23,7 @@ final class AdministrationTraitementController extends AbstractController
     ): JsonResponse {
         $date = $request->request->get('date');
         $heure = $request->request->get('heure');
+        $observation = trim((string) $request->request->get('observation', ''));
 
         if (!$date || $heure === null) {
             return new JsonResponse([
@@ -51,7 +52,30 @@ final class AdministrationTraitementController extends AbstractController
 
         $administration = $repo->findOneForTraitementDateHeure($traitement, $dateObj, $heure);
 
+        if (!$administration && !$traitement->isWithinPeriodAt($dateObj, $heure)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Cette période de traitement n\'est pas encore disponible.'
+            ], 400);
+        }
+
+        $isLateAdministration = !$administration && $traitement->isLateSlotAt($dateObj, $heure);
+
+        if ($isLateAdministration && $observation === '') {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Une explication est obligatoire pour enregistrer un traitement en retard.'
+            ], 400);
+        }
+
         if ($administration) {
+            if (!$this->isGranted('ROLE_MEDECIN') && !$this->isGranted('ROLE_ADMIN')) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Seul un compte medecin ou admin peut retirer un traitement administre.'
+                ], 403);
+            }
+
             $em->remove($administration);
             $em->flush();
 
@@ -66,15 +90,17 @@ final class AdministrationTraitementController extends AbstractController
             ->setTraitement($traitement)
             ->setDateAdministration($dateObj)
             ->setHeure($heure)
-            ->setStatut('administre')
-            ->setAdministreLe(new \DateTimeImmutable());
+            ->setStatut($isLateAdministration ? 'retard' : 'administre')
+            ->setAdministreLe(new \DateTimeImmutable())
+            ->setObservation($observation !== '' ? $observation : null);
 
         $em->persist($administration);
         $em->flush();
 
         return new JsonResponse([
             'success' => true,
-            'checked' => true
+            'checked' => true,
+            'late' => $isLateAdministration
         ]);
     }
 }

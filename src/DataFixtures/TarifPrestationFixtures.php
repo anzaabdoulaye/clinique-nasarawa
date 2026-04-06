@@ -13,6 +13,7 @@ class TarifPrestationFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         $slugger = new AsciiSlugger();
+        $repository = $manager->getRepository(TarifPrestation::class);
 
         $tarifs = [
             // ================= CONSULTATIONS =================
@@ -125,13 +126,16 @@ class TarifPrestationFixtures extends Fixture
         ];
 
         foreach ($tarifs as $item) {
-            $tarif = new TarifPrestation();
+            $code = strtoupper((string) $slugger->slug($item['libelle']));
+
+            $tarif = $repository->findOneBy(['code' => $code])
+                ?? $repository->findOneBy(['libelle' => $item['libelle']])
+                ?? new TarifPrestation();
+
             $tarif->setLibelle($item['libelle']);
             $tarif->setCategorie($item['categorie']);
             $tarif->setPrix($item['prix']);
             $tarif->setActif(true);
-
-            $code = strtoupper((string) $slugger->slug($item['libelle'])) ;
             $tarif->setCode($code);
 
             $manager->persist($tarif);

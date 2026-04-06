@@ -264,6 +264,22 @@ class DossierMedical
         return $this;
     }
 
+    public function syncMedicalDataToPatient(): void
+    {
+        if ($this->patient === null) {
+            return;
+        }
+
+        $this->patient->setGroupeSanguin($this->groupeSanguin);
+        $this->patient->setAllergies($this->allergies);
+        $this->patient->setAntecedentsMedicaux($this->antecedentsMedicaux);
+        $this->patient->setAntecedentsChirurgicaux($this->antecedentsChirurgicaux);
+        $this->patient->setMaladiesChroniques($this->maladiesChroniques);
+        $this->patient->setTraitementEnCours($this->traitementEnCours);
+        $this->patient->setHandicap($this->handicap);
+        $this->patient->setGrossesse($this->grossesse);
+    }
+
     public function getNombreConsultations(): int
     {
         return $this->consultations->count();

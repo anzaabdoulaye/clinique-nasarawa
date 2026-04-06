@@ -4,15 +4,15 @@ namespace App\Command;
 
 use App\Service\PharmacyService;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'pharmacy:alerts', description: 'Check lots near expiration and emit alerts')]
 class PharmacyAlertsCommand extends Command
 {
-    protected static $defaultName = 'pharmacy:alerts';
-
     public function __construct(private PharmacyService $pharmacy, private LoggerInterface $logger)
     {
         parent::__construct();

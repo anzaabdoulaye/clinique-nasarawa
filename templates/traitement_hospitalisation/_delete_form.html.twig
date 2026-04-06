@@ -1,4 +1,6 @@
-<form method="post" action="{{ path('app_traitement_hospitalisation_delete', {'id': traitement_hospitalisation.id}) }}" onsubmit="return confirm('Are you sure you want to delete this item?');">
-    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ traitement_hospitalisation.id) }}">
-    <button class="btn">Delete</button>
-</form>
+{% if is_granted('ROLE_ADMIN') %}
+    <form method="post" action="{{ path('app_traitement_hospitalisation_delete', {'id': traitement_hospitalisation.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer ce traitement ?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ traitement_hospitalisation.id) }}">
+        <button class="btn btn-danger btn-sm">Supprimer</button>
+    </form>
+{% endif %}
