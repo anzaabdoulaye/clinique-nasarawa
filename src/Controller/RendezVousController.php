@@ -9,6 +9,7 @@ use App\Enum\StatutRendezVous;
 use App\Form\RendezVousType;
 use App\Repository\ConsultationRepository;
 use App\Repository\RendezVousRepository;
+use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
@@ -172,7 +173,8 @@ public function startConsultation(
     Request $request,
     RendezVous $rendezVous,
     ConsultationRepository $consultationRepo,
-    EntityManagerInterface $em
+    EntityManagerInterface $em,
+    FacturationService $facturationService
 ): Response {
     if (!$this->isCsrfTokenValid('start_consultation_' . $rendezVous->getId(), (string)$request->request->get('_token'))) {
         throw $this->createAccessDeniedException('CSRF token invalide.');
@@ -194,6 +196,7 @@ public function startConsultation(
     $consultation->setStatut(StatutConsultation::EN_COURS);
 
     $em->persist($consultation);
+    $facturationService->initialiserOuRecupererFacture($consultation);
     $em->flush();
 
     return $this->redirectToRoute('app_consultation_show', ['id' => $consultation->getId()]);

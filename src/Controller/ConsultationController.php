@@ -16,6 +16,7 @@ use App\Repository\DossierMedicalRepository;
 use App\Repository\RendezVousRepository;
 use App\Repository\UtilisateurRepository;
 use App\Service\BillingService;
+use App\Service\FacturationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -46,7 +47,8 @@ public function index(
     ConsultationRepository $consultationRepository,
     UtilisateurRepository $utilisateurRepository,
     DossierMedicalRepository $dossierMedicalRepository,
-    EntityManagerInterface $em
+    EntityManagerInterface $em,
+    FacturationService $facturationService
 ): Response {
     $consultation = new Consultation();
 
@@ -101,6 +103,7 @@ public function index(
 
             if (0 === count($form->getErrors(true))) {
                 $em->persist($consultation);
+                $facturationService->initialiserOuRecupererFacture($consultation);
                 $em->flush();
 
                 $this->addFlash('success', 'Consultation créée avec succès.');

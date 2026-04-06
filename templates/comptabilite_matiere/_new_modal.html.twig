@@ -79,6 +79,17 @@
                                             </option>
                                         {% endfor %}
                                     </select>
+                                    <small class="text-muted d-block mt-1">Sélectionnez un lot existant ou renseignez-en un nouveau ci-dessous.</small>
+                                </div>
+
+                                <div class="col-md-2 bon-entree-only">
+                                    <label class="form-label fw-semibold">Nouveau numéro lot</label>
+                                    <input type="text" name="lignes[0][numeroLot]" class="form-control" placeholder="Ex: LOT-2026-001">
+                                </div>
+
+                                <div class="col-md-2 bon-entree-only">
+                                    <label class="form-label fw-semibold">Péremption</label>
+                                    <input type="date" name="lignes[0][datePeremption]" class="form-control">
                                 </div>
 
                                 <div class="col-md-2">
@@ -124,10 +135,25 @@
 document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('bon-lines');
     const addBtn = document.getElementById('add-bon-line');
+    const typeSelect = document.querySelector('select[name="type"]');
 
     if (!container || !addBtn) return;
 
     let index = container.querySelectorAll('.bon-line').length;
+
+    const syncEntreeFields = function () {
+        const isEntree = typeSelect && typeSelect.value === 'ENTREE';
+
+        container.querySelectorAll('.bon-entree-only').forEach(function (fieldWrapper) {
+            fieldWrapper.classList.toggle('d-none', !isEntree);
+
+            fieldWrapper.querySelectorAll('input').forEach(function (field) {
+                if (!isEntree) {
+                    field.value = '';
+                }
+            });
+        });
+    };
 
     addBtn.addEventListener('click', function () {
         const firstLine = container.querySelector('.bon-line');
@@ -150,7 +176,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         container.appendChild(clone);
         index++;
+        syncEntreeFields();
     });
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', syncEntreeFields);
+    }
 
     document.addEventListener('click', function (e) {
         const btn = e.target.closest('.remove-line');
@@ -166,5 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         btn.closest('.bon-line')?.remove();
     });
+
+    syncEntreeFields();
 });
 </script>

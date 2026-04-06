@@ -25,6 +25,8 @@ class ComptabiliteMatiereService
      * @param array<int, array{
      *     medicament: \App\Entity\Medicament,
      *     lot?: ?Lot,
+    *     numeroLot?: ?string,
+    *     datePeremption?: ?\DateTimeInterface,
      *     quantite: int,
      *     prixUnitaire?: ?float,
      *     observation?: ?string
@@ -59,6 +61,8 @@ class ComptabiliteMatiereService
      * @param array<int, array{
      *     medicament: \App\Entity\Medicament,
      *     lot?: ?Lot,
+    *     numeroLot?: ?string,
+    *     datePeremption?: ?\DateTimeInterface,
      *     quantite: int,
      *     prixUnitaire?: ?float,
      *     observation?: ?string
@@ -96,6 +100,8 @@ class ComptabiliteMatiereService
      * @param array<int, array{
      *     medicament: \App\Entity\Medicament,
      *     lot?: ?Lot,
+    *     numeroLot?: ?string,
+    *     datePeremption?: ?\DateTimeInterface,
      *     quantite: int,
      *     prixUnitaire?: ?float,
      *     observation?: ?string
@@ -275,6 +281,8 @@ public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user = nul
      * @param array<int, array{
      *     medicament: \App\Entity\Medicament,
      *     lot?: ?Lot,
+    *     numeroLot?: ?string,
+    *     datePeremption?: ?\DateTimeInterface,
      *     quantite: int,
      *     prixUnitaire?: ?float,
      *     observation?: ?string
@@ -297,9 +305,22 @@ public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user = nul
                 throw new \RuntimeException('La quantité doit être supérieure à zéro.');
             }
 
+            $lot = $data['lot'] ?? null;
+
+            if (!$lot instanceof Lot && $bon->getType() === TypeBonMatiere::ENTREE) {
+                $lot = new Lot();
+                $lot->setMedicament($data['medicament']);
+                $lot->setNumeroLot($data['numeroLot'] ?? null);
+                $lot->setDatePeremption($data['datePeremption'] ?? null);
+                $lot->setQuantite(0);
+                $lot->setPrixAchat($data['prixUnitaire'] ?? null);
+
+                $this->em->persist($lot);
+            }
+
             $ligne = new BonMatiereLigne();
             $ligne->setMedicament($data['medicament']);
-            $ligne->setLot($data['lot'] ?? null);
+            $ligne->setLot($lot);
             $ligne->setQuantite($quantite);
             $ligne->setPrixUnitaire($data['prixUnitaire'] ?? null);
             $ligne->setObservation($data['observation'] ?? null);

@@ -148,6 +148,8 @@ final class BonMatiereController extends AbstractController
                 foreach ($rawLignes as $index => $rawLigne) {
                     $medicamentId = isset($rawLigne['medicament']) ? (int) $rawLigne['medicament'] : 0;
                     $lotId = isset($rawLigne['lot']) && $rawLigne['lot'] !== '' ? (int) $rawLigne['lot'] : null;
+                    $numeroLot = trim((string) ($rawLigne['numeroLot'] ?? ''));
+                    $datePeremptionValue = trim((string) ($rawLigne['datePeremption'] ?? ''));
                     $quantite = isset($rawLigne['quantite']) ? (int) $rawLigne['quantite'] : 0;
                     $prixUnitaire = isset($rawLigne['prixUnitaire']) && $rawLigne['prixUnitaire'] !== ''
                         ? (float) $rawLigne['prixUnitaire']
@@ -178,6 +180,15 @@ final class BonMatiereController extends AbstractController
                         throw new \RuntimeException(sprintf('Quantité invalide à la ligne %d.', $index + 1));
                     }
 
+                    $datePeremption = null;
+                    if ($datePeremptionValue !== '') {
+                        $datePeremption = \DateTime::createFromFormat('Y-m-d', $datePeremptionValue);
+
+                        if (!$datePeremption instanceof \DateTime) {
+                            throw new \RuntimeException(sprintf('Date de péremption invalide à la ligne %d.', $index + 1));
+                        }
+                    }
+
                     if ($type !== TypeBonMatiere::ENTREE && !$lot) {
                         throw new \RuntimeException(sprintf(
                             'Le lot est obligatoire à la ligne %d pour ce type de bon.',
@@ -188,6 +199,8 @@ final class BonMatiereController extends AbstractController
                     $lignesData[] = [
                         'medicament' => $medicament,
                         'lot' => $lot,
+                        'numeroLot' => $numeroLot !== '' ? $numeroLot : null,
+                        'datePeremption' => $datePeremption,
                         'quantite' => $quantite,
                         'prixUnitaire' => $prixUnitaire,
                         'observation' => $ligneObservation ?: null,
