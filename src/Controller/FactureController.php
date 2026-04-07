@@ -271,7 +271,7 @@ public function qrFacture(Facture $facture, BuilderInterface $builder): Response
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
         $pdfOutput = $dompdf->output();

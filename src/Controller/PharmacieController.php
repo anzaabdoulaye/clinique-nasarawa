@@ -161,7 +161,7 @@ final class PharmacieController extends AbstractController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
         $pdfOutput = $dompdf->output();
