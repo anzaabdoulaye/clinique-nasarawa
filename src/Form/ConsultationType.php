@@ -162,6 +162,11 @@ class ConsultationType extends AbstractType
                 'class' => 'js-select2-dossier',
                 'data-placeholder' => 'Rechercher un dossier médical...',
             ],
+        ])
+        ->add('motifs', TextareaType::class, [
+            'required' => false,
+            'label' => 'Motif de consultation',
+            'attr' => ['rows' => 3],
         ]);
 
             $addRendezVousField = function ($form, ?DossierMedical $dossierMedical, ?RendezVous $selectedRendezVous = null): void {

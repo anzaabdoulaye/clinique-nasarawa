@@ -5,8 +5,10 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
 </div>
 
-{{ form_start(form, {'attr': {'id': 'prestationForm'}}) }}
+{{ form_start(form, {'attr': {'id': 'prestationForm', 'data-mode': prescription.id ? 'edit' : 'create', 'novalidate': 'novalidate'}}) }}
 <div class="modal-body">
+    <div class="alert d-none js-prestation-feedback" role="alert"></div>
+
     <div class="row g-3">
         <div class="col-md-12">
             {{ form_row(form.tarifPrestation) }}
@@ -18,11 +20,28 @@
             {{ form_row(form.instructions) }}
         </div>
     </div>
+
+    {% if not prescription.id %}
+        <div class="border rounded-3 p-3 mt-4 bg-light-subtle">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <div class="fw-semibold">Examens à enregistrer</div>
+                    <div class="small text-muted">Ajoutez plusieurs examens à la sélection avant l’enregistrement.</div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm js-queue-prestation">
+                    <i class="ri-add-line me-1"></i> Ajouter à la sélection
+                </button>
+            </div>
+
+            <div class="small text-muted mb-2 js-prestation-pending-empty">Aucun examen ajouté pour le moment.</div>
+            <div class="list-group js-prestation-pending-list d-none"></div>
+        </div>
+    {% endif %}
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
     <button type="submit" class="btn btn-primary js-submit-prestation">
-        <i class="ri-save-line me-1"></i> Enregistrer
+        <i class="ri-save-line me-1"></i> {{ prescription.id ? 'Enregistrer' : 'Enregistrer la sélection' }}
     </button>
 </div>
 {{ form_end(form) }}

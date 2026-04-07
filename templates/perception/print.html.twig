@@ -6,7 +6,7 @@
 
     <style>
         @page {
-            size: A5 portrait;
+            size: A4 portrait;
             margin: 5mm;
         }
 
@@ -374,6 +374,10 @@
 
                 <strong>N° dossier médical :</strong>
                 {{ consultation and consultation.dossierMedical and consultation.dossierMedical.numeroDossier ? consultation.dossierMedical.numeroDossier : '-' }}
+                <br>
+
+                <strong>Motif de consultation :</strong>
+                {{ consultation and consultation.motifs ? consultation.motifs : '-' }}
                 <br>
 
                 <strong>Téléphone :</strong>

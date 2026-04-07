@@ -6,16 +6,22 @@ use App\Entity\Patient;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TelType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class PatientType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $dateNaissance = $builder->getData()?->getDateNaissance();
+
         $builder
             // ===== Identité =====
             ->add('nom', TextType::class, [
@@ -25,6 +31,7 @@ class PatientType extends AbstractType
                     'placeholder' => 'Ex: ABDOULAYE',
                     'autocomplete' => 'family-name',
                 ],
+                'help' => 'Obligatoire.',
             ])
             ->add('prenom', TextType::class, [
                 'label' => 'Prénom(s)',
@@ -33,14 +40,34 @@ class PatientType extends AbstractType
                     'placeholder' => 'Ex: Anza',
                     'autocomplete' => 'given-name',
                 ],
+                'help' => 'Obligatoire.',
             ])
             ->add('dateNaissance', DateType::class, [
                 'label' => 'Date de naissance',
                 'widget' => 'single_text',
                 'required' => false,
+                'input' => 'datetime_immutable',
                 'attr' => [
                     'class' => 'form-control',
+                    'max' => (new \DateTimeImmutable())->format('Y-m-d'),
+                    'data-date-naissance' => 'true',
                 ],
+                'help' => 'Vous pouvez saisir l’âge ou la date de naissance. Les deux champs se synchronisent automatiquement.',
+            ])
+            ->add('age', IntegerType::class, [
+                'label' => 'Âge (ans)',
+                'required' => false,
+                'mapped' => false,
+                'data' => $this->calculateAge($dateNaissance),
+                'attr' => [
+                    'class' => 'form-control',
+                    'min' => 0,
+                    'max' => 130,
+                    'placeholder' => 'Ex: 35',
+                    'inputmode' => 'numeric',
+                    'data-age-input' => 'true',
+                ],
+                'help' => 'Vous pouvez saisir l’âge ou la date de naissance. Les deux champs se synchronisent automatiquement.',
             ])
             ->add('sexe', ChoiceType::class, [
                 'label' => 'Sexe',
@@ -53,17 +80,20 @@ class PatientType extends AbstractType
                 'attr' => [
                     'class' => 'form-select',
                 ],
-            ])
+            ]) 
+          
+
             ->add('telephone', TelType::class, [
                 'label' => 'Téléphone',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'class' => 'form-control',
                     'placeholder' => 'Ex: +227 90 00 00 00',
                     'inputmode' => 'tel',
                     'autocomplete' => 'tel',
                 ],
-                'help' => 'Format conseillé : +227 XX XX XX XX',
+                'help' => 'Obligatoire. Format conseillé : +227 XX XX XX XX',
+                
             ])
             ->add('adresse', TextType::class, [
                 'label' => 'Adresse',
@@ -225,6 +255,35 @@ class PatientType extends AbstractType
                 'help' => 'Généré automatiquement à la création.',
             ])
         ;
+
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event): void {
+            $data = $event->getData();
+
+            if (!is_array($data)) {
+                return;
+            }
+
+            $age = isset($data['age']) ? trim((string) $data['age']) : '';
+            $dateNaissance = isset($data['dateNaissance']) ? trim((string) $data['dateNaissance']) : '';
+
+            if ($age === '' || $dateNaissance !== '') {
+                return;
+            }
+
+            if (!ctype_digit($age)) {
+                return;
+            }
+
+            $ageInt = (int) $age;
+            if ($ageInt < 0 || $ageInt > 130) {
+                return;
+            }
+
+            $year = (int) (new \DateTimeImmutable())->format('Y') - $ageInt;
+            $data['dateNaissance'] = sprintf('%04d-01-01', $year);
+
+            $event->setData($data);
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -232,5 +291,14 @@ class PatientType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Patient::class,
         ]);
+    }
+
+    private function calculateAge(?\DateTimeInterface $dateNaissance): ?int
+    {
+        if (!$dateNaissance instanceof \DateTimeInterface) {
+            return null;
+        }
+
+        return $dateNaissance->diff(new \DateTimeImmutable())->y;
     }
 }

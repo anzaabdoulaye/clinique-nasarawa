@@ -29,7 +29,7 @@ class Patient
 
     #[Assert\LessThanOrEqual('today')]
     #[ORM\Column(type: 'date_immutable', nullable: true)]
-    private \DateTimeImmutable $dateNaissance;
+    private ?\DateTimeImmutable $dateNaissance = null;
 
     #[Assert\Positive]
     #[ORM\Column(length: 30)]
@@ -204,12 +204,12 @@ class Patient
     public function getCode(): ?string { return $this->code; }
     public function setCode(?string $code): self { $this->code = $code; return $this; }
 
-    public function getDateNaissance(): \DateTimeImmutable
+    public function getDateNaissance(): ?\DateTimeImmutable
     {
         return $this->dateNaissance;
     }
 
-    public function setDateNaissance(\DateTimeImmutable $dateNaissance): self
+    public function setDateNaissance(?\DateTimeImmutable $dateNaissance): self
     {
         $this->dateNaissance = $dateNaissance;
 

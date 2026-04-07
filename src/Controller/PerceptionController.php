@@ -326,7 +326,7 @@ public function rapportAgentsPdf(
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
         
@@ -500,7 +500,7 @@ public function rapportAgentsPdf(
             'paiements' => $paiements,
             'agents' => $agentFilterLocked && $connectedUser instanceof Utilisateur
                 ? [$connectedUser]
-                : $utilisateurRepository->findUsersByRoles(['ROLE_ADMIN', 'ROLE_PERCEPTION']),
+                : $utilisateurRepository->findUsersByRoles(['ROLE_PERCEPTION']),
             'rapportAgents' => $rapportAgents,
             'agentFilterLocked' => $agentFilterLocked,
             'selectedAgentId' => $agentId,
