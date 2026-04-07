@@ -892,6 +892,8 @@
 (() => {
     const prestationModalEl = document.getElementById('prestationModal');
     const prestationModalContent = document.getElementById('prestationModalContent');
+    let pendingPrestations = [];
+    let reloadOnClose = false;
 
     if (!prestationModalEl || !prestationModalContent) {
         console.error('Modale prestation introuvable');
@@ -937,6 +939,166 @@
     console.log('Select2 initialisé sur prestation');
 }
 
+    function resetPendingPrestations() {
+        pendingPrestations = [];
+    }
+
+    function setPrestationFeedback(form, message, type = 'success') {
+        const feedback = form.querySelector('.js-prestation-feedback');
+        if (!feedback) {
+            return;
+        }
+
+        feedback.className = `alert alert-${type} js-prestation-feedback`;
+        feedback.textContent = message;
+        feedback.classList.remove('d-none');
+    }
+
+    function clearPrestationFeedback(form) {
+        const feedback = form.querySelector('.js-prestation-feedback');
+        if (!feedback) {
+            return;
+        }
+
+        feedback.className = 'alert d-none js-prestation-feedback';
+        feedback.textContent = '';
+    }
+
+    function getPrestationFields(form) {
+        return {
+            tarifPrestation: form.querySelector('[name$="[tarifPrestation]"]'),
+            quantite: form.querySelector('[name$="[quantite]"]'),
+            instructions: form.querySelector('[name$="[instructions]"]'),
+        };
+    }
+
+    function getCurrentPrestationPayload(form) {
+        const fields = getPrestationFields(form);
+        if (!fields.tarifPrestation) {
+            return null;
+        }
+
+        const formData = new FormData(form);
+        const tarifId = (formData.get(fields.tarifPrestation.name) || '').toString();
+        if (!tarifId) {
+            return null;
+        }
+
+        const selectedOption = Array.from(fields.tarifPrestation.options).find((option) => option.value === tarifId);
+        const select2Rendered = form.querySelector('.select2-selection__rendered');
+
+        return {
+            tarifPrestation: tarifId,
+            tarifLabel: selectedOption ? selectedOption.textContent.trim() : (select2Rendered ? select2Rendered.textContent.trim() : 'Prestation'),
+            quantite: (fields.quantite && formData.get(fields.quantite.name)) ? formData.get(fields.quantite.name).toString() : '1',
+            instructions: (fields.instructions && formData.get(fields.instructions.name)) ? formData.get(fields.instructions.name).toString() : '',
+        };
+    }
+
+    function resetCurrentPrestationFields(form) {
+        const fields = getPrestationFields(form);
+
+        if (fields.quantite) {
+            fields.quantite.value = '1';
+        }
+
+        if (fields.instructions) {
+            fields.instructions.value = '';
+        }
+
+        if (fields.tarifPrestation) {
+            if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                $(fields.tarifPrestation).val(null).trigger('change');
+            } else {
+                fields.tarifPrestation.value = '';
+            }
+        }
+    }
+
+    function renderPendingPrestations(form) {
+        const list = form.querySelector('.js-prestation-pending-list');
+        const emptyState = form.querySelector('.js-prestation-pending-empty');
+
+        if (!list || !emptyState) {
+            return;
+        }
+
+        if (pendingPrestations.length === 0) {
+            list.innerHTML = '';
+            list.classList.add('d-none');
+            emptyState.classList.remove('d-none');
+            return;
+        }
+
+        emptyState.classList.add('d-none');
+        list.classList.remove('d-none');
+        list.innerHTML = pendingPrestations.map((item, index) => `
+            <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="fw-semibold">${item.tarifLabel}</div>
+                    <div class="small text-muted">Qté: ${item.quantite}${item.instructions ? ` · ${item.instructions}` : ''}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger js-remove-pending-prestation" data-index="${index}">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function addCurrentPrestationToPending(form) {
+        clearPrestationFeedback(form);
+
+        const payload = getCurrentPrestationPayload(form);
+        if (!payload) {
+            setPrestationFeedback(form, 'Choisissez un examen avant de l’ajouter à la sélection.', 'warning');
+            return;
+        }
+
+        pendingPrestations.push(payload);
+        renderPendingPrestations(form);
+        resetCurrentPrestationFields(form);
+        setPrestationFeedback(form, 'Examen ajouté à la sélection.', 'success');
+    }
+
+    async function submitSinglePrestation(form, payload) {
+        const fields = getPrestationFields(form);
+        const formData = new FormData(form);
+
+        if (fields.tarifPrestation) {
+            formData.set(fields.tarifPrestation.name, payload.tarifPrestation);
+        }
+
+        if (fields.quantite) {
+            formData.set(fields.quantite.name, payload.quantite || '1');
+        }
+
+        if (fields.instructions) {
+            formData.set(fields.instructions.name, payload.instructions || '');
+        }
+
+        const response = await fetch(form.action, {
+            method: (form.method || 'POST').toUpperCase(),
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+
+        if (contentType.includes('application/json')) {
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Erreur lors de l’enregistrement.');
+            }
+
+            return data;
+        }
+
+        const html = await response.text();
+        throw new Error(html || 'Réponse inattendue du serveur.');
+    }
+
     function bindPrestationForm() {
         const form = prestationModalContent.querySelector('#prestationForm') || prestationModalContent.querySelector('form');
         console.log('bindPrestationForm =>', !!form);
@@ -948,6 +1110,27 @@
 
         if (form.dataset.bound === '1') return;
         form.dataset.bound = '1';
+
+        renderPendingPrestations(form);
+
+        const queueBtn = form.querySelector('.js-queue-prestation');
+        if (queueBtn) {
+            queueBtn.addEventListener('click', function () {
+                addCurrentPrestationToPending(form);
+            });
+        }
+
+        form.addEventListener('click', function (e) {
+            const removeBtn = e.target.closest('.js-remove-pending-prestation');
+            if (!removeBtn) return;
+
+            const index = Number.parseInt(removeBtn.dataset.index || '', 10);
+            if (Number.isNaN(index)) return;
+
+            pendingPrestations.splice(index, 1);
+            renderPendingPrestations(form);
+            clearPrestationFeedback(form);
+        });
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -962,6 +1145,27 @@
             }
 
             try {
+                if ((form.dataset.mode || 'create') === 'create') {
+                    const payloads = [...pendingPrestations];
+                    const currentPayload = getCurrentPrestationPayload(form);
+
+                    if (currentPayload) {
+                        payloads.push(currentPayload);
+                    }
+
+                    if (payloads.length === 0) {
+                        setPrestationFeedback(form, 'Choisissez au moins un examen à enregistrer.', 'warning');
+                        return;
+                    }
+
+                    for (const payload of payloads) {
+                        await submitSinglePrestation(form, payload);
+                    }
+
+                    window.location.reload();
+                    return;
+                }
+
                 const response = await fetch(form.action, {
                     method: (form.method || 'POST').toUpperCase(),
                     body: new FormData(form),
@@ -1009,6 +1213,8 @@
     async function openPrestationModal(url) {
         
         console.log('openPrestationModal =>', url);
+        resetPendingPrestations();
+        reloadOnClose = false;
         showLoading();
 
         try {
@@ -1052,6 +1258,12 @@
     });
 
     prestationModalEl.addEventListener('hidden.bs.modal', function () {
+        if (reloadOnClose) {
+            window.location.reload();
+            return;
+        }
+
+        resetPendingPrestations();
         showLoading();
     });
 })();

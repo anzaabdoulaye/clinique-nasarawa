@@ -199,6 +199,8 @@
             <div class="col-12 col-md-6">{{ form_row(form.prenom) }}</div>
 
             <div class="col-12 col-md-6">{{ form_row(form.dateNaissance) }}</div>
+            <div class="col-12 col-md-6">{{ form_row(form.age) }}</div>
+
             <div class="col-12 col-md-6">{{ form_row(form.sexe) }}</div>
 
             <div class="col-12 col-md-6">{{ form_row(form.telephone) }}</div>
@@ -305,6 +307,63 @@
 
       let currentUrl = null;
 
+      function calculateAge(dateValue) {
+        if (!dateValue) return '';
+
+        const birthDate = new Date(dateValue + 'T00:00:00');
+        if (Number.isNaN(birthDate.getTime())) return '';
+
+        const today = new Date();
+        let years = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          years -= 1;
+        }
+
+        return years >= 0 ? String(years) : '';
+      }
+
+      function calculateBirthDate(ageValue) {
+        if (ageValue === '' || ageValue === null || ageValue === undefined) return '';
+
+        const years = Number.parseInt(ageValue, 10);
+        if (Number.isNaN(years) || years < 0) return '';
+
+        const year = new Date().getFullYear() - years;
+        return `${year}-01-01`;
+      }
+
+      function syncAgeField(scope) {
+        const root = scope || document;
+        const sourceFields = root.querySelectorAll('[data-date-naissance="true"]');
+
+        sourceFields.forEach((sourceField) => {
+          const form = sourceField.closest('form');
+          if (!form) return;
+
+          const ageField = form.querySelector('[data-age-input="true"]');
+          if (!ageField) return;
+
+          ageField.value = calculateAge(sourceField.value);
+        });
+      }
+
+      function syncDateField(scope) {
+        const root = scope || document;
+        const ageFields = root.querySelectorAll('[data-age-input="true"]');
+
+        ageFields.forEach((ageField) => {
+          const form = ageField.closest('form');
+          if (!form) return;
+
+          const dateField = form.querySelector('[data-date-naissance="true"]');
+          if (!dateField) return;
+
+          dateField.value = calculateBirthDate(ageField.value);
+        });
+      }
+
       function setLoading() {
         loader.classList.remove('d-none');
         body.classList.add('d-none');
@@ -343,6 +402,7 @@
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
+        syncAgeField(body);
         focusFirstField();
         bindSubmit();
       }
@@ -389,6 +449,7 @@
 
             // HTML (souvent erreurs)
             body.innerHTML = await submitRes.text();
+            syncAgeField(body);
             focusFirstField();
             bindSubmit();
           } catch (err) {
@@ -419,6 +480,28 @@
         currentUrl = null;
         setLoading();
       });
+
+      document.addEventListener('input', (e) => {
+        if (e.target.matches('[data-date-naissance="true"]')) {
+          syncAgeField(e.target.closest('form'));
+        }
+
+        if (e.target.matches('[data-age-input="true"]')) {
+          syncDateField(e.target.closest('form'));
+        }
+      });
+
+      document.addEventListener('change', (e) => {
+        if (e.target.matches('[data-date-naissance="true"]')) {
+          syncAgeField(e.target.closest('form'));
+        }
+
+        if (e.target.matches('[data-age-input="true"]')) {
+          syncDateField(e.target.closest('form'));
+        }
+      });
+
+      syncAgeField(document);
     })();
   </script>
 {% endblock %}

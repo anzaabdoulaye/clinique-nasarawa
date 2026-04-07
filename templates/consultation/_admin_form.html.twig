@@ -17,6 +17,12 @@
         </div>
     {% endif %}
 
+    {% if form.motifs is defined %}
+        <div class="col-12">
+            {{ form_row(form.motifs) }}
+        </div>
+    {% endif %}
+
     {% if form.rendezVous is defined %}
         <div class="col-md-6">
             {{ form_row(form.rendezVous) }}
