@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats laboratoire consultation</title>
+
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 6mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 9px;
+            color: #1f2937;
+            background: #ffffff;
+        }
+
+        .document {
+            width: 100%;
+            margin: 0 auto;
+            border: 1px solid #dbe3ea;
+            border-radius: 10px;
+            padding: 6px;
+        }
+
+        .top-bar {
+            height: 3px;
+            background: #0f4c81;
+            margin-bottom: 6px;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td,
+        .info-table td,
+        .trace-table td {
+            vertical-align: top;
+        }
+
+        .clinic-logo {
+            width: 20mm;
+            height: 20mm;
+            border: 1px solid #d1d5db;
+            padding: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .clinic h1 {
+            margin: 0 0 2px 0;
+            font-size: 11px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .clinic .sub {
+            font-size: 7px;
+            line-height: 1.3;
+            color: #6b7280;
+        }
+
+        .qr-box {
+            width: 100%;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            padding: 3px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .qr-box img {
+            width: 17mm;
+            height: 17mm;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            padding: 2px;
+        }
+
+        .qr-label {
+            margin-top: 2px;
+            font-size: 6.5px;
+            line-height: 1.2;
+            color: #6b7280;
+        }
+
+        .separator {
+            border-bottom: 1px solid #d1d5db;
+            margin: 5px 0 6px 0;
+        }
+
+        .title-box {
+            text-align: center;
+            margin-bottom: 6px;
+            padding: 4px 6px;
+            background: #f8fafc;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+
+        .title-box .title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .title-box .subtitle {
+            margin-top: 2px;
+            font-size: 7px;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+
+        .section {
+            margin-top: 6px;
+        }
+
+        .section-title {
+            padding: 4px 5px;
+            font-size: 8px;
+            font-weight: bold;
+            color: #0f4c81;
+            background: #f8fafc;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .section-body {
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .info-table td,
+        .trace-table td {
+            padding: 4px 5px;
+            font-size: 8px;
+            line-height: 1.35;
+            border: 1px solid #eef2f7;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .result-table th,
+        .result-table td {
+            border: 1px solid #e5e7eb;
+            padding: 4px;
+            font-size: 8px;
+            text-align: left;
+            vertical-align: top;
+            line-height: 1.3;
+        }
+
+        .result-table th {
+            color: #ffffff;
+            background: #0f4c81;
+            font-weight: bold;
+        }
+
+        .result-table tbody tr:nth-child(even) {
+            background: #fafcff;
+        }
+
+        .box {
+            padding: 6px;
+            line-height: 1.4;
+            font-size: 8px;
+            min-height: 28px;
+        }
+
+        .exam-block {
+            margin-top: 8px;
+            page-break-inside: avoid;
+        }
+
+        .footer-note {
+            margin-top: 6px;
+            padding-top: 4px;
+            text-align: center;
+            font-size: 8px;
+            font-weight: bold;
+            color: #0f4c81;
+            border-top: 1px dashed #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    {% set rdv = consultation.rendezVous|default(null) %}
+    {% set _qr = qr_data is defined ? qr_data : null %}
+
+    <div class="document">
+        <div class="top-bar"></div>
+
+        <table class="header-table">
+            <tr>
+                <td style="width:18%;">
+                    {% if logo_path is defined and logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo Clinique Médicale Nassarawa" class="clinic-logo">
+                    {% endif %}
+                </td>
+
+                <td style="width:56%;">
+                    <div class="clinic">
+                        <h1>Clinique Neurologique Nassarawa</h1>
+                        <div class="sub">
+                            NIF : 120402/R<br>
+                            RCCM : NE-NIM-01-2024-B12-00145<br>
+                            Yantala Haut Avenue du Daoura YN 187<br>
+                            Tél : 20 75 51 02 / 82 09 61 12<br>
+                            BP : 2120 Niamey<br>
+                            Email : nassrawaclinique@gmail.com
+                        </div>
+                    </div>
+                </td>
+
+                <td style="width:26%; text-align:right;">
+                    <div class="qr-box">
+                        {% if _qr %}
+                            <img src="{{ _qr }}" alt="QR Code">
+                        {% endif %}
+
+                        {% if code_qr is defined and code_qr %}
+                            <div class="qr-label">Code : {{ code_qr }}</div>
+                        {% endif %}
+
+                        <div class="qr-label">Scanner pour vérification</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="separator"></div>
+
+        <div class="title-box">
+            <div class="title">Fiche consolidée des résultats laboratoire</div>
+            <div class="subtitle">Consultation #{{ consultation.id }} · {{ prestations|length }} examen{{ prestations|length > 1 ? 's' : '' }}</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Informations patient et consultation</div>
+            <div class="section-body">
+                <table class="info-table">
+                    <tr>
+                        <td style="width:50%;"><span class="label">Nom et prénom :</span>
+                            {% if patient %}
+                                {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="width:50%;"><span class="label">Référence :</span> RC-{{ consultation.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="label">Âge :</span> {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}</td>
+                        <td><span class="label">Sexe :</span> {{ patient and patient.sexe ? patient.sexe : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="label">Dossier médical :</span> {{ consultation.dossierMedical ? consultation.dossierMedical.numeroDossier : '-' }}</td>
+                        <td><span class="label">Consultation :</span> #{{ consultation.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="label">Médecin :</span> {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}</td>
+                        <td><span class="label">Date de validation :</span> {{ dateValidationReference ? dateValidationReference|date('d/m/Y H:i') : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><span class="label">Validé par :</span> {{ validateurs is not empty ? validateurs|join(' · ') : '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {% for prestation in prestations %}
+            {% set resultat = prestation.resultatLaboratoire %}
+
+            <div class="exam-block">
+                <div class="section">
+                    <div class="section-title">{{ prestation.tarifPrestation.libelle }}</div>
+                    <div class="section-body">
+                        <table class="info-table">
+                            <tr>
+                                <td style="width:50%;"><span class="label">Examen :</span> {{ prestation.tarifPrestation.libelle }}</td>
+                                <td style="width:50%;"><span class="label">Prestation :</span> #{{ prestation.id }}</td>
+                            </tr>
+                            <tr>
+                                <td><span class="label">Catégorie :</span> {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}</td>
+                                <td><span class="label">Quantité :</span> {{ prestation.quantite }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2"><span class="label">Instructions :</span> {{ prestation.instructions ?: '-' }}</td>
+                            </tr>
+                        </table>
+
+                        <table class="result-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:34%;">Paramètre / Demande</th>
+                                    <th style="width:33%;">Résultat</th>
+                                    <th style="width:33%;">Valeurs normales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if resultat and resultat.lignes|length > 0 %}
+                                    {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                                        <tr>
+                                            <td>{{ ligne.demande|nl2br }}</td>
+                                            <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
+                                            <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td>{{ prestation.tarifPrestation.libelle }}</td>
+                                        <td>{{ resultat and resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
+                                        <td>-</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+
+                        {% if resultat and resultat.conclusion %}
+                            <div class="section" style="margin: 0;">
+                                <div class="section-title">Conclusion / Observation</div>
+                                <div class="section-body">
+                                    <div class="box">{{ resultat.conclusion|nl2br }}</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="footer-note">
+            Clinique Médicale Nassarawa — Fiche consolidée des résultats laboratoire
+        </div>
+    </div>
+</body>
+</html>

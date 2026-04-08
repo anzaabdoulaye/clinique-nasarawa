@@ -29,7 +29,7 @@
                         Adresse : {{ patient.adresse ?? '-' }}
                     </div>
                 </div>
-
+                {% if not is_granted('ROLE_LABO') %}
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ path('app_dossier_medical_edit', {'id': dossier.id}) }}"
                        class="btn btn-outline-primary">
@@ -43,6 +43,7 @@
                         </a>
                     {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -111,6 +111,7 @@
             <div class="d-flex flex-column align-items-end gap-2">
 
                 <!-- boutons -->
+                {% if not is_granted('ROLE_LABO') %}
                 <div class="d-flex gap-2">
                     <a href="{{ path('app_consultation_index') }}" class="btn btn-outline-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Retour
@@ -118,7 +119,7 @@
 
                     {{ include('consultation/_delete_form.html.twig') }}
                 </div>
-
+                {% endif %}
                 <!-- badges -->
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
                     <span class="badge {{ badgeClass }}">{{ st ?: 'N/A' }}</span>
@@ -203,7 +204,7 @@
         <div class="consultation-action-panel mt-3">
             <div class="consultation-meta-label mb-3">Actions</div>
             <div class="row g-2">
-                
+             {% if not is_granted('ROLE_LABO') %}   
                 {% if dossier %}
                     <div class="col-12 col-md-6 col-xl-3 d-grid">
                         <a href="{{ path('app_dossier_medical_show', {'id': dossier.id}) }}" class="btn btn-outline-info">
@@ -229,7 +230,7 @@
                         <i class="fa fa-print me-1"></i> Fiche consultation
                     </a>
                 </div>
-                
+             {% endif %}
             </div>
         </div>
     </div>
@@ -241,7 +242,7 @@
                 <h5 class="mb-0">Prestations prescrites</h5>
                 <small class="text-muted">Actes, examens et consommables demandés par le médecin</small>
             </div>
-
+            {% if not is_granted('ROLE_LABO')  %}
             <button type="button"
                     class="btn btn-primary btn-sm js-add-prestation"
                     data-bs-toggle="modal"
@@ -250,6 +251,7 @@
                 <i class="ri-add-line me-1"></i> Ajouter
             </button>
         </div>
+        {% endif %}
 
         <div class="card-body">
             {% if consultation.prescriptionsPrestations is defined and consultation.prescriptionsPrestations|length > 0 %}
@@ -281,6 +283,7 @@
                                 <td>{{ p.quantite|default(1) }}</td>
                                 <td>{{ p.instructions ?: '-' }}</td>
                                 <td>
+                                
                                     {% if isLabo and p.resultatLaboratoire %}
                                         <div class="d-flex flex-wrap gap-2">
                                             <span class="badge bg-success-subtle text-success">Disponible</span>
@@ -308,6 +311,7 @@
             {% endif %}
         </span>
     {% else %}
+    {% if not is_granted('ROLE_LABO')  %}
         <button type="button"
                 class="btn btn-sm btn-outline-primary js-edit-prestation"
                 title="Modifier"
@@ -326,6 +330,7 @@
                 <i class="ri-delete-bin-line"></i>
             </button>
         </form>
+    {% endif %}
     {% endif %}
 </td>
                             </tr>
