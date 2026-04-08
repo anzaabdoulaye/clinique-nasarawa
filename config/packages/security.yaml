@@ -41,8 +41,11 @@ security:
         # rendez-vous
         - { path: ^/rendez/vous, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN] }
 
+        # dossier medical
+        - { path: ^/dossier-medical, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER, ROLE_LABO] }
+
         # consultation
-        - { path: ^/consultation, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER] }
+        - { path: ^/consultation, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER, ROLE_LABO] }
 
         # prescription / prestations rattachées à la consultation
         - { path: ^/prescription, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN] }
@@ -52,7 +55,7 @@ security:
         # clinique
         - { path: ^/patient, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER] }
         - { path: ^/rendez/vous, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN] }
-        - { path: ^/consultation, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER] }
+        - { path: ^/consultation, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_MEDECIN, ROLE_INFIRMIER, ROLE_LABO] }
 
         # factures
         - { path: ^/facture, roles: [ROLE_ADMIN, ROLE_ACCUEIL, ROLE_PERCEPTION, ROLE_MEDECIN] }

@@ -147,4 +147,30 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return PrescriptionPrestation[]
+     */
+    public function findExamensLaboAvecResultatsParConsultation(int $consultationId): array
+    {
+        return $this->createQueryBuilder('pp')
+            ->leftJoin('pp.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.dossierMedical', 'dm')->addSelect('dm')
+            ->leftJoin('dm.patient', 'patientDossier')->addSelect('patientDossier')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('r.patient', 'patientRdv')->addSelect('patientRdv')
+            ->leftJoin('c.medecin', 'm')->addSelect('m')
+            ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
+            ->leftJoin('pp.resultatLaboratoire', 'rl')->addSelect('rl')
+            ->leftJoin('rl.lignes', 'rll')->addSelect('rll')
+            ->andWhere('c.id = :consultationId')
+            ->andWhere('tp.serviceExecution = :service')
+            ->andWhere('rl.id IS NOT NULL')
+            ->setParameter('consultationId', $consultationId)
+            ->setParameter('service', 'laboratoire')
+            ->orderBy('pp.id', 'ASC')
+            ->addOrderBy('rll.ordre', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

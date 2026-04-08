@@ -50,18 +50,27 @@ final class LaboratoireController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
 ))]
     #[Route('/prestation/{id}', name: 'app_laboratoire_show', methods: ['GET'])]
-    public function show(PrescriptionPrestation $prestation): Response
+    public function show(
+        PrescriptionPrestation $prestation,
+        PrescriptionPrestationRepository $repository
+    ): Response
     {
         $this->verifierDestinationLaboratoire($prestation);
 
         $resultat = $prestation->getResultatLaboratoire();
         $hasResultatSaisi = $resultat ? $this->hasSaisiResultat($resultat) : false;
+        $consultation = $prestation->getConsultation();
+        $prestationsAvecResultatsConsultation = $consultation instanceof Consultation
+            ? $this->getPrestationsAvecResultatsSaisis($consultation, $repository)
+            : [];
 
         return $this->render('laboratoire/show.html.twig', [
             'prestation' => $prestation,
             'canEditResult' => $this->canEditResult($prestation),
             'hasResultatSaisi' => $hasResultatSaisi,
             'canMarkRealise' => $prestation->getStatut() === StatutPrescriptionPrestation::EN_COURS && $hasResultatSaisi,
+            'canViewConsultationResultsSheet' => count($prestationsAvecResultatsConsultation) > 0,
+            'consultationResultsCount' => count($prestationsAvecResultatsConsultation),
         ]);
     }
 
@@ -232,6 +241,88 @@ final class LaboratoireController extends AbstractController
         return new Response($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="bon_labo-%d.pdf"', $consultation->getId()),
+        ]);
+    }
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
+    #[Route('/consultation/{id}/resultats', name: 'app_laboratoire_resultats_consultation_show', methods: ['GET'])]
+    public function resultatsConsultationShow(
+        Consultation $consultation,
+        PrescriptionPrestationRepository $repository
+    ): Response {
+        $prestations = $this->getPrestationsAvecResultatsSaisis($consultation, $repository);
+
+        if ($prestations === []) {
+            $this->addFlash('warning', 'Aucun résultat laboratoire saisi n\'est disponible pour cette consultation.');
+
+            return $this->redirectToRoute('app_laboratoire_bon_show', [
+                'id' => $consultation->getId(),
+            ]);
+        }
+
+        return $this->render('laboratoire/resultats_consultation_show.html.twig', [
+            'consultation' => $consultation,
+            'prestations' => $prestations,
+            'patient' => $this->resolvePatientFromConsultation($consultation),
+            'dateValidationReference' => $this->resolveDateValidationReference($prestations),
+            'validateurs' => $this->resolveValidateurs($prestations),
+        ]);
+    }
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
+    #[Route('/consultation/{id}/resultats/pdf', name: 'app_laboratoire_resultats_consultation_pdf', methods: ['GET'])]
+    public function resultatsConsultationPdf(
+        Consultation $consultation,
+        PrescriptionPrestationRepository $repository
+    ): Response {
+        $prestations = $this->getPrestationsAvecResultatsSaisis($consultation, $repository);
+
+        if ($prestations === []) {
+            throw $this->createNotFoundException('Aucun résultat laboratoire saisi n\'est disponible pour cette consultation.');
+        }
+
+        $verifyUrl = $this->generateUrl('app_laboratoire_resultats_consultation_show', [
+            'id' => $consultation->getId(),
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        $qrCode = new QrCode(
+            data: $verifyUrl,
+            encoding: new Encoding('UTF-8'),
+            size: 200,
+            margin: 6
+        );
+
+        $png = (new PngWriter())->write($qrCode)->getString();
+        $dataUri = 'data:image/png;base64,' . base64_encode($png);
+
+        $html = $this->renderView('laboratoire/resultats_consultation_print.html.twig', [
+            'consultation' => $consultation,
+            'prestations' => $prestations,
+            'patient' => $this->resolvePatientFromConsultation($consultation),
+            'dateValidationReference' => $this->resolveDateValidationReference($prestations),
+            'validateurs' => $this->resolveValidateurs($prestations),
+            'qr_data' => $dataUri,
+            'code_qr' => 'RC-' . $consultation->getId(),
+            'logo_path' => $this->getEmbeddedLogo(),
+            'verifyUrl' => $verifyUrl,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="resultats_consultation-%d.pdf"', $consultation->getId()),
         ]);
     }
 
@@ -514,5 +605,64 @@ public function saisirResultat(
         }
 
         return false;
+    }
+
+    /**
+     * @return PrescriptionPrestation[]
+     */
+    private function getPrestationsAvecResultatsSaisis(
+        Consultation $consultation,
+        PrescriptionPrestationRepository $repository
+    ): array {
+        $prestations = $repository->findExamensLaboAvecResultatsParConsultation($consultation->getId());
+
+        return array_values(array_filter(
+            $prestations,
+            fn (PrescriptionPrestation $prestation): bool => $prestation->getResultatLaboratoire() instanceof ResultatLaboratoire
+                && $this->hasSaisiResultat($prestation->getResultatLaboratoire())
+        ));
+    }
+
+    private function resolvePatientFromConsultation(Consultation $consultation): ?object
+    {
+        return $consultation->getDossierMedical()?->getPatient() ?? $consultation->getRendezVous()?->getPatient();
+    }
+
+    /**
+     * @param PrescriptionPrestation[] $prestations
+     */
+    private function resolveDateValidationReference(array $prestations): ?\DateTimeImmutable
+    {
+        $dateReference = null;
+
+        foreach ($prestations as $prestation) {
+            $dateValidation = $prestation->getResultatLaboratoire()?->getDateValidation();
+
+            if ($dateValidation !== null && ($dateReference === null || $dateValidation > $dateReference)) {
+                $dateReference = $dateValidation;
+            }
+        }
+
+        return $dateReference;
+    }
+
+    /**
+     * @param PrescriptionPrestation[] $prestations
+     *
+     * @return string[]
+     */
+    private function resolveValidateurs(array $prestations): array
+    {
+        $validateurs = [];
+
+        foreach ($prestations as $prestation) {
+            $validePar = trim((string) $prestation->getResultatLaboratoire()?->getValidePar());
+
+            if ($validePar !== '' && !in_array($validePar, $validateurs, true)) {
+                $validateurs[] = $validePar;
+            }
+        }
+
+        return $validateurs;
     }
 }

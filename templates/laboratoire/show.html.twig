@@ -6,7 +6,8 @@
 <div class="container-fluid">
     {% set consultation = prestation.consultation %}
     {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-    {% set patient = rdv ? rdv.patient|default(null) : null %}
+    {% set dossier = consultation ? consultation.dossierMedical|default(null) : null %}
+    {% set patient = dossier and dossier.patient is defined and dossier.patient ? dossier.patient : (rdv ? rdv.patient|default(null) : null) %}
     {% set statut = prestation.statut.value %}
 
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
@@ -21,6 +22,23 @@
             <a href="{{ path('app_laboratoire_index') }}" class="btn btn-outline-secondary">
                 Retour
             </a>
+
+                        {% if dossier %}
+                                <a href="{{ path('app_dossier_medical_show', {'id': dossier.id}) }}"
+                                     class="btn btn-sm btn-outline-primary">
+                                        <i class="fa fa-folder-open me-1"></i> Voir dossier
+                                </a>
+                        {% endif %}
+
+            {% if consultation and canViewConsultationResultsSheet %}
+                <a href="{{ path('app_laboratoire_resultats_consultation_show', {id: consultation.id}) }}"
+                   class="btn btn-outline-primary">
+                    <i class="ri-file-list-3-line me-1"></i> Fiche consultation
+                    {% if consultationResultsCount > 1 %}
+                        ({{ consultationResultsCount }})
+                    {% endif %}
+                </a>
+            {% endif %}
 
             {% if statut == 'paye' %}
                 <form method="post" action="{{ path('app_laboratoire_prendre_en_charge', {id: prestation.id}) }}">

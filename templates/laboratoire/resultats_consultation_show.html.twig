@@ -1,0 +1,160 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Résultats consultation #{{ consultation.id }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    {% set rdv = consultation.rendezVous|default(null) %}
+
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+        <div>
+            <h3 class="mb-1">Fiche consolidée des résultats</h3>
+            <div class="text-muted small">
+                Consultation #{{ consultation.id }} · {{ prestations|length }} examen{{ prestations|length > 1 ? 's' : '' }} avec résultat
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <a href="{{ path('app_laboratoire_index') }}" class="btn btn-outline-secondary">
+                Retour
+            </a>
+            <a href="{{ path('app_laboratoire_bon_show', {id: consultation.id}) }}" class="btn btn-outline-secondary">
+                 Bon d'examen
+            </a>
+            
+            <a href="{{ path('app_laboratoire_resultats_consultation_pdf', {id: consultation.id}) }}"
+               target="_blank"
+               class="btn btn-primary">
+                <i class="ri-printer-line me-1"></i> Imprimer la fiche
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Patient</div>
+                <div class="card-body">
+                    <div><strong>Nom :</strong>
+                        {% if patient %}
+                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div><strong>Dossier :</strong> {{ consultation.dossierMedical ? consultation.dossierMedical.numeroDossier : '-' }}</div>
+                    <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
+                    <div><strong>Rendez-vous :</strong> {{ rdv ? ('#' ~ rdv.id) : '-' }}</div>
+                    <div><strong>Âge :</strong> {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}</div>
+                    <div><strong>Sexe :</strong> {{ patient and patient.sexe ? patient.sexe : '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Prescription</div>
+                <div class="card-body">
+                    <div><strong>Médecin :</strong>
+                        {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}
+                    </div>
+                    <div><strong>Date consultation :</strong> {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}</div>
+                    <div><strong>Service :</strong> Laboratoire</div>
+                    <div><strong>Dernière validation :</strong> {{ dateValidationReference ? dateValidationReference|date('d/m/Y H:i') : '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white fw-semibold">Validation</div>
+                <div class="card-body">
+                    <div><strong>Examens avec résultat :</strong> {{ prestations|length }}</div>
+                    <div><strong>État :</strong> Fiche consolidée prête à l'impression</div>
+                    <div class="mt-2"><strong>Validé par :</strong></div>
+                    <div class="small text-muted">
+                        {% if validateurs is not empty %}
+                            {{ validateurs|join(' · ') }}
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column gap-3">
+        {% for prestation in prestations %}
+            {% set resultat = prestation.resultatLaboratoire %}
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
+                    <div>
+                        <div class="fw-semibold">{{ prestation.tarifPrestation.libelle }}</div>
+                        <div class="text-muted small">
+                            Examen #{{ prestation.id }} · {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="badge rounded-pill text-bg-light border">Qté {{ prestation.quantite }}</span>
+                        <a href="{{ path('app_laboratoire_show', {id: prestation.id}) }}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                            Ouvrir l'examen
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    {% if prestation.instructions %}
+                        <div class="alert alert-light border mb-3">
+                            <strong>Instructions :</strong> {{ prestation.instructions }}
+                        </div>
+                    {% endif %}
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 28%;">Paramètre / Demande</th>
+                                    <th style="width: 36%;">Résultat</th>
+                                    <th style="width: 36%;">Valeurs normales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if resultat and resultat.lignes|length > 0 %}
+                                    {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                                        <tr>
+                                            <td>{{ ligne.demande|nl2br }}</td>
+                                            <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
+                                            <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td>{{ prestation.tarifPrestation.libelle }}</td>
+                                        <td>{{ resultat and resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
+                                        <td>-</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if resultat and resultat.conclusion %}
+                        <div class="mt-3">
+                            <div class="fw-semibold mb-2">Conclusion / Observation</div>
+                            <div class="border rounded-3 p-3 bg-light-subtle">{{ resultat.conclusion|nl2br }}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-3 small text-muted d-flex flex-wrap gap-3">
+                        <span><strong>Validation :</strong> {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}</span>
+                        <span><strong>Laborantin :</strong> {{ resultat and resultat.validePar ? resultat.validePar : '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
