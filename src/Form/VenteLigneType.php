@@ -5,7 +5,6 @@ namespace App\Form;
 use App\Entity\Lot;
 use App\Entity\Medicament;
 use App\Entity\VenteLigne;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -27,6 +26,7 @@ class VenteLigneType extends AbstractType
         $ligne = $builder->getData();
         $medicament = $ligne instanceof VenteLigne ? $ligne->getMedicament() : null;
         $lot = $ligne instanceof VenteLigne ? $ligne->getLot() : null;
+        $initialPrice = $ligne instanceof VenteLigne ? $ligne->getPrixUnitaire() : null;
         $medicamentLabel = null;
 
         if ($medicament instanceof Medicament) {
@@ -58,7 +58,7 @@ class VenteLigneType extends AbstractType
                     'autocomplete' => 'off',
                     'data-search-url' => '/caisse/medicament/search',
                     'data-initial-label' => $medicamentLabel ?? '',
-                    'data-initial-price' => $medicament ? (string) $medicament->getPrixUnitaire() : '',
+                    'data-initial-price' => $initialPrice !== null ? (string) $initialPrice : '',
                     'data-initial-id' => $medicament ? (string) $medicament->getId() : '',
                     'data-initial-lot-id' => $lot ? (string) $lot->getId() : '',
                     'data-initial-lot-label' => $lotLabel,
@@ -83,14 +83,15 @@ class VenteLigneType extends AbstractType
             ])
             ->add('prixUnitaire', NumberType::class, [
                 'scale' => 2,
-                'disabled' => true,
                 'attr' => [
                     'class' => 'form-control',
+                    'min' => 0,
+                    'step' => '0.01',
                 ],
             ]);
 
-            $builder->get('medicament')->addModelTransformer($this->medicamentToIdTransformer);
-            $builder->get('lot')->addModelTransformer($this->lotToIdTransformer);
+        $builder->get('medicament')->addModelTransformer($this->medicamentToIdTransformer);
+        $builder->get('lot')->addModelTransformer($this->lotToIdTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

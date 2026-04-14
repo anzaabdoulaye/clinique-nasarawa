@@ -293,66 +293,76 @@
             </div>
         </div>
 
-        {% for prestation in prestations %}
-            {% set resultat = prestation.resultatLaboratoire %}
+        <div class="section">
+            <div class="section-title">Résultats des examens</div>
+            <div class="section-body">
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th style="width:24%;">Examen</th>
+                            <th style="width:28%;">Paramètre / Demande</th>
+                            <th style="width:24%;">Résultat</th>
+                            <th style="width:24%;">Valeurs normales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestation in prestations %}
+                            {% set resultat = prestation.resultatLaboratoire %}
 
-            <div class="exam-block">
-                <div class="section">
-                    <div class="section-title">{{ prestation.tarifPrestation.libelle }}</div>
-                    <div class="section-body">
-                        <table class="info-table">
-                            <tr>
-                                <td style="width:50%;"><span class="label">Examen :</span> {{ prestation.tarifPrestation.libelle }}</td>
-                                <td style="width:50%;"><span class="label">Prestation :</span> #{{ prestation.id }}</td>
-                            </tr>
-                            <tr>
-                                <td><span class="label">Catégorie :</span> {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}</td>
-                                <td><span class="label">Quantité :</span> {{ prestation.quantite }}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="2"><span class="label">Instructions :</span> {{ prestation.instructions ?: '-' }}</td>
-                            </tr>
-                        </table>
-
-                        <table class="result-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:34%;">Paramètre / Demande</th>
-                                    <th style="width:33%;">Résultat</th>
-                                    <th style="width:33%;">Valeurs normales</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if resultat and resultat.lignes|length > 0 %}
-                                    {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
-                                        <tr>
-                                            <td>{{ ligne.demande|nl2br }}</td>
-                                            <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
-                                            <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
+                            {% if resultat and resultat.lignes|length > 0 %}
+                                {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
                                     <tr>
-                                        <td>{{ prestation.tarifPrestation.libelle }}</td>
-                                        <td>{{ resultat and resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
-                                        <td>-</td>
+                                        <td>
+                                            {{ prestation.tarifPrestation.libelle }}<br>
+                                            <span style="color:#6b7280;">Prestation #{{ prestation.id }}</span>
+                                        </td>
+                                        <td>{{ ligne.demande|nl2br }}</td>
+                                        <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
+                                        <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
                                     </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-
-                        {% if resultat and resultat.conclusion %}
-                            <div class="section" style="margin: 0;">
-                                <div class="section-title">Conclusion / Observation</div>
-                                <div class="section-body">
-                                    <div class="box">{{ resultat.conclusion|nl2br }}</div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td>
+                                        {{ prestation.tarifPrestation.libelle }}<br>
+                                        <span style="color:#6b7280;">Prestation #{{ prestation.id }}</span>
+                                    </td>
+                                    <td>{{ prestation.instructions ?: prestation.tarifPrestation.libelle }}</td>
+                                    <td>{{ resultat and resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
+                                    <td>-</td>
+                                </tr>
+                            {% endif %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4">Aucun résultat disponible.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        {% endfor %}
+        </div>
+
+        <div class="section">
+            <div class="section-title">Conclusions / Observations</div>
+            <div class="section-body">
+                {% set has_conclusion = false %}
+                {% for prestation in prestations %}
+                    {% set resultat = prestation.resultatLaboratoire %}
+
+                    {% if resultat and resultat.conclusion %}
+                        {% set has_conclusion = true %}
+                        <div class="box" style="border-bottom: 1px solid #eef2f7;">
+                            <span class="label">{{ prestation.tarifPrestation.libelle }} :</span><br>
+                            {{ resultat.conclusion|nl2br }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% if not has_conclusion %}
+                    <div class="box">-</div>
+                {% endif %}
+            </div>
+        </div>
 
         <div class="footer-note">
             Clinique Médicale Nassarawa — Fiche consolidée des résultats laboratoire

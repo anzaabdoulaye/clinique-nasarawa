@@ -45,6 +45,10 @@ final class LotController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($lot->getPrixAchat() !== null && $lot->getMedicament()) {
+                $lot->getMedicament()->setPrixUnitaire($lot->getPrixAchat());
+            }
+
             $em->flush();
             $this->addFlash('success', 'Lot mis à jour.');
             return $this->redirectToRoute('app_lot_index');

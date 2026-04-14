@@ -72,9 +72,6 @@ public function new(
                 continue;
             }
 
-            // Le prix vient toujours du médicament choisi
-            $ligne->setPrixUnitaire((float) $med->getPrixUnitaire());
-
             $lot = $ligne->getLot();
 
             // Si aucun lot n'est encore renseigné, on tente une auto-affectation

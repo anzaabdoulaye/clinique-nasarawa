@@ -306,6 +306,7 @@ public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user = nul
             }
 
             $lot = $data['lot'] ?? null;
+            $prixUnitaire = $data['prixUnitaire'] ?? null;
 
             if (!$lot instanceof Lot && $bon->getType() === TypeBonMatiere::ENTREE) {
                 $lot = new Lot();
@@ -313,16 +314,24 @@ public function creerEtValiderDepuisVente(Vente $vente, ?Utilisateur $user = nul
                 $lot->setNumeroLot($data['numeroLot'] ?? null);
                 $lot->setDatePeremption($data['datePeremption'] ?? null);
                 $lot->setQuantite(0);
-                $lot->setPrixAchat($data['prixUnitaire'] ?? null);
+                $lot->setPrixAchat($prixUnitaire);
 
                 $this->em->persist($lot);
+            }
+
+            if ($bon->getType() === TypeBonMatiere::ENTREE && $prixUnitaire !== null) {
+                if ($lot instanceof Lot) {
+                    $lot->setPrixAchat($prixUnitaire);
+                }
+
+                $data['medicament']->setPrixUnitaire($prixUnitaire);
             }
 
             $ligne = new BonMatiereLigne();
             $ligne->setMedicament($data['medicament']);
             $ligne->setLot($lot);
             $ligne->setQuantite($quantite);
-            $ligne->setPrixUnitaire($data['prixUnitaire'] ?? null);
+            $ligne->setPrixUnitaire($prixUnitaire);
             $ligne->setObservation($data['observation'] ?? null);
 
             $bon->addLigne($ligne);
