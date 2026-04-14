@@ -172,6 +172,20 @@ class Patient
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $grossesse = null;
 
+    #[ORM\OneToOne(mappedBy: 'patient', cascade: ['persist', 'remove'])]
+    private ?PatientCouverture $couverturePriseEnCharge = null;
+
+    public function getCouverturePriseEnCharge(): ?PatientCouverture
+    {
+        return $this->couverturePriseEnCharge;
+    }
+
+    public function setCouverturePriseEnCharge(?PatientCouverture $couverturePriseEnCharge): static
+    {
+        $this->couverturePriseEnCharge = $couverturePriseEnCharge;
+        return $this;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

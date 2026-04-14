@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\FactureLigneRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Enum\TypePrestationPEC;
 
 #[ORM\Entity(repositoryClass: FactureLigneRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -38,6 +39,23 @@ class FactureLigne
 
     #[ORM\Column(length: 30, nullable: true)]
     private ?string $type = null;
+
+    
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantBrut = 0;
+
+    #[ORM\Column(enumType: TypePrestationPEC::class, nullable: true)]
+    private ?TypePrestationPEC $typePrestationPEC = null;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $tauxPriseEnCharge = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantPriseEnCharge = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantPatient = 0;
 
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
@@ -127,6 +145,61 @@ class FactureLigne
     public function setType(?string $type): static
     {
         $this->type = $type;
+        return $this;
+    }
+
+    public function getMontantBrut(): int
+    {
+        return $this->montantBrut;
+    }
+
+    public function setMontantBrut(int $montantBrut): static
+    {
+        $this->montantBrut = $montantBrut;
+        return $this;
+    }
+
+    public function getTypePrestationPEC(): ?TypePrestationPEC
+    {
+        return $this->typePrestationPEC;
+    }
+
+    public function setTypePrestationPEC(?TypePrestationPEC $typePrestationPEC): static
+    {
+        $this->typePrestationPEC = $typePrestationPEC;
+        return $this;
+    }
+
+    public function getTauxPriseEnCharge(): int
+    {
+        return $this->tauxPriseEnCharge;
+    }
+
+    public function setTauxPriseEnCharge(int $tauxPriseEnCharge): static
+    {
+        $this->tauxPriseEnCharge = $tauxPriseEnCharge;
+        return $this;
+    }
+
+    public function getMontantPriseEnCharge(): int
+    {
+        return $this->montantPriseEnCharge;
+    }
+
+    public function setMontantPriseEnCharge(int $montantPriseEnCharge): static
+    {
+        $this->montantPriseEnCharge = $montantPriseEnCharge;
+        return $this;
+    }
+
+    public function getMontantPatient(): int
+    {
+        return $this->montantPatient;
+    }
+
+    public function setMontantPatient(int $montantPatient): static
+    {
+        $this->montantPatient = $montantPatient;
         return $this;
     }
 }

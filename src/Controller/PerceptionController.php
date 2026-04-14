@@ -170,94 +170,112 @@ public function rapportAgentsPdf(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"
 ))]
     #[Route('/facture/{id}/encaisser', name: 'app_perception_facture_encaisser', methods: ['GET', 'POST'])]
-    public function encaisser(
-        Request $request,
-        Facture $facture,
-        FacturationService $facturationService,
-        EntityManagerInterface $em
-    ): Response {
-        $resteAPayer = $facture->getResteAPayer();
+public function encaisser(
+    Request $request,
+    Facture $facture,
+    FacturationService $facturationService,
+    EntityManagerInterface $em
+): Response {
+    // Recalcul initial
+    $facturationService->recalculerFacture($facture);
+    $restePatientInitial = $facture->getRestePatient();
 
-        $form = $this->createForm(EncaissementType::class, null, [
-            'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
-            'method' => 'POST',
-            'max_amount' => $resteAPayer,
-        ]);
+    $form = $this->createForm(EncaissementType::class, $facture, [
+        'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
+        'method' => 'POST',
+        'max_amount' => 999999999, // On désactive la contrainte Symfony ici, on valide manuellement après
+    ]);
 
-        $form->handleRequest($request);
+    $form->handleRequest($request);
 
-        if ($request->isXmlHttpRequest()) {
-            if ($form->isSubmitted() && $form->isValid()) {
-                $data = $form->getData();
-                $currentUser = $this->getUser();
-                $effectuePar = $currentUser instanceof Utilisateur ? $currentUser : null;
-
-                try {
-                    $facturationService->ajouterPaiement(
-                        $facture,
-                        (int) $data['montant'],
-                        $data['mode'],
-                        $effectuePar
-                    );
-                } catch (\InvalidArgumentException $exception) {
-                    $form->get('montant')->addError(new FormError($exception->getMessage()));
-
-                    return $this->render('perception/_encaissement_form.html.twig', [
-                        'form' => $form->createView(),
-                        'facture' => $facture,
-                    ]);
-                }
-
-                $em->flush();
-
-                return $this->json([
-                    'success' => true,
-                    'message' => 'Paiement enregistré avec succès.',
-                    'printUrl' => $this->generateUrl('app_perception_facture_print', [
-                        'id' => $facture->getId(),
-                    ]),
-                ]);
+    if ($form->isSubmitted()) {
+        // 1. Appliquer d'abord les changements PEC
+        if ($facture->isPriseEnChargeActive()) {
+            if (!$facture->getOrganismePriseEnCharge()) {
+                $form->get('organismePriseEnCharge')->addError(
+                    new FormError('Veuillez sélectionner un organisme.')
+                );
             }
 
-            return $this->render('perception/_encaissement_form.html.twig', [
-                'form' => $form->createView(),
-                'facture' => $facture,
-            ]);
+            if ($facture->getTauxPriseEnChargeManuel() === null) {
+                $form->get('tauxPriseEnChargeManuel')->addError(
+                    new FormError('Veuillez sélectionner un taux de prise en charge.')
+                );
+            }
+
+            $facture->setPriseEnChargeManuelle(true);
+        } else {
+            $facture->setPriseEnChargeManuelle(false);
+            $facture->setTauxPriseEnChargeManuel(null);
+            $facture->setOrganismePriseEnCharge(null);
         }
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
+        // 2. RECALCULER après application de la PEC (CRUCIAL !)
+        $facturationService->recalculerFacture($facture);
+        $resteApresPec = $facture->getRestePatient();
+
+        // 3. Validation manuelle du montant APRÈS recalcul
+        $montant = (int) ($form->get('montant')->getData() ?? 0);
+        
+        if ($montant <= 0) {
+            $form->get('montant')->addError(new FormError('Le montant doit être supérieur à zéro.'));
+        } elseif ($montant > $resteApresPec) {
+            $form->get('montant')->addError(new FormError(
+                sprintf(
+                    'Le montant saisi (%s FCFA) dépasse le reste à payer après prise en charge (%s FCFA).', 
+                    number_format($montant, 0, ',', ' '),
+                    number_format($resteApresPec, 0, ',', ' ')
+                )
+            ));
+        }
+
+        if ($form->isValid()) {
+            $mode = $form->get('mode')->getData();
             $currentUser = $this->getUser();
             $effectuePar = $currentUser instanceof Utilisateur ? $currentUser : null;
 
             try {
-                $facturationService->ajouterPaiement(
-                    $facture,
-                    (int) $data['montant'],
-                    $data['mode'],
-                    $effectuePar
-                );
+                if ($montant > 0) {
+                    $facturationService->ajouterPaiement(
+                        $facture,
+                        $montant,
+                        $mode,
+                        $effectuePar
+                    );
+                }
             } catch (\InvalidArgumentException $exception) {
                 $form->get('montant')->addError(new FormError($exception->getMessage()));
-
-                return $this->render('perception/encaisser.html.twig', [
-                    'form' => $form->createView(),
-                    'facture' => $facture,
-                ]);
             }
 
-            $em->flush();
+            if ($form->isValid()) {
+                $em->flush();
 
-            return $this->redirectToRoute('app_perception_facture_show', [
-                'id' => $facture->getId(),
-            ]);
+                if ($request->isXmlHttpRequest()) {
+                    return $this->json([
+                        'success' => true,
+                        'message' => 'Paiement enregistré avec succès.',
+                        'printUrl' => $this->generateUrl('app_perception_facture_print', [
+                            'id' => $facture->getId(),
+                        ]),
+                    ]);
+                }
+
+                return $this->redirectToRoute('app_perception_facture_show', [
+                    'id' => $facture->getId(),
+                ]);
+            }
         }
-
-        return $this->render('perception/encaisser.html.twig', [
-            'form' => $form->createView(),
-            'facture' => $facture,
-        ]);
     }
+
+    $template = $request->isXmlHttpRequest()
+        ? 'perception/_encaissement_form.html.twig'
+        : 'perception/encaisser.html.twig';
+
+    return $this->render($template, [
+        'form' => $form->createView(),
+        'facture' => $facture,
+    ]);
+}
 
     #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"

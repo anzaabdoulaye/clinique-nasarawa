@@ -16,32 +16,21 @@
                 Émise le {{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}
             </div>
         </div>
-
         <div class="d-flex gap-2">
-            <a href="{{ path('app_perception_index') }}" class="btn btn-outline-secondary">
-                Retour
-            </a>
-
+            <a href="{{ path('app_perception_index') }}" class="btn btn-outline-secondary">Retour</a>
             {% if facture.statut.value in ['paye', 'partiellement_paye'] %}
-                <a href="{{ path('app_perception_facture_print', {id: facture.id}) }}"
-                target="_blank"
-                class="btn btn-outline-dark">
-                    <i class="ri-printer-line me-1"></i> Voir
+                <a href="{{ path('app_perception_facture_print', {id: facture.id}) }}" target="_blank" class="btn btn-outline-dark">
+                    <i class="ri-eye-line me-1"></i> Voir
                 </a>
-                <a href="{{ path('app_perception_facture_pdf', {id: facture.id}) }}"
-                target="_blank"
-                class="btn btn-outline-dark">
+                <a href="{{ path('app_perception_facture_pdf', {id: facture.id}) }}" target="_blank" class="btn btn-outline-dark">
                     <i class="ri-printer-line me-1"></i> Imprimer
                 </a>
             {% endif %}
-
             {% if facture.resteAPayer > 0 and statut != 'annule' %}
                 <button type="button"
                         class="btn btn-success js-open-encaissement"
-                        data-bs-toggle="modal"
-                        data-bs-target="#encaissementModal"
                         data-url="{{ path('app_perception_facture_encaisser', {id: facture.id}) }}">
-                    Encaisser
+                    <i class="ri-money-dollar-circle-line me-1"></i> Encaisser
                 </button>
             {% endif %}
         </div>
@@ -53,45 +42,35 @@
                 <div class="card-header bg-white fw-semibold">Patient</div>
                 <div class="card-body">
                     <div><strong>Nom :</strong>
-                        {% if patient %}
-                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
-                        {% else %}
-                            -
-                        {% endif %}
+                        {% if patient %}{{ patient.nomComplet|default((patient.nom|default('')~' '~patient.prenom|default(''))|trim) }}{% else %}-{% endif %}
                     </div>
                     <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
                     <div><strong>Médecin :</strong>
-                        {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}
+                        {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('')~' '~consultation.medecin.prenom|default(''))|trim) }}
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white fw-semibold">Synthèse financière</div>
                 <div class="card-body">
-                    <div><strong>Total :</strong> {{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</div>
-                    <div><strong>Payé :</strong> {{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</div>
-                    <div><strong>Reste :</strong> {{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</div>
-                    <div class="mt-2">
-                        <strong>Statut :</strong>
-                        {% if statut == 'brouillon' %}
-                            <span class="badge bg-secondary">Brouillon</span>
-                        {% elseif statut == 'non_paye' %}
-                            <span class="badge bg-warning text-dark">Non payé</span>
-                        {% elseif statut == 'partiellement_paye' %}
-                            <span class="badge bg-info text-dark">Partiellement payé</span>
-                        {% elseif statut == 'paye' %}
-                            <span class="badge bg-success">Payé</span>
-                        {% elseif statut == 'annule' %}
-                            <span class="badge bg-danger">Annulé</span>
+                    <div><strong>Total brut :</strong> {{ facture.montantTotalBrut|number_format(0, ',', ' ') }} FCFA</div>
+                    <div><strong>Prise en charge :</strong> {{ facture.montantTotalPriseEnCharge|number_format(0, ',', ' ') }} FCFA</div>
+                    <div><strong>Part patient :</strong> {{ facture.montantTotalPatient|number_format(0, ',', ' ') }} FCFA</div>
+                    <div><strong>Payé :</strong> {{ facture.montantPayePatient|number_format(0, ',', ' ') }} FCFA</div>
+                    <div><strong>Reste :</strong> {{ facture.restePatient|number_format(0, ',', ' ') }} FCFA</div>
+                    <div class="mt-2"><strong>Statut :</strong>
+                        {% if statut == 'brouillon' %}<span class="badge bg-secondary">Brouillon</span>
+                        {% elseif statut == 'non_paye' %}<span class="badge bg-warning text-dark">Non payé</span>
+                        {% elseif statut == 'partiellement_paye' %}<span class="badge bg-info text-dark">Partiellement payé</span>
+                        {% elseif statut == 'paye' %}<span class="badge bg-success">Payé</span>
+                        {% elseif statut == 'annule' %}<span class="badge bg-danger">Annulé</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white fw-semibold">Paiements</div>
@@ -103,11 +82,7 @@
                                 <div><strong>Mode :</strong> {{ paiement.mode.value|replace({'_':' '})|title }}</div>
                                 <div><strong>Date :</strong> {{ paiement.payeLe|date('Y-m-d H:i') }}</div>
                                 <div><strong>Perçu par :</strong>
-                                    {% if paiement.effectuePar %}
-                                        {{ paiement.effectuePar.nomComplet }}{% if paiement.effectuePar.username %} | {{ paiement.effectuePar.username }}{% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                    {% if paiement.effectuePar %}{{ paiement.effectuePar.nomComplet }}{% if paiement.effectuePar.username %} | {{ paiement.effectuePar.username }}{% endif %}{% else %}-{% endif %}
                                 </div>
                             </div>
                         {% endfor %}
@@ -125,13 +100,7 @@
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th>Libellé</th>
-                            <th>Type</th>
-                            <th>Quantité</th>
-                            <th>Prix unitaire</th>
-                            <th>Total</th>
-                        </tr>
+                        <tr><th>Libellé</th><th>Type</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr>
                     </thead>
                     <tbody>
                     {% for ligne in facture.lignes %}
@@ -143,9 +112,7 @@
                             <td>{{ ligne.total|number_format(0, ',', ' ') }} FCFA</td>
                         </tr>
                     {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">Aucune ligne de facture.</td>
-                        </tr>
+                        <tr><td colspan="5" class="text-center text-muted">Aucune ligne de facture.</td></tr>
                     {% endfor %}
                     </tbody>
                     <tfoot>
@@ -160,12 +127,13 @@
     </div>
 </div>
 
+{# Modale encaissement #}
 <div class="modal fade" id="encaissementModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content" id="encaissementModalContent">
             <div class="modal-body text-center py-5">
                 <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-3 mb-0">Chargement...</p>
+                <p class="mt-3 mb-0">Chargement…</p>
             </div>
         </div>
     </div>
@@ -173,127 +141,151 @@
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const modalEl = document.getElementById('encaissementModal');
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion du bouton Encaisser
+    document.querySelectorAll('.js-open-encaissement').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const url = this.dataset.url;
+            const modalElement = document.getElementById('encaissementModal');
             const modalContent = document.getElementById('encaissementModalContent');
-
-            function openEncaissementModal(url) {
-                modalContent.innerHTML = `
-                    <div class="modal-body text-center py-5">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-3 mb-0">Chargement...</p>
-                    </div>
-                `;
-
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    modalContent.innerHTML = html;
-                    bindEncaissementForm();
-                });
-            }
-
-            function bindEncaissementForm() {
-                const form = modalContent.querySelector('form');
-                if (!form) return;
-
-                const montantInput = form.querySelector('#encaissement_montant');
-                const alertBox = form.querySelector('.js-encaissement-alert');
-                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || '0', 10);
-
-                function showAlert(message) {
-                    if (!alertBox) {
-                        return;
-                    }
-
-                    if (!message) {
-                        alertBox.textContent = '';
-                        alertBox.classList.add('d-none');
-                        return;
-                    }
-
-                    alertBox.textContent = message;
-                    alertBox.classList.remove('d-none');
-                }
-
-                function validateMontant() {
-                    if (!montantInput || Number.isNaN(maxAmount) || maxAmount <= 0) {
-                        showAlert('');
-                        return true;
-                    }
-
-                    const value = Number.parseInt(montantInput.value || '0', 10);
-
-                    if (!Number.isNaN(value) && value > maxAmount) {
-                        showAlert(`Le montant saisi ne doit pas depasser le total a payer de ${maxAmount} FCFA.`);
-                        return false;
-                    }
-
-                    showAlert('');
-
-                    return true;
-                }
-
-                montantInput?.addEventListener('input', validateMontant);
-
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-
-                    if (!validateMontant()) {
-                        return;
-                    }
-
-                    const submitBtn = form.querySelector('.js-submit-encaissement');
-                    if (submitBtn) submitBtn.disabled = true;
-
-                    fetch(form.action, {
-                        method: form.method || 'POST',
-                        body: new FormData(form),
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                    .then(async response => {
-                        const contentType = response.headers.get('content-type') || '';
-
-                        if (contentType.includes('application/json')) {
-                            const data = await response.json();
-
-                            if (data.success) {
-                                const modal = bootstrap.Modal.getInstance(modalEl);
-                                modal?.hide();
-
-                                if (data.printUrl) {
-                                    window.open(data.printUrl, '_blank');
-                                }
-
-                                window.location.reload();
-                                return;
-                            }
-                        }
-
-                        const html = await response.text();
-                        modalContent.innerHTML = html;
-                        bindEncaissementForm();
-                    })
-                    .finally(() => {
-                        if (submitBtn) submitBtn.disabled = false;
-                    });
-                });
-            }
-
-            document.addEventListener('click', function (e) {
-                const btn = e.target.closest('.js-open-encaissement');
-                if (!btn) return;
-
-                const url = btn.dataset.url;
-                if (!url) return;
-
-                openEncaissementModal(url);
+            
+            // Afficher le spinner
+            modalContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-3">Chargement...</p>
+                </div>
+            `;
+            
+            // Ouvrir la modal manuellement
+            const bsModal = new bootstrap.Modal(modalElement);
+            bsModal.show();
+            
+            // Charger le contenu
+            fetch(url, { 
+                headers: { 'X-Requested-With': 'XMLHttpRequest' } 
+            })
+            .then(response => response.text())
+            .then(html => {
+                modalContent.innerHTML = html;
+                setTimeout(initForm, 100);
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                modalContent.innerHTML = '<div class="modal-body text-danger">Erreur de chargement</div>';
             });
         });
-    </script>
+    });
+});
+
+function initForm() {
+    console.log('Formulaire chargé - Initialisation');
+    
+    const toggle = document.querySelector('.js-pec-toggle');
+    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"], select[id*="tauxPriseEnChargeManuel"]');
+    const montantInput = document.querySelector('input[name*="montant"], input[id*="montant"]');
+    
+    console.log('Toggle:', toggle ? 'OK' : 'NON TROUVÉ');
+    console.log('Taux:', tauxSelect ? 'OK' : 'NON TROUVÉ');
+    console.log('Montant:', montantInput ? 'OK' : 'NON TROUVÉ');
+    
+    // Gestion Toggle PEC
+    if (toggle) {
+        toggle.addEventListener('change', function() {
+            const container = document.getElementById('pec-fields-container');
+            if (container) {
+                if (this.checked) container.classList.add('show');
+                else container.classList.remove('show');
+            }
+            calculer();
+        });
+    }
+    
+    // Gestion changement taux
+    if (tauxSelect) {
+        tauxSelect.addEventListener('change', calculer);
+    }
+    
+    // Validation montant
+    if (montantInput) {
+        montantInput.addEventListener('input', function() {
+            const max = parseInt(this.dataset.max || this.max || 999999999);
+            const val = parseInt(this.value || 0);
+            
+            if (val > max) {
+                this.classList.add('is-invalid');
+                this.value = max;
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    // Calcul initial
+    calculer();
+}
+
+function calculer() {
+    console.log('Calcul en cours...');
+    
+    const totalEl = document.getElementById('pec-total-brut');
+    const dejaPayeEl = document.getElementById('pec-deja-paye');
+    const toggle = document.querySelector('.js-pec-toggle');
+    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"], select[id*="tauxPriseEnChargeManuel"]');
+    
+    if (!totalEl) {
+        console.error('Total brut non trouvé');
+        return;
+    }
+    
+    const totalBrut = parseInt(totalEl.dataset.value || 0);
+    const dejaPaye = parseInt(dejaPayeEl?.dataset.value || 0);
+    const pecActive = toggle ? toggle.checked : false;
+    const taux = (pecActive && tauxSelect && tauxSelect.value) ? parseInt(tauxSelect.value) : 0;
+    
+    console.log('Données:', {totalBrut, dejaPaye, pecActive, taux});
+    
+    const montantPec = Math.round((totalBrut * taux) / 100);
+    const partPatient = totalBrut - montantPec;
+    const reste = Math.max(0, partPatient - dejaPaye);
+    
+    console.log('Résultat:', {montantPec, partPatient, reste});
+    
+    // Mise à jour affichage
+    const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
+    
+    const update = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = fmt(val);
+            el.dataset.value = val;
+        }
+    };
+    
+    update('pec-montant-pec', montantPec);
+    update('pec-part-patient', partPatient);
+    update('pec-reste-patient', reste);
+    
+    // Mise à jour input max
+    const montantInput = document.querySelector('input[name*="montant"], input[id*="montant"]');
+    if (montantInput) {
+        montantInput.max = reste;
+        montantInput.dataset.max = reste;
+        
+        const helpText = montantInput.closest('.card-body, .form-group, div')?.querySelector('.form-text');
+        if (helpText) {
+            helpText.innerHTML = `Max: <strong class="text-danger">${fmt(reste)} FCFA</strong>`;
+        }
+        
+        if (parseInt(montantInput.value || 0) > reste) {
+            montantInput.value = reste;
+        }
+    }
+}
+</script>
 {% endblock %}

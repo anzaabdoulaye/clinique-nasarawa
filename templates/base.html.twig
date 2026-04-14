@@ -354,6 +354,152 @@
     }
 })();
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion du bouton Encaisser
+    document.querySelectorAll('.js-open-encaissement').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const url = this.dataset.url;
+            const modalElement = document.getElementById('encaissementModal');
+            const modalContent = document.getElementById('encaissementModalContent');
+            
+            // Afficher le spinner
+            modalContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-3">Chargement...</p>
+                </div>
+            `;
+            
+            // Ouvrir la modal manuellement
+            const bsModal = new bootstrap.Modal(modalElement);
+            bsModal.show();
+            
+            // Charger le contenu
+            fetch(url, { 
+                headers: { 'X-Requested-With': 'XMLHttpRequest' } 
+            })
+            .then(response => response.text())
+            .then(html => {
+                modalContent.innerHTML = html;
+                setTimeout(initForm, 100);
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                modalContent.innerHTML = '<div class="modal-body text-danger">Erreur de chargement</div>';
+            });
+        });
+    });
+});
+
+function initForm() {
+    console.log('Formulaire chargé - Initialisation');
+    
+    const toggle = document.querySelector('.js-pec-toggle');
+    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"], select[id*="tauxPriseEnChargeManuel"]');
+    const montantInput = document.querySelector('input[name*="montant"], input[id*="montant"]');
+    
+    console.log('Toggle:', toggle ? 'OK' : 'NON TROUVÉ');
+    console.log('Taux:', tauxSelect ? 'OK' : 'NON TROUVÉ');
+    console.log('Montant:', montantInput ? 'OK' : 'NON TROUVÉ');
+    
+    // Gestion Toggle PEC
+    if (toggle) {
+        toggle.addEventListener('change', function() {
+            const container = document.getElementById('pec-fields-container');
+            if (container) {
+                if (this.checked) container.classList.add('show');
+                else container.classList.remove('show');
+            }
+            calculer();
+        });
+    }
+    
+    // Gestion changement taux
+    if (tauxSelect) {
+        tauxSelect.addEventListener('change', calculer);
+    }
+    
+    // Validation montant
+    if (montantInput) {
+        montantInput.addEventListener('input', function() {
+            const max = parseInt(this.dataset.max || this.max || 999999999);
+            const val = parseInt(this.value || 0);
+            
+            if (val > max) {
+                this.classList.add('is-invalid');
+                this.value = max;
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    // Calcul initial
+    calculer();
+}
+
+function calculer() {
+    console.log('Calcul en cours...');
+    
+    const totalEl = document.getElementById('pec-total-brut');
+    const dejaPayeEl = document.getElementById('pec-deja-paye');
+    const toggle = document.querySelector('.js-pec-toggle');
+    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"], select[id*="tauxPriseEnChargeManuel"]');
+    
+    if (!totalEl) {
+        console.error('Total brut non trouvé');
+        return;
+    }
+    
+    const totalBrut = parseInt(totalEl.dataset.value || 0);
+    const dejaPaye = parseInt(dejaPayeEl?.dataset.value || 0);
+    const pecActive = toggle ? toggle.checked : false;
+    const taux = (pecActive && tauxSelect && tauxSelect.value) ? parseInt(tauxSelect.value) : 0;
+    
+    console.log('Données:', {totalBrut, dejaPaye, pecActive, taux});
+    
+    const montantPec = Math.round((totalBrut * taux) / 100);
+    const partPatient = totalBrut - montantPec;
+    const reste = Math.max(0, partPatient - dejaPaye);
+    
+    console.log('Résultat:', {montantPec, partPatient, reste});
+    
+    // Mise à jour affichage
+    const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
+    
+    const update = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = fmt(val);
+            el.dataset.value = val;
+        }
+    };
+    
+    update('pec-montant-pec', montantPec);
+    update('pec-part-patient', partPatient);
+    update('pec-reste-patient', reste);
+    
+    // Mise à jour input max
+    const montantInput = document.querySelector('input[name*="montant"], input[id*="montant"]');
+    if (montantInput) {
+        montantInput.max = reste;
+        montantInput.dataset.max = reste;
+        
+        const helpText = montantInput.closest('.card-body, .form-group, div')?.querySelector('.form-text');
+        if (helpText) {
+            helpText.innerHTML = `Max: <strong class="text-danger">${fmt(reste)} FCFA</strong>`;
+        }
+        
+        if (parseInt(montantInput.value || 0) > reste) {
+            montantInput.value = reste;
+        }
+    }
+}
+</script>
     {% endblock %}
 </body>
 </html>

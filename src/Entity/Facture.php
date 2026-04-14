@@ -50,6 +50,33 @@ class Facture
     #[ORM\OneToMany(mappedBy: 'facture', targetEntity: Paiement::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $paiements;
 
+    #[ORM\ManyToOne]
+    private ?OrganismePriseEnCharge $organismePriseEnCharge = null;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantTotalBrut = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantTotalPriseEnCharge = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantTotalPatient = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $montantPayePatient = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $restePatient = 0;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $priseEnChargeActive = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $priseEnChargeManuelle = false;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $tauxPriseEnChargeManuel = null;
+
     public function __construct()
     {
         $this->lignes = new ArrayCollection();
@@ -241,6 +268,71 @@ class Facture
 
         return $this;
     }
+    public function getOrganismePriseEnCharge(): ?OrganismePriseEnCharge
+    {
+        return $this->organismePriseEnCharge;
+    }
+
+    public function setOrganismePriseEnCharge(?OrganismePriseEnCharge $organismePriseEnCharge): static
+    {
+        $this->organismePriseEnCharge = $organismePriseEnCharge;
+        return $this;
+    }
+
+    public function getMontantTotalBrut(): int
+    {
+        return $this->montantTotalBrut;
+    }
+
+    public function setMontantTotalBrut(int $montantTotalBrut): static
+    {
+        $this->montantTotalBrut = $montantTotalBrut;
+        return $this;
+    }
+
+    public function getMontantTotalPriseEnCharge(): int
+    {
+        return $this->montantTotalPriseEnCharge;
+    }
+
+    public function setMontantTotalPriseEnCharge(int $montantTotalPriseEnCharge): static
+    {
+        $this->montantTotalPriseEnCharge = $montantTotalPriseEnCharge;
+        return $this;
+    }
+
+    public function getMontantTotalPatient(): int
+    {
+        return $this->montantTotalPatient;
+    }
+
+    public function setMontantTotalPatient(int $montantTotalPatient): static
+    {
+        $this->montantTotalPatient = $montantTotalPatient;
+        return $this;
+    }
+
+    public function getMontantPayePatient(): int
+    {
+        return $this->montantPayePatient;
+    }
+
+    public function setMontantPayePatient(int $montantPayePatient): static
+    {
+        $this->montantPayePatient = $montantPayePatient;
+        return $this;
+    }
+
+    public function getRestePatient(): int
+    {
+        return $this->restePatient;
+    }
+
+    public function setRestePatient(int $restePatient): static
+    {
+        $this->restePatient = $restePatient;
+        return $this;
+    }
 
     public function recalculerMontants(): void
     {
@@ -279,8 +371,55 @@ class Facture
         $this->resteAPayer = 0;
     }
 
+        public function isPriseEnChargeActive(): bool
+    {
+        return $this->priseEnChargeActive;
+    }
+
+    public function setPriseEnChargeActive(bool $priseEnChargeActive): static
+    {
+        $this->priseEnChargeActive = $priseEnChargeActive;
+        return $this;
+    }
+
+    public function isPriseEnChargeManuelle(): bool
+    {
+        return $this->priseEnChargeManuelle;
+    }
+
+    public function setPriseEnChargeManuelle(bool $priseEnChargeManuelle): static
+    {
+        $this->priseEnChargeManuelle = $priseEnChargeManuelle;
+        return $this;
+    }
+
+    public function getTauxPriseEnChargeManuel(): ?int
+    {
+        return $this->tauxPriseEnChargeManuel;
+    }
+
+    public function setTauxPriseEnChargeManuel(?int $tauxPriseEnChargeManuel): static
+    {
+        if ($tauxPriseEnChargeManuel !== null && !\in_array($tauxPriseEnChargeManuel, [0, 80, 100], true)) {
+            throw new \InvalidArgumentException('Le taux manuel doit être 0, 80 ou 100.');
+        }
+
+        $this->tauxPriseEnChargeManuel = $tauxPriseEnChargeManuel;
+        return $this;
+    }
+
     private function computeTimbreAmount(int $montantBase): int
     {
         return $montantBase > self::SEUIL_TIMBRE ? self::MONTANT_TIMBRE : 0;
+    }
+
+    public function aPriseEnCharge(): bool
+    {
+        return $this->priseEnChargeActive && $this->organismePriseEnCharge !== null;
+    }
+
+    public function estSoldeePourLePatient(): bool
+    {
+        return $this->restePatient <= 0;
     }
 }

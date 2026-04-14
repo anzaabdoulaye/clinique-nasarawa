@@ -16,4 +16,8 @@ del composer.lock
 composer clear-cache
 composer install
 
-"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U postgres -d clinique -f "C:\backup\clinique-nassarawa.sql"
+//Pour l'ajout d'un utilisateur dans la BD 
+
+INSERT INTO public.utilisateur(nom,prenom,username,password,statut,roles,created_at,modified_at,force_password_change) 
+VALUES ('admin','admin','admin','$2y$13$DPC0Ak0e3WN8mJlvaTK4Pu/3G2n84J3FP65uCzRq3q7/pRLcD/1Gi','ACTIF','["ROLE_ADMIN"]',
+'2026-03-06 14:28:28','2026-03-06 14:28:28','false');

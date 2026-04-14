@@ -1,32 +1,104 @@
-<div class="modal-header">
-    <h5 class="modal-title">Encaissement facture #{{ facture.id }}</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-</div>
+{# _encaissement.html.twig ou _encaissement_form.html.twig #}
 
-{{ form_start(form, {'attr': {'id': 'encaissementForm', 'data-reste-a-payer': facture.resteAPayer}}) }}
+{{ form_start(form) }}
+
 <div class="modal-body">
-    <div class="alert alert-light border">
-        <div><strong>Total :</strong> {{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</div>
-        <div><strong>Déjà payé :</strong> {{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</div>
-        <div><strong>Reste à payer :</strong> {{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</div>
+    {# SECTION 1 : OPTIONS DE PRISE EN CHARGE #}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="form-check form-switch card-input p-3 border rounded shadow-sm">
+                {{ form_widget(form.priseEnChargeActive, {
+                    attr: {
+                        'class': 'form-check-input js-pec-toggle',
+                        'role': 'switch'
+                    }
+                }) }}
+                {{ form_label(form.priseEnChargeActive, null, {'label_attr': {'class': 'form-check-label fw-bold'}}) }}
+            </div>
+        </div>
+
+        <div class="collapse {% if form.vars.value.priseEnChargeActive %}show{% endif %}" id="pec-fields-container">
+            <div class="row g-3 p-3 bg-light border rounded mx-0">
+                <div class="col-md-6">
+                    {{ form_row(form.organismePriseEnCharge) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.tauxPriseEnChargeManuel) }}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="alert alert-danger d-none js-encaissement-alert" role="alert"></div>
+    {# SECTION 2 : RÉCAPITULATIF FINANCIER #}
+    <div class="bg-light p-3 rounded mb-4 border-start border-4 border-primary">
+        <h6 class="text-uppercase text-muted small fw-bold mb-3">Détails de la facture</h6>
+        <div class="row g-2">
+            <div class="col-6 small text-muted">Total brut :</div>
+            <div class="col-6 small text-end fw-semibold">
+                <span id="pec-total-brut" data-value="{{ facture.montantTotalBrut }}">
+                    {{ facture.montantTotalBrut|number_format(0, ',', ' ') }}
+                </span> FCFA
+            </div>
 
+            <div class="col-6 small text-muted">Prise en charge :</div>
+            <div class="col-6 small text-end text-success fw-semibold">
+                - <span id="pec-montant-pec" data-value="{{ facture.montantTotalPriseEnCharge }}">
+                    {{ facture.montantTotalPriseEnCharge|number_format(0, ',', ' ') }}
+                </span> FCFA
+            </div>
+
+            <div class="col-6 small text-muted">Part patient :</div>
+            <div class="col-6 small text-end fw-semibold">
+                <span id="pec-part-patient" data-value="{{ facture.montantTotalPatient }}">
+                    {{ facture.montantTotalPatient|number_format(0, ',', ' ') }}
+                </span> FCFA
+            </div>
+
+            <div class="col-6 small text-muted">Déjà payé :</div>
+            <div class="col-6 small text-end fw-semibold text-info">
+                <span id="pec-deja-paye" data-value="{{ facture.montantPayePatient }}">
+                    {{ facture.montantPayePatient|number_format(0, ',', ' ') }}
+                </span> FCFA
+            </div>
+
+            <div class="col-12 border-top mt-2 pt-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Reste à payer :</span>
+                <span class="h5 mb-0 text-danger fw-bold">
+                    <span id="pec-reste-patient" data-value="{{ facture.restePatient }}">
+                        {{ facture.restePatient|number_format(0, ',', ' ') }}
+                    </span> FCFA
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {# SECTION 3 : SAISIE DE L'ENCAISSEMENT #}
     <div class="row g-3">
         <div class="col-12">
-            {{ form_row(form.montant) }}
-            <div class="form-text">Le montant maximum autorisé est de {{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA.</div>
+            <div class="card border-primary-subtle shadow-sm">
+                <div class="card-body">
+                    {{ form_row(form.montant, {
+                        'label': 'Montant à encaisser maintenant',
+                        'attr': {'class': 'form-control-lg fw-bold text-primary'}
+                    }) }}
+                    <div class="form-text">
+                        Saisissez le montant versé par le patient (Max: {{ facture.restePatient|number_format(0, ',', ' ') }} FCFA).
+                    </div>
+                </div>
+            </div>
         </div>
+
         <div class="col-12">
             {{ form_row(form.mode) }}
         </div>
     </div>
 </div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-    <button type="submit" class="btn btn-success js-submit-encaissement">
-        <i class="ri-money-dollar-circle-line me-1"></i> Encaisser
+
+<div class="modal-footer bg-light">
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-success px-4">
+        <i class="ri-money-dollar-circle-line me-1"></i> Confirmer l'encaissement
     </button>
 </div>
+
 {{ form_end(form) }}
