@@ -176,20 +176,21 @@ public function encaisser(
     FacturationService $facturationService,
     EntityManagerInterface $em
 ): Response {
-    // Recalcul initial
+    // Recalcul initial pour afficher des valeurs propres dans le modal
     $facturationService->recalculerFacture($facture);
-    $restePatientInitial = $facture->getRestePatient();
 
     $form = $this->createForm(EncaissementType::class, $facture, [
         'action' => $this->generateUrl('app_perception_facture_encaisser', ['id' => $facture->getId()]),
         'method' => 'POST',
-        'max_amount' => 999999999, // On désactive la contrainte Symfony ici, on valide manuellement après
+        // On neutralise ici la contrainte max côté FormType,
+        // car le vrai max dépend du recalcul après PEC.
+        'max_amount' => 999999999,
     ]);
 
     $form->handleRequest($request);
 
     if ($form->isSubmitted()) {
-        // 1. Appliquer d'abord les changements PEC
+        // 1. Appliquer / retirer la PEC manuelle
         if ($facture->isPriseEnChargeActive()) {
             if (!$facture->getOrganismePriseEnCharge()) {
                 $form->get('organismePriseEnCharge')->addError(
@@ -210,27 +211,41 @@ public function encaisser(
             $facture->setOrganismePriseEnCharge(null);
         }
 
-        // 2. RECALCULER après application de la PEC (CRUCIAL !)
+        // 2. Recalcul après PEC
         $facturationService->recalculerFacture($facture);
         $resteApresPec = $facture->getRestePatient();
 
-        // 3. Validation manuelle du montant APRÈS recalcul
+        // 3. Validation manuelle du montant
         $montant = (int) ($form->get('montant')->getData() ?? 0);
-        
-        if ($montant <= 0) {
-            $form->get('montant')->addError(new FormError('Le montant doit être supérieur à zéro.'));
-        } elseif ($montant > $resteApresPec) {
-            $form->get('montant')->addError(new FormError(
-                sprintf(
-                    'Le montant saisi (%s FCFA) dépasse le reste à payer après prise en charge (%s FCFA).', 
-                    number_format($montant, 0, ',', ' '),
-                    number_format($resteApresPec, 0, ',', ' ')
-                )
-            ));
+        $mode = $form->get('mode')->getData();
+
+        // Cas normal : il reste quelque chose à payer
+        if ($resteApresPec > 0) {
+            if ($montant <= 0) {
+                $form->get('montant')->addError(
+                    new FormError('Le montant doit être supérieur à zéro.')
+                );
+            } elseif ($montant > $resteApresPec) {
+                $form->get('montant')->addError(
+                    new FormError(sprintf(
+                        'Le montant saisi (%s FCFA) dépasse le reste à payer après prise en charge (%s FCFA).',
+                        number_format($montant, 0, ',', ' '),
+                        number_format($resteApresPec, 0, ',', ' ')
+                    ))
+                );
+            }
+
+            if ($mode === null) {
+                $form->get('mode')->addError(
+                    new FormError('Veuillez choisir un mode de paiement.')
+                );
+            }
+        } else {
+            // Cas PEC totale : pas de paiement à saisir
+            $montant = 0;
         }
 
         if ($form->isValid()) {
-            $mode = $form->get('mode')->getData();
             $currentUser = $this->getUser();
             $effectuePar = $currentUser instanceof Utilisateur ? $currentUser : null;
 
@@ -242,9 +257,15 @@ public function encaisser(
                         $mode,
                         $effectuePar
                     );
+                } else {
+                    // Important : si la PEC solde entièrement la facture,
+                    // on recalcule une dernière fois pour fixer le statut/date.
+                    $facturationService->recalculerFacture($facture);
                 }
             } catch (\InvalidArgumentException $exception) {
-                $form->get('montant')->addError(new FormError($exception->getMessage()));
+                $form->get('montant')->addError(
+                    new FormError($exception->getMessage())
+                );
             }
 
             if ($form->isValid()) {
@@ -253,7 +274,7 @@ public function encaisser(
                 if ($request->isXmlHttpRequest()) {
                     return $this->json([
                         'success' => true,
-                        'message' => 'Paiement enregistré avec succès.',
+                        'message' => 'Encaissement enregistré avec succès.',
                         'printUrl' => $this->generateUrl('app_perception_facture_print', [
                             'id' => $facture->getId(),
                         ]),
@@ -267,11 +288,7 @@ public function encaisser(
         }
     }
 
-    $template = $request->isXmlHttpRequest()
-        ? 'perception/_encaissement_form.html.twig'
-        : 'perception/encaisser.html.twig';
-
-    return $this->render($template, [
+    return $this->render('perception/_encaissement_form.html.twig', [
         'form' => $form->createView(),
         'facture' => $facture,
     ]);

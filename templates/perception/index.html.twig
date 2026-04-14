@@ -10,9 +10,14 @@
             <p class="text-muted mb-0">Gestion des factures et des paiements patients</p>
         </div>
         {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION') %}
+        <div >
             <a href="{{ path('app_perception_rapport_agents') }}" class="btn btn-outline-dark">
                 Rapport par agent
             </a>
+             <a href="{{ path('app_perception_rapport_organisme') }}" class="btn btn-outline-success">
+                Prises en charge par organisme
+            </a>
+        </div>
         {% endif %}
     </div>
 
@@ -161,143 +166,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const modalEl = document.getElementById('encaissementModal');
-            const modalContent = document.getElementById('encaissementModalContent');
-
-            function openEncaissementModal(url) {
-                modalContent.innerHTML = `
-                    <div class="modal-body text-center py-5">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-3 mb-0">Chargement...</p>
-                    </div>
-                `;
-
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    modalContent.innerHTML = html;
-                    bindEncaissementForm();
-                })
-                .catch(() => {
-                    modalContent.innerHTML = `
-                        <div class="modal-body">
-                            <div class="alert alert-danger mb-0">
-                                Impossible de charger le formulaire d'encaissement.
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            function bindEncaissementForm() {
-                const form = modalContent.querySelector('form');
-                if (!form) return;
-
-                const montantInput = form.querySelector('#encaissement_montant');
-                const alertBox = form.querySelector('.js-encaissement-alert');
-                const maxAmount = Number.parseInt(form.dataset.resteAPayer || montantInput?.dataset.maxAmount || '0', 10);
-
-                function showAlert(message) {
-                    if (!alertBox) {
-                        return;
-                    }
-
-                    if (!message) {
-                        alertBox.textContent = '';
-                        alertBox.classList.add('d-none');
-                        return;
-                    }
-
-                    alertBox.textContent = message;
-                    alertBox.classList.remove('d-none');
-                }
-
-                function validateMontant() {
-                    if (!montantInput || Number.isNaN(maxAmount) || maxAmount <= 0) {
-                        showAlert('');
-                        return true;
-                    }
-
-                    const value = Number.parseInt(montantInput.value || '0', 10);
-
-                    if (!Number.isNaN(value) && value > maxAmount) {
-                        showAlert(`Le montant saisi ne doit pas depasser le total a payer de ${maxAmount} FCFA.`);
-                        return false;
-                    }
-
-                    showAlert('');
-
-                    return true;
-                }
-
-                montantInput?.addEventListener('input', validateMontant);
-
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-
-                    if (!validateMontant()) {
-                        return;
-                    }
-
-                    const submitBtn = form.querySelector('.js-submit-encaissement');
-                    if (submitBtn) submitBtn.disabled = true;
-
-                    fetch(form.action, {
-                        method: form.method || 'POST',
-                        body: new FormData(form),
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                    .then(async response => {
-                        const contentType = response.headers.get('content-type') || '';
-
-                        if (contentType.includes('application/json')) {
-                            const data = await response.json();
-
-                            if (data.success) {
-                                const modal = bootstrap.Modal.getInstance(modalEl);
-                                modal?.hide();
-                                window.location.reload();
-                                return;
-                            }
-                        }
-
-                        const html = await response.text();
-                        modalContent.innerHTML = html;
-                        bindEncaissementForm();
-                    })
-                    .catch(() => {
-                        modalContent.innerHTML = `
-                            <div class="modal-body">
-                                <div class="alert alert-danger mb-0">
-                                    Une erreur est survenue pendant l'encaissement.
-                                </div>
-                            </div>
-                        `;
-                    })
-                    .finally(() => {
-                        if (submitBtn) submitBtn.disabled = false;
-                    });
-                });
-            }
-
-            document.addEventListener('click', function (e) {
-                const btn = e.target.closest('.js-open-encaissement');
-                if (!btn) return;
-
-                const url = btn.dataset.url;
-                if (!url) return;
-
-                openEncaissementModal(url);
-            });
-        });
-    </script>
 {% endblock %}

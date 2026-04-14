@@ -177,29 +177,52 @@ class PriseEnChargeService
 
     private function mettreAJourStatutFacture(Facture $facture): void
     {
-        $totalPatient = $facture->getMontantTotalPatient();
-        $montantPayePatient = $facture->getMontantPayePatient();
-        $restePatient = $facture->getRestePatient();
+        $totalPatient = max(0, $facture->getMontantTotalPatient());
+        $montantPayePatient = max(0, $facture->getMontantPayePatient());
+        $restePatient = max(0, $facture->getRestePatient());
 
+        // Cas 1 : tout est couvert par PEC
         if ($totalPatient === 0) {
-            $facture->setDatePaiement($facture->getDatePaiement() ?? new \DateTimeImmutable());
             $facture->setStatut(StatutFacture::PAYE);
+
+            if ($facture->getDatePaiement() === null) {
+                $facture->setDatePaiement(new \DateTimeImmutable());
+            }
+
             return;
         }
 
+        // Cas 2 : rien payé par le patient
         if ($montantPayePatient <= 0) {
-            $facture->setDatePaiement(null);
             $facture->setStatut(StatutFacture::NON_PAYE);
+            $facture->setDatePaiement(null);
             return;
         }
 
-        if ($restePatient <= 0) {
-            $facture->setDatePaiement($facture->getDatePaiement() ?? new \DateTimeImmutable());
+        // Cas 3 : patient a soldé sa part
+        if ($montantPayePatient >= $totalPatient || $restePatient <= 0) {
             $facture->setStatut(StatutFacture::PAYE);
+
+            // on prend idéalement la date du dernier paiement
+            $dernierPaiement = null;
+            foreach ($facture->getPaiements() as $paiement) {
+                if ($dernierPaiement === null || $paiement->getPayeLe() > $dernierPaiement->getPayeLe()) {
+                    $dernierPaiement = $paiement;
+                }
+            }
+
+            $facture->setDatePaiement(
+                $dernierPaiement?->getPayeLe() ?? new \DateTimeImmutable()
+            );
+
+            $facture->setRestePatient(0);
+            $facture->setResteAPayer(0);
+
             return;
         }
 
-        $facture->setDatePaiement(null);
+        // Cas 4 : paiement partiel réel
         $facture->setStatut(StatutFacture::PARTIELLEMENT_PAYE);
+        $facture->setDatePaiement(null);
     }
 }

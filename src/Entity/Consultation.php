@@ -79,6 +79,9 @@ class Consultation
     #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: PrescriptionPrestation::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
   private Collection $prescriptionsPrestations;
 
+  #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+private ?\DateTimeImmutable $dateCloture = null;
+
     public function getHistoire(): ?string { return $this->histoire; }
     public function setHistoire(?string $histoire): self { $this->histoire = $histoire; return $this; }
 
@@ -316,4 +319,30 @@ class Consultation
             $this->getId() ?? 0
         );
     }
+
+    public function getDateCloture(): ?\DateTimeImmutable
+{
+    return $this->dateCloture;
+}
+
+public function setDateCloture(?\DateTimeImmutable $dateCloture): self
+{
+    $this->dateCloture = $dateCloture;
+    return $this;
+}
+
+public function estCloturee(): bool
+{
+    return $this->statut === StatutConsultation::CLOTURE;
+}
+
+public function estAnnulee(): bool
+{
+    return $this->statut === StatutConsultation::ANNULE;
+}
+
+public function estModifiable(): bool
+{
+    return !$this->estCloturee() && !$this->estAnnulee();
+}
 }

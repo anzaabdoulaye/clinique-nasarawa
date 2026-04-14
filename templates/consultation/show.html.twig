@@ -116,10 +116,26 @@
                     <a href="{{ path('app_consultation_index') }}" class="btn btn-outline-secondary">
                         <i class="fa fa-arrow-left me-1"></i> Retour
                     </a>
+                    {% if consultation.statut.value not in ['cloture', 'annule'] %}
+                    <form method="post"
+                        action="{{ path('app_consultation_cloturer', {id: consultation.id}) }}"
+                        class="d-inline"
+                        onsubmit="return confirm('Clôturer cette consultation ? Après clôture, aucune nouvelle prestation ne pourra être ajoutée.');">
+                        <input type="hidden"
+                            name="_token"
+                            value="{{ csrf_token('cloturer_consultation_' ~ consultation.id) }}">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="ri-lock-line me-1"></i> Clôturer la consultation
+                        </button>
+                    </form>
+                {% else %}
+                    <span class="badge bg-success">Consultation clôturée</span>
+                {% endif %}
 
                     {{ include('consultation/_delete_form.html.twig') }}
                 </div>
                 {% endif %}
+                
                 <!-- badges -->
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
                     <span class="badge {{ badgeClass }}">{{ st ?: 'N/A' }}</span>

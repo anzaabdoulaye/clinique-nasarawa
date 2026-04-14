@@ -1,0 +1,249 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport des prises en charge par organisme{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">Rapport des prises en charge par organisme</h2>
+            <p class="text-muted mb-0">
+                Vue globale des montants de prise en charge par organisme et par période.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ path('app_perception_rapport_organisme') }}" class="btn btn-outline-secondary">
+                Rapport par agent
+            </a>
+
+            <a href="{{ path('app_perception_rapport_organisme_export_pdf', {
+                search: filtres.search,
+                organisme: filtres.organisme,
+                du: filtres.du,
+                au: filtres.au
+            }) }}" class="btn btn-outline-dark">
+                Export PDF
+            </a>
+
+            <a href="{{ path('app_perception_rapport_organisme_export_excel', {
+                search: filtres.search,
+                organisme: filtres.organisme,
+                du: filtres.du,
+                au: filtres.au
+            }) }}" class="btn btn-outline-success">
+                Export Excel
+            </a>
+
+            <a href="{{ path('app_perception_rapport_organisme_print', {
+                search: filtres.search,
+                organisme: filtres.organisme,
+                du: filtres.du,
+                au: filtres.au
+            }) }}" target="_blank" class="btn btn-outline-primary">
+                Imprimer
+            </a>
+
+            <a href="{{ path('app_perception_index') }}" class="btn btn-primary">
+                Retour à la perception
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Montant PEC filtré</div>
+                    <div class="fs-2 fw-bold text-dark">
+                        {{ totalMontantPec|number_format(0, ',', ' ') }} FCFA
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Factures PEC</div>
+                    <div class="fs-2 fw-bold text-dark">
+                        {{ totalFactures }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Organismes actifs</div>
+                    <div class="fs-2 fw-bold text-dark">
+                        {{ totalOrganismes }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 pt-4 px-4">
+            <h5 class="mb-0">Filtres des prises en charge</h5>
+        </div>
+
+        <div class="card-body px-4 pb-4">
+            <form method="get" class="row g-3">
+                <div class="col-lg-4">
+                    <label class="form-label fw-semibold">Recherche patient / dossier</label>
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="Code, téléphone, dossier, nom"
+                        value="{{ filtres.search }}"
+                    >
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label fw-semibold">Organisme</label>
+                    <select name="organisme" class="form-select">
+                        <option value="">Tous les organismes</option>
+                        {% for organisme in organismes %}
+                            <option value="{{ organisme.id }}"
+                                {% if filtres.organisme is not null and filtres.organisme == organisme.id %}selected{% endif %}>
+                                {{ organisme.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label fw-semibold">Du</label>
+                    <input type="date" name="du" class="form-control" value="{{ filtres.du }}">
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label fw-semibold">Au</label>
+                    <input type="date" name="au" class="form-control" value="{{ filtres.au }}">
+                </div>
+
+                <div class="col-lg-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Filtrer
+                    </button>
+                </div>
+
+                <div class="col-12">
+                    <a href="{{ path('app_perception_rapport_organisme') }}" class="btn btn-outline-secondary btn-sm">
+                        Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 px-4 pt-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Rapport des prises en charge par organisme</h5>
+            <small class="text-muted">Basé sur les factures filtrées</small>
+        </div>
+
+        <div class="card-body px-0 pb-0">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Organisme</th>
+                            <th>Code</th>
+                            <th>Nombre de factures</th>
+                            <th class="text-end">Montant brut</th>
+                            <th class="text-end">Montant PEC</th>
+                            <th class="text-end pe-4">Montant patient</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for ligne in lignes %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ ligne.organisme }}</td>
+                            <td>{{ ligne.code }}</td>
+                            <td>{{ ligne.nombre_factures }}</td>
+                            <td class="text-end">{{ ligne.montant_total_brut|number_format(0, ',', ' ') }} FCFA</td>
+                            <td class="text-end fw-bold text-success">{{ ligne.montant_total_pec|number_format(0, ',', ' ') }} FCFA</td>
+                            <td class="text-end pe-4">{{ ligne.montant_total_patient|number_format(0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Aucune donnée trouvée pour les filtres sélectionnés.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 px-4 pt-4">
+            <h5 class="mb-0">Journal des prises en charge</h5>
+        </div>
+
+        <div class="card-body px-0 pb-0">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0 datatable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Date émission</th>
+                            <th>Facture</th>
+                            <th>Patient</th>
+                            <th>Dossier</th>
+                            <th>Organisme</th>
+                            <th class="text-end">Montant brut</th>
+                            <th class="text-end">PEC</th>
+                            <th class="text-end">Part patient</th>
+                            <th class="text-end">Reste patient</th>
+                            <th class="pe-4">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in journal %}
+                        <tr>
+                            <td class="ps-4">
+                                {{ item.date_emission ? item.date_emission|date('Y-m-d H:i') : '-' }}
+                            </td>
+                            <td>#{{ item.facture_id }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ item.patient }}</div>
+                                <small class="text-muted">{{ item.code_patient }}</small>
+                            </td>
+                            <td>{{ item.dossier }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ item.organisme }}</div>
+                                <small class="text-muted">{{ item.code_organisme }}</small>
+                            </td>
+                            <td class="text-end">{{ item.montant_brut|number_format(0, ',', ' ') }}</td>
+                            <td class="text-end fw-bold text-success">{{ item.montant_pec|number_format(0, ',', ' ') }}</td>
+                            <td class="text-end">{{ item.montant_patient|number_format(0, ',', ' ') }}</td>
+                            <td class="text-end">{{ item.reste_patient|number_format(0, ',', ' ') }}</td>
+                            <td class="pe-4">
+                                <span class="badge bg-light text-dark border">
+                                    {{ item.statut|replace({'_':' '})|title }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                Aucune prise en charge trouvée.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

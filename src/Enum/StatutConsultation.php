@@ -1,5 +1,4 @@
 <?php
-// src/Domain/Core/Enum/StatutRendezVous.php
 namespace App\Enum;
 
 enum StatutConsultation: string

@@ -30,57 +30,118 @@ class FacturationService
     ) {
     }
 
-    public function initialiserOuRecupererFacture(Consultation $consultation): Facture
+
+    private function assertConsultationModifiable(Consultation $consultation): void
     {
-        $facture = $consultation->getFacture();
-
-        if (!$facture instanceof Facture) {
-            $facture = new Facture();
-            $facture->setConsultation($consultation);
-            $facture->setStatut(StatutFacture::BROUILLON);
-            $facture->setDateEmission(new \DateTimeImmutable());
-            $facture->setMontantTotal(0);
-            $facture->setMontantPaye(0);
-            $facture->setResteAPayer(0);
-            $facture->setMontantTotalBrut(0);
-            $facture->setMontantTotalPriseEnCharge(0);
-            $facture->setMontantTotalPatient(0);
-            $facture->setMontantPayePatient(0);
-            $facture->setRestePatient(0);
-
-            $consultation->setFacture($facture);
-            $this->em->persist($facture);
+        if ($consultation->estCloturee()) {
+            throw new \LogicException('Cette consultation est clôturée. Aucune nouvelle prestation ne peut être ajoutée.');
         }
 
-        $this->assurerLigneConsultation($facture);
-        $this->recalculerFacture($facture);
+        if ($consultation->estAnnulee()) {
+            throw new \LogicException('Cette consultation est annulée. Aucune modification de facturation n’est autorisée.');
+        }
+    }
 
+    public function initialiserOuRecupererFacture(Consultation $consultation): Facture
+{
+    $facture = $consultation->getFacture();
+
+    if (!$facture instanceof Facture) {
+        $this->assertConsultationModifiable($consultation);
+
+        $facture = new Facture();
+        $facture->setConsultation($consultation);
+        $facture->setStatut(StatutFacture::BROUILLON);
+        $facture->setDateEmission(new \DateTimeImmutable());
+        $facture->setMontantTotal(0);
+        $facture->setMontantPaye(0);
+        $facture->setResteAPayer(0);
+        $facture->setMontantTotalBrut(0);
+        $facture->setMontantTotalPriseEnCharge(0);
+        $facture->setMontantTotalPatient(0);
+        $facture->setMontantPayePatient(0);
+        $facture->setRestePatient(0);
+
+        $consultation->setFacture($facture);
+        $this->em->persist($facture);
+    }
+
+    // On ne recrée pas / n’ajoute pas de ligne consultation si la consultation est clôturée
+    if ($consultation->estModifiable()) {
+        $this->assurerLigneConsultation($facture);
+    }
+
+    $this->recalculerFacture($facture);
+
+    return $facture;
+}
+
+    public function synchroniserDepuisPrescription(PrescriptionPrestation $prescription): Facture
+{
+    $consultation = $prescription->getConsultation();
+
+    if (!$consultation instanceof Consultation) {
+        throw new \LogicException('La prescription prestation doit être liée à une consultation.');
+    }
+
+    $this->assertConsultationModifiable($consultation);
+
+    $facture = $this->initialiserOuRecupererFacture($consultation);
+
+    if (!$prescription->isAFacturer()) {
+        $ligneExistante = $this->trouverLigneParPrescription($prescription);
+
+        if ($ligneExistante instanceof FactureLigne) {
+            $facture->removeLigne($ligneExistante);
+            $this->em->remove($ligneExistante);
+        }
+
+        $this->recalculerFacture($facture);
         return $facture;
     }
 
-    public function synchroniserDepuisPrescription(PrescriptionPrestation $prescription): Facture
-    {
-        $consultation = $prescription->getConsultation();
+    $ligne = $this->trouverLigneParPrescription($prescription);
 
-        if (!$consultation instanceof Consultation) {
-            throw new \LogicException('La prescription prestation doit être liée à une consultation.');
-        }
+    if (!$ligne instanceof FactureLigne) {
+        $ligne = new FactureLigne();
+        $ligne->setFacture($facture);
+        $ligne->setPrescriptionPrestation($prescription);
 
-        $facture = $this->initialiserOuRecupererFacture($consultation);
+        $facture->addLigne($ligne);
+        $this->em->persist($ligne);
+    }
 
-        if (!$prescription->isAFacturer()) {
-            $ligneExistante = $this->trouverLigneParPrescription($prescription);
+    $this->hydraterLigneDepuisPrescription($ligne, $prescription);
 
-            if ($ligneExistante instanceof FactureLigne) {
-                $facture->removeLigne($ligneExistante);
-                $this->em->remove($ligneExistante);
-            }
+    if ($prescription->getStatut() === StatutPrescriptionPrestation::PRESCRIT) {
+        $prescription->setStatut(StatutPrescriptionPrestation::FACTURE);
+    }
 
-            $this->recalculerFacture($facture);
-            return $facture;
+    $this->recalculerFacture($facture);
+
+    return $facture;
+}
+
+    public function synchroniserFactureDepuisConsultation(Consultation $consultation): Facture
+{
+    $this->assertConsultationModifiable($consultation);
+
+    $facture = $this->initialiserOuRecupererFacture($consultation);
+
+    foreach ($consultation->getPrescriptionsPrestations() as $prescription) {
+        if (!$prescription instanceof PrescriptionPrestation) {
+            continue;
         }
 
         $ligne = $this->trouverLigneParPrescription($prescription);
+
+        if (!$prescription->isAFacturer()) {
+            if ($ligne instanceof FactureLigne) {
+                $facture->removeLigne($ligne);
+                $this->em->remove($ligne);
+            }
+            continue;
+        }
 
         if (!$ligne instanceof FactureLigne) {
             $ligne = new FactureLigne();
@@ -96,53 +157,14 @@ class FacturationService
         if ($prescription->getStatut() === StatutPrescriptionPrestation::PRESCRIT) {
             $prescription->setStatut(StatutPrescriptionPrestation::FACTURE);
         }
-
-        $this->recalculerFacture($facture);
-
-        return $facture;
     }
 
-    public function synchroniserFactureDepuisConsultation(Consultation $consultation): Facture
-    {
-        $facture = $this->initialiserOuRecupererFacture($consultation);
+    $this->supprimerLignesOrphelines($facture, $consultation);
+    $this->assurerLigneConsultation($facture);
+    $this->recalculerFacture($facture);
 
-        foreach ($consultation->getPrescriptionsPrestations() as $prescription) {
-            if (!$prescription instanceof PrescriptionPrestation) {
-                continue;
-            }
-
-            $ligne = $this->trouverLigneParPrescription($prescription);
-
-            if (!$prescription->isAFacturer()) {
-                if ($ligne instanceof FactureLigne) {
-                    $facture->removeLigne($ligne);
-                    $this->em->remove($ligne);
-                }
-                continue;
-            }
-
-            if (!$ligne instanceof FactureLigne) {
-                $ligne = new FactureLigne();
-                $ligne->setFacture($facture);
-                $ligne->setPrescriptionPrestation($prescription);
-
-                $facture->addLigne($ligne);
-                $this->em->persist($ligne);
-            }
-
-            $this->hydraterLigneDepuisPrescription($ligne, $prescription);
-
-            if ($prescription->getStatut() === StatutPrescriptionPrestation::PRESCRIT) {
-                $prescription->setStatut(StatutPrescriptionPrestation::FACTURE);
-            }
-        }
-
-        $this->supprimerLignesOrphelines($facture, $consultation);
-        $this->assurerLigneConsultation($facture);
-        $this->recalculerFacture($facture);
-
-        return $facture;
-    }
+    return $facture;
+}
 
     public function ajouterPaiement(
         Facture $facture,
@@ -233,46 +255,43 @@ class FacturationService
         $this->mettreAJourStatutPrestations($facture);
     }
 
-    public function supprimerDepuisPrescription(PrescriptionPrestation $prescription): void
-    {
-        $consultation = $prescription->getConsultation();
+   public function supprimerDepuisPrescription(PrescriptionPrestation $prescription): void
+{
+    $consultation = $prescription->getConsultation();
 
-        if (!$consultation instanceof Consultation) {
-            return;
-        }
+    if (!$consultation instanceof Consultation) {
+        return;
+    }
 
-        $facture = $consultation->getFacture();
+    $this->assertConsultationModifiable($consultation);
 
-        if (!$facture instanceof Facture) {
-            return;
-        }
+    $facture = $consultation->getFacture();
 
-        $ligne = $this->trouverLigneParPrescription($prescription);
+    if (!$facture instanceof Facture) {
+        return;
+    }
 
-        if ($ligne instanceof FactureLigne) {
-            $facture->removeLigne($ligne);
-            $this->em->remove($ligne);
-        }
+    $ligne = $this->trouverLigneParPrescription($prescription);
 
-        $this->recalculerFacture($facture);
+    if ($ligne instanceof FactureLigne) {
+        $facture->removeLigne($ligne);
+        $this->em->remove($ligne);
+    }
 
-        // On conserve la facture tant qu'il reste au moins la ligne consultation
-        $lignesNonConsultation = 0;
-        foreach ($facture->getLignes() as $ligneRestante) {
-            if ($ligneRestante->getPrescriptionPrestation() !== null) {
-                $lignesNonConsultation++;
-            }
-        }
+    $this->recalculerFacture($facture);
 
-        if ($facture->getLignes()->isEmpty() || ($facture->getLignes()->count() === 1 && $lignesNonConsultation === 0)) {
-            // Ici, deux options métier :
-            // 1. garder la facture avec uniquement la consultation
-            // 2. supprimer la facture si plus aucune ligne utile
-            // On choisit de garder la facture avec la ligne consultation.
-            $this->assurerLigneConsultation($facture);
-            $this->recalculerFacture($facture);
+    $lignesNonConsultation = 0;
+    foreach ($facture->getLignes() as $ligneRestante) {
+        if ($ligneRestante->getPrescriptionPrestation() !== null) {
+            $lignesNonConsultation++;
         }
     }
+
+    if ($facture->getLignes()->isEmpty() || ($facture->getLignes()->count() === 1 && $lignesNonConsultation === 0)) {
+        $this->assurerLigneConsultation($facture);
+        $this->recalculerFacture($facture);
+    }
+}
 
     private function trouverLigneParPrescription(PrescriptionPrestation $prescription): ?FactureLigne
     {

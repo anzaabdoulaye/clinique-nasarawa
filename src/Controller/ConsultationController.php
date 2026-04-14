@@ -129,6 +129,29 @@ public function index(
         'search' => $search,
     ]);
  }
+
+ private function denyIfConsultationLocked(Consultation $consultation, Request $request): ?Response
+{
+    if ($consultation->estModifiable()) {
+        return null;
+    }
+
+    $message = 'Cette consultation est clôturée ou annulée. Veuillez créer une nouvelle consultation.';
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->json([
+            'success' => false,
+            'message' => $message,
+        ], Response::HTTP_FORBIDDEN);
+    }
+
+    $this->addFlash('warning', $message);
+
+    return $this->redirectToRoute('app_consultation_show', [
+        'id' => $consultation->getId(),
+    ]);
+}
+
 #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER') or is_granted('ROLE_LABO')"
 ))]
@@ -152,6 +175,10 @@ public function new(
     Consultation $consultation,
     EntityManagerInterface $em
 ): Response {
+    if ($response = $this->denyIfConsultationLocked($consultation, $request)) {
+        return $response;
+    }
+
     $prescription = new PrescriptionPrestation();
     $prescription->setConsultation($consultation);
 
@@ -205,6 +232,12 @@ public function edit(
     PrescriptionPrestation $prescription,
     EntityManagerInterface $em
 ): Response {
+    $consultation = $prescription->getConsultation();
+
+    if ($consultation && ($response = $this->denyIfConsultationLocked($consultation, $request))) {
+        return $response;
+    }
+
     $form = $this->createForm(PrescriptionPrestationType::class, $prescription, [
         'action' => $this->generateUrl('app_prescription_prestation_edit', ['id' => $prescription->getId()]),
         'method' => 'POST',
@@ -741,5 +774,52 @@ public function editAdmin(
             'Content-Disposition' => sprintf('inline; filename="consultation-%d.pdf"', $consultation->getId()),
         ]);
     }
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_ACCUEIL')"
+))]
+#[Route('/{id}/cloturer', name: 'app_consultation_cloturer', methods: ['POST'])]
+public function cloturer(
+    Request $request,
+    Consultation $consultation,
+    EntityManagerInterface $em,
+    FacturationService $facturationService
+): Response {
+    if (!$this->isCsrfTokenValid('cloturer_consultation_'.$consultation->getId(), $request->request->get('_token'))) {
+        throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+    }
+
+    if ($consultation->estAnnulee()) {
+        $this->addFlash('warning', 'Une consultation annulée ne peut pas être clôturée.');
+
+        return $this->redirectToRoute('app_consultation_show', [
+            'id' => $consultation->getId(),
+        ]);
+    }
+
+    if ($consultation->estCloturee()) {
+        $this->addFlash('info', 'Cette consultation est déjà clôturée.');
+
+        return $this->redirectToRoute('app_consultation_show', [
+            'id' => $consultation->getId(),
+        ]);
+    }
+
+    // on fige la facture avant clôture
+    if ($consultation->getFacture()) {
+        $facturationService->recalculerFacture($consultation->getFacture());
+    }
+
+    $consultation->setStatut(StatutConsultation::CLOTURE);
+    $consultation->setDateCloture(new \DateTimeImmutable());
+
+    $em->flush();
+
+    $this->addFlash('success', 'La consultation a été clôturée. Elle ne peut plus recevoir de nouvelles prestations.');
+
+    return $this->redirectToRoute('app_consultation_show', [
+        'id' => $consultation->getId(),
+    ]);
+}
 
 }

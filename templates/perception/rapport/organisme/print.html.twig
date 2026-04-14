@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+            margin: 20px;
+        }
+
+        h1, h2, h3, h4, p {
+            margin: 0;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .header h2 {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .meta {
+            margin-top: 10px;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+
+        .kpi-row {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px 0;
+            margin-bottom: 18px;
+        }
+
+        .kpi-box {
+            width: 33.33%;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid #bbb;
+            padding: 6px 8px;
+            font-size: 11px;
+        }
+
+        th {
+            background: #f0f0f0;
+            text-align: left;
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .small {
+            font-size: 10px;
+            color: #666;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body {% if is_print %}onload="window.print()" {% endif %}>
+
+    <div class="header">
+        <h2>{{ title }}</h2>
+        <p class="muted">Vue globale des montants de prise en charge par organisme et par période.</p>
+    </div>
+
+    <div class="meta">
+        <strong>Filtres appliqués :</strong><br>
+        Recherche :
+        {{ filtres.search is not empty ? filtres.search : 'Toutes' }}
+        &nbsp;|&nbsp;
+        Du :
+        {{ filtres.du ?: '---' }}
+        &nbsp;|&nbsp;
+        Au :
+        {{ filtres.au ?: '---' }}
+    </div>
+
+    <table class="kpi-row">
+        <tr>
+            <td class="kpi-box">
+                <div class="kpi-label">Montant PEC filtré</div>
+                <div class="kpi-value">{{ totalMontantPec|number_format(0, ',', ' ') }} FCFA</div>
+            </td>
+            <td class="kpi-box">
+                <div class="kpi-label">Factures PEC</div>
+                <div class="kpi-value">{{ totalFactures }}</div>
+            </td>
+            <td class="kpi-box">
+                <div class="kpi-label">Organismes actifs</div>
+                <div class="kpi-value">{{ totalOrganismes }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Synthèse par organisme</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Organisme</th>
+                <th>Code</th>
+                <th>Nombre</th>
+                <th class="text-end">Montant brut</th>
+                <th class="text-end">Montant PEC</th>
+                <th class="text-end">Montant patient</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for ligne in lignes %}
+            <tr>
+                <td>{{ ligne.organisme }}</td>
+                <td>{{ ligne.code }}</td>
+                <td>{{ ligne.nombre_factures }}</td>
+                <td class="text-end">{{ ligne.montant_total_brut|number_format(0, ',', ' ') }}</td>
+                <td class="text-end">{{ ligne.montant_total_pec|number_format(0, ',', ' ') }}</td>
+                <td class="text-end">{{ ligne.montant_total_patient|number_format(0, ',', ' ') }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Aucune donnée.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Journal détaillé</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Facture</th>
+                <th>Patient</th>
+                <th>Dossier</th>
+                <th>Organisme</th>
+                <th class="text-end">PEC</th>
+                <th class="text-end">Part patient</th>
+                <th class="text-end">Reste patient</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in journal %}
+            <tr>
+                <td>{{ item.date_emission ? item.date_emission|date('Y-m-d H:i') : '-' }}</td>
+                <td>#{{ item.facture_id }}</td>
+                <td>
+                    {{ item.patient }}<br>
+                    <span class="small">{{ item.code_patient }}</span>
+                </td>
+                <td>{{ item.dossier }}</td>
+                <td>
+                    {{ item.organisme }}<br>
+                    <span class="small">{{ item.code_organisme }}</span>
+                </td>
+                <td class="text-end">{{ item.montant_pec|number_format(0, ',', ' ') }}</td>
+                <td class="text-end">{{ item.montant_patient|number_format(0, ',', ' ') }}</td>
+                <td class="text-end">{{ item.reste_patient|number_format(0, ',', ' ') }}</td>
+                <td>{{ item.statut|replace({'_':' '})|title }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9" class="text-center">Aucune donnée.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
