@@ -33,11 +33,45 @@ final class FactureController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_PERCEPTION')"
 ))]
     #[Route(name: 'app_facture_index', methods: ['GET'])]
-    public function index(FactureRepository $factureRepository): Response
+    public function index(Request $request, FactureRepository $factureRepository): Response
     {
+        // Récupérer le filtre de période depuis les paramètres de requête
+        $periodeFilter = $request->query->get('periode');
+        if ($periodeFilter === null) {
+            // Par défaut, filtrer sur les factures des 30 derniers jours
+            $periodeFilter = 'recent';
+        }
+
+        $qb = $factureRepository->createQueryBuilder('f');
+
+        // Appliquer le filtre de période
+        if ($periodeFilter === 'recent') {
+            $date = new \DateTimeImmutable('-30 days');
+            $qb->andWhere('f.createdAt >= :date')
+               ->setParameter('date', $date);
+        } elseif ($periodeFilter === 'month') {
+            $now = new \DateTimeImmutable();
+            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+            $qb->andWhere('f.createdAt >= :date')
+               ->setParameter('date', $startOfMonth);
+        } elseif ($periodeFilter === 'quarter') {
+            $date = new \DateTimeImmutable('-90 days');
+            $qb->andWhere('f.createdAt >= :date')
+               ->setParameter('date', $date);
+        } elseif ($periodeFilter === 'year') {
+            $date = new \DateTimeImmutable('-365 days');
+            $qb->andWhere('f.createdAt >= :date')
+               ->setParameter('date', $date);
+        }
+        // Pour 'all', pas de filtre de date
+
+        $factures = $qb->orderBy('f.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
         return $this->render('facture/index.html.twig', [
-            'factures' => $factureRepository->findAll(),
-            'factures' => $factureRepository->findAllWithRelations(),
+            'factures' => $factures,
+            'periodeFilter' => $periodeFilter,
         ]);
     }
 

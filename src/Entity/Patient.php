@@ -151,6 +151,18 @@ class Patient
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $poids = null;
 
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $temperature = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $tensionArterielle = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $frequenceCardiaque = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $frequenceRespiratoire = null;
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $allergies = null;
 
@@ -345,6 +357,50 @@ class Patient
     public function setPoids(?float $poids): self
     {
         $this->poids = $poids;
+        return $this;
+    }
+
+    public function getTemperature(): ?float
+    {
+        return $this->temperature;
+    }
+
+    public function setTemperature(?float $temperature): self
+    {
+        $this->temperature = $temperature;
+        return $this;
+    }
+
+    public function getTensionArterielle(): ?string
+    {
+        return $this->tensionArterielle;
+    }
+
+    public function setTensionArterielle(?string $tensionArterielle): self
+    {
+        $this->tensionArterielle = $tensionArterielle;
+        return $this;
+    }
+
+    public function getFrequenceCardiaque(): ?int
+    {
+        return $this->frequenceCardiaque;
+    }
+
+    public function setFrequenceCardiaque(?int $frequenceCardiaque): self
+    {
+        $this->frequenceCardiaque = $frequenceCardiaque;
+        return $this;
+    }
+
+    public function getFrequenceRespiratoire(): ?int
+    {
+        return $this->frequenceRespiratoire;
+    }
+
+    public function setFrequenceRespiratoire(?int $frequenceRespiratoire): self
+    {
+        $this->frequenceRespiratoire = $frequenceRespiratoire;
         return $this;
     }
 

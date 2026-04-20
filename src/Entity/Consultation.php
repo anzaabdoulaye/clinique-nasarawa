@@ -55,6 +55,9 @@ class Consultation
     #[ORM\Column(nullable: true)]
     private ?int $frequenceCardiaque = null;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $frequenceRespiratoire = null;
+
     #[ORM\OneToMany(mappedBy: 'consultation', targetEntity: Prescription::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $prescriptions;
 
@@ -210,6 +213,18 @@ private ?\DateTimeImmutable $dateCloture = null;
     public function setFrequenceCardiaque(?int $frequenceCardiaque): self
     {
         $this->frequenceCardiaque = $frequenceCardiaque;
+
+        return $this;
+    }
+
+    public function getFrequenceRespiratoire(): ?int
+    {
+        return $this->frequenceRespiratoire;
+    }
+
+    public function setFrequenceRespiratoire(?int $frequenceRespiratoire): self
+    {
+        $this->frequenceRespiratoire = $frequenceRespiratoire;
 
         return $this;
     }

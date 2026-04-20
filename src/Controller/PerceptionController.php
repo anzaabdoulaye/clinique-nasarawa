@@ -44,12 +44,40 @@ public function index(
 {
     $search = trim((string) $request->query->get('search', ''));
 
+    // Récupérer le filtre de période depuis les paramètres de requête
+    $periodeFilter = $request->query->get('periode');
+    if ($periodeFilter === null) {
+        // Par défaut, filtrer sur les factures des 30 derniers jours
+        $periodeFilter = 'recent';
+    }
+
     $qb = $factureRepository->createQueryBuilder('f')
         ->leftJoin('f.consultation', 'c')->addSelect('c')
         ->leftJoin('c.rendezVous', 'r')->addSelect('r')
         ->leftJoin('r.patient', 'p')->addSelect('p')
         ->leftJoin('p.dossierMedical', 'dm')->addSelect('dm')
         ->leftJoin('f.paiements', 'pa')->addSelect('pa');
+
+    // Appliquer le filtre de période
+    if ($periodeFilter === 'recent') {
+        $date = new \DateTimeImmutable('-30 days');
+        $qb->andWhere('f.createdAt >= :date')
+           ->setParameter('date', $date);
+    } elseif ($periodeFilter === 'month') {
+        $now = new \DateTimeImmutable();
+        $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+        $qb->andWhere('f.createdAt >= :date')
+           ->setParameter('date', $startOfMonth);
+    } elseif ($periodeFilter === 'quarter') {
+        $date = new \DateTimeImmutable('-90 days');
+        $qb->andWhere('f.createdAt >= :date')
+           ->setParameter('date', $date);
+    } elseif ($periodeFilter === 'year') {
+        $date = new \DateTimeImmutable('-365 days');
+        $qb->andWhere('f.createdAt >= :date')
+           ->setParameter('date', $date);
+    }
+    // Pour 'all', pas de filtre de date
 
     if ($search !== '') {
         $qb->andWhere(
@@ -99,6 +127,7 @@ public function index(
         'nbPayees' => $nbPayees,
         'totalEncaisseJour' => $totalEncaisseJour,
         'search' => $search,
+        'periodeFilter' => $periodeFilter,
     ]);
 }
 

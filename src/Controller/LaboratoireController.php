@@ -33,16 +33,54 @@ final class LaboratoireController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
 ))]
     #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
-    public function index(PrescriptionPrestationRepository $repository): Response
+    public function index(Request $request, PrescriptionPrestationRepository $repository): Response
     {
         $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
         $enCours = $repository->findExamensLaboEnCours();
+        
+        // Récupérer le filtre de période pour les examens réalisés
+        $periodeFilter = $request->query->get('periode');
+        if ($periodeFilter === null) {
+            // Par défaut, filtrer sur les examens réalisés des 30 derniers jours
+            $periodeFilter = 'recent';
+        }
+
         $realises = $repository->findExamensLaboRealises();
+
+        // Filtrer les examens réalisés par période
+        if ($periodeFilter === 'recent') {
+            $date = new \DateTimeImmutable('-30 days');
+            $realises = array_filter($realises, function($prestation) use ($date) {
+                $createdAt = $prestation->getCreatedAt();
+                return $createdAt && $createdAt >= $date;
+            });
+        } elseif ($periodeFilter === 'month') {
+            $now = new \DateTimeImmutable();
+            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+            $realises = array_filter($realises, function($prestation) use ($startOfMonth) {
+                $createdAt = $prestation->getCreatedAt();
+                return $createdAt && $createdAt >= $startOfMonth;
+            });
+        } elseif ($periodeFilter === 'quarter') {
+            $date = new \DateTimeImmutable('-90 days');
+            $realises = array_filter($realises, function($prestation) use ($date) {
+                $createdAt = $prestation->getCreatedAt();
+                return $createdAt && $createdAt >= $date;
+            });
+        } elseif ($periodeFilter === 'year') {
+            $date = new \DateTimeImmutable('-365 days');
+            $realises = array_filter($realises, function($prestation) use ($date) {
+                $createdAt = $prestation->getCreatedAt();
+                return $createdAt && $createdAt >= $date;
+            });
+        }
+        // Pour 'all', garder tous les examens réalisés
 
         return $this->render('laboratoire/index.html.twig', [
             'aTraiter' => $aTraiter,
             'enCours' => $enCours,
             'realises' => $realises,
+            'periodeFilter' => $periodeFilter,
         ]);
     }
 

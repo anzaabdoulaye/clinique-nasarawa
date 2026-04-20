@@ -22,10 +22,55 @@ use Symfony\Component\Routing\Attribute\Route;
 final class CaisseController extends AbstractController
 {
     #[Route(name: 'app_caisse_index', methods: ['GET'])]
-    public function index(VenteRepository $venteRepository): Response
+    public function index(Request $request, VenteRepository $venteRepository): Response
     {
+        // Récupérer le filtre de période depuis les paramètres de requête
+        $periodeFilter = $request->query->get('periode');
+        if ($periodeFilter === null) {
+            // Par défaut, filtrer sur les ventes des 30 derniers jours
+            $periodeFilter = 'recent';
+        }
+
+        if ($periodeFilter === 'recent') {
+            $date = new \DateTimeImmutable('-30 days');
+            $ventes = $venteRepository->createQueryBuilder('v')
+                ->andWhere('v.date >= :date')
+                ->setParameter('date', $date)
+                ->orderBy('v.date', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } elseif ($periodeFilter === 'month') {
+            $now = new \DateTimeImmutable();
+            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+            $ventes = $venteRepository->createQueryBuilder('v')
+                ->andWhere('v.date >= :date')
+                ->setParameter('date', $startOfMonth)
+                ->orderBy('v.date', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } elseif ($periodeFilter === 'quarter') {
+            $date = new \DateTimeImmutable('-90 days');
+            $ventes = $venteRepository->createQueryBuilder('v')
+                ->andWhere('v.date >= :date')
+                ->setParameter('date', $date)
+                ->orderBy('v.date', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } elseif ($periodeFilter === 'year') {
+            $date = new \DateTimeImmutable('-365 days');
+            $ventes = $venteRepository->createQueryBuilder('v')
+                ->andWhere('v.date >= :date')
+                ->setParameter('date', $date)
+                ->orderBy('v.date', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $ventes = $venteRepository->findBy([], ['date' => 'DESC']);
+        }
+
         return $this->render('pharmacie/caisse/index.html.twig', [
-            'ventes' => $venteRepository->findBy([], ['date' => 'DESC']),
+            'ventes' => $ventes,
+            'periodeFilter' => $periodeFilter,
         ]);
     }
 

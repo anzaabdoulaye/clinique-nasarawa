@@ -102,6 +102,32 @@ public function index(
             }
 
             if (0 === count($form->getErrors(true))) {
+                // Synchroniser les constantes vitales du patient vers la consultation si disponibles
+                if ($consultation->getDossierMedical() !== null) {
+                    $patient = $consultation->getDossierMedical()->getPatient();
+                    if ($patient !== null) {
+                        // Si la consultation n'a pas de constantes, les copier du patient
+                        if ($consultation->getPoids() === null && $patient->getPoids() !== null) {
+                            $consultation->setPoids($patient->getPoids());
+                        }
+                        if ($consultation->getTaille() === null && $patient->getTaille() !== null) {
+                            $consultation->setTaille($patient->getTaille());
+                        }
+                        if ($consultation->getTemperature() === null && $patient->getTemperature() !== null) {
+                            $consultation->setTemperature($patient->getTemperature());
+                        }
+                        if ($consultation->getTensionArterielle() === null && $patient->getTensionArterielle() !== null) {
+                            $consultation->setTensionArterielle($patient->getTensionArterielle());
+                        }
+                        if ($consultation->getFrequenceCardiaque() === null && $patient->getFrequenceCardiaque() !== null) {
+                            $consultation->setFrequenceCardiaque($patient->getFrequenceCardiaque());
+                        }
+                        if ($consultation->getFrequenceRespiratoire() === null && $patient->getFrequenceRespiratoire() !== null) {
+                            $consultation->setFrequenceRespiratoire($patient->getFrequenceRespiratoire());
+                        }
+                    }
+                }
+
                 $em->persist($consultation);
                 $facturationService->initialiserOuRecupererFacture($consultation);
                 $em->flush();
@@ -123,12 +149,49 @@ public function index(
 
     $consultations = $consultationRepository->searchVisibleForUser($search, $user);
 
+    // Récupérer le filtre de période
+    $periodeFilter = $request->query->get('periode');
+    if ($periodeFilter === null) {
+        // Par défaut, filtrer sur les consultations des 30 derniers jours
+        $periodeFilter = 'recent';
+    }
+
+    // Filtrer les consultations par période
+    if ($periodeFilter === 'recent') {
+        $date = new \DateTimeImmutable('-30 days');
+        $consultations = array_filter($consultations, function($consultation) use ($date) {
+            $createdAt = $consultation->getCreatedAt();
+            return $createdAt && $createdAt >= $date;
+        });
+    } elseif ($periodeFilter === 'month') {
+        $now = new \DateTimeImmutable();
+        $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+        $consultations = array_filter($consultations, function($consultation) use ($startOfMonth) {
+            $createdAt = $consultation->getCreatedAt();
+            return $createdAt && $createdAt >= $startOfMonth;
+        });
+    } elseif ($periodeFilter === 'quarter') {
+        $date = new \DateTimeImmutable('-90 days');
+        $consultations = array_filter($consultations, function($consultation) use ($date) {
+            $createdAt = $consultation->getCreatedAt();
+            return $createdAt && $createdAt >= $date;
+        });
+    } elseif ($periodeFilter === 'year') {
+        $date = new \DateTimeImmutable('-365 days');
+        $consultations = array_filter($consultations, function($consultation) use ($date) {
+            $createdAt = $consultation->getCreatedAt();
+            return $createdAt && $createdAt >= $date;
+        });
+    }
+    // Pour 'all', garder toutes les consultations
+
     return $this->render('consultation/index.html.twig', [
         'consultations' => $consultations,
         'form' => $form->createView(),
         'search' => $search,
+        'periodeFilter' => $periodeFilter,
     ]);
- }
+    }
 
  private function denyIfConsultationLocked(Consultation $consultation, Request $request): ?Response
 {
