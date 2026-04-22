@@ -24,8 +24,8 @@ class PrescriptionPrestationType extends AbstractType
         $builder
             ->add('tarifPrestation', EntityType::class, [
                 'class' => TarifPrestation::class,
-                'label' => 'Acte / examen / consommable',
-                'placeholder' => 'Choisir une prestation',
+                'label' => 'CONSULTATION - Acte / examen / consommable',
+                'placeholder' => 'Choisir une prestation ',
                 'choice_label' => function (TarifPrestation $tarif) {
                     return $tarif->getLibelle();
                 },
