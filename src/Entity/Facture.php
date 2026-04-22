@@ -410,7 +410,9 @@ class Facture
 
     private function computeTimbreAmount(int $montantBase): int
     {
-        return $montantBase > self::SEUIL_TIMBRE ? self::MONTANT_TIMBRE : 0;
+        // Le timbre s'applique uniquement au niveau de la perception (lors du paiement)
+        // et non au calcul initial de la facture
+        return 0;
     }
 
     public function aPriseEnCharge(): bool

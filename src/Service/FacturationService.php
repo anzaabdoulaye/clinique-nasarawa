@@ -20,7 +20,7 @@ class FacturationService
 {
     private const CONSULTATION_LINE_TYPE = 'CONSULTATION';
     private const CONSULTATION_LINE_LABEL = 'Consultation';
-    private const CONSULTATION_PRICE = 7000;
+    private const CONSULTATION_PRICE = 0;
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -176,6 +176,11 @@ class FacturationService
             throw new \InvalidArgumentException('Le montant du paiement doit être supérieur à zéro.');
         }
 
+        // Ajouter la ligne timbre lors du premier paiement (perception)
+        if ($facture->getMontantPaye() === 0) {
+            $this->assurerLigneTimbre($facture);
+        }
+
         $this->recalculerFacture($facture);
 
         if ($montant > $facture->getRestePatient()) {
@@ -326,6 +331,34 @@ class FacturationService
         $ligneConsultation->setPrixUnitaire(self::CONSULTATION_PRICE);
         $ligneConsultation->setType(self::CONSULTATION_LINE_TYPE);
         $ligneConsultation->setTypePrestationPEC(TypePrestationPEC::CONSULTATION);
+    }
+
+    private function assurerLigneTimbre(Facture $facture): void
+    {
+        $ligneTimbre = null;
+
+        foreach ($facture->getLignes() as $ligne) {
+            if (
+                $ligne->getPrescriptionPrestation() === null
+                && $ligne->getType() === 'TIMBRE'
+            ) {
+                $ligneTimbre = $ligne;
+                break;
+            }
+        }
+
+        if (!$ligneTimbre instanceof FactureLigne) {
+            $ligneTimbre = new FactureLigne();
+            $ligneTimbre->setFacture($facture);
+            $facture->addLigne($ligneTimbre);
+            $this->em->persist($ligneTimbre);
+        }
+
+        $ligneTimbre->setLibelle('Timbre');
+        $ligneTimbre->setQuantite(1);
+        $ligneTimbre->setPrixUnitaire(200);
+        $ligneTimbre->setType('TIMBRE');
+        $ligneTimbre->setTypePrestationPEC(TypePrestationPEC::AUTRE);
     }
 
     private function hydraterLigneDepuisPrescription(
