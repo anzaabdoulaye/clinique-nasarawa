@@ -62,7 +62,19 @@
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white">
-            <h5 class="mb-0">Liste des factures</h5>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">Liste des factures</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="periodeFilter" class="form-label mb-0 small fw-semibold">Filtrer par période:</label>
+                    <select id="periodeFilter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
+                        <option value="recent" {% if periodeFilter == 'recent' %}selected{% endif %}>30 derniers jours</option>
+                        <option value="month" {% if periodeFilter == 'month' %}selected{% endif %}>Ce mois</option>
+                        <option value="quarter" {% if periodeFilter == 'quarter' %}selected{% endif %}>90 derniers jours</option>
+                        <option value="year" {% if periodeFilter == 'year' %}selected{% endif %}>Cette année</option>
+                        <option value="all" {% if periodeFilter == 'all' %}selected{% endif %}>Toutes les factures</option>
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -166,4 +178,23 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(function () {
+    // Gestionnaire pour le filtre de période
+    document.getElementById('periodeFilter').addEventListener('change', function() {
+        const selectedValue = this.value;
+        const url = new URL(window.location);
+        if (selectedValue && selectedValue !== 'all') {
+            url.searchParams.set('periode', selectedValue);
+        } else {
+            url.searchParams.set('periode', 'all');
+        }
+        window.location.href = url.toString();
+    });
+})();
+</script>
 {% endblock %}

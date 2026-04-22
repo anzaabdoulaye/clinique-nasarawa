@@ -66,6 +66,11 @@ class ConsultationType extends AbstractType
                     'label' => 'Fréquence cardiaque (bpm)',
                     'scale' => 0,
                 ])
+                ->add('frequenceRespiratoire', NumberType::class, [
+                    'required' => false,
+                    'label' => 'Fréquence respiratoire (cycles/min)',
+                    'scale' => 0,
+                ])
                 ->add('motifs', TextareaType::class, [
                     'required' => false,
                     'label' => 'Motif',

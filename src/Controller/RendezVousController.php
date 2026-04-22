@@ -60,9 +60,24 @@ final class RendezVousController extends AbstractController
     return $this->redirectToRoute('app_rendez_vous_index');
 }
 
+        // Récupérer le filtre de statut depuis les paramètres de requête
+        $statutFilter = $request->query->get('statut');
+        $criteria = [];
+        if ($statutFilter === null) {
+            // Par défaut, filtrer sur les statuts actifs : en_attente, planifie, confirme
+            $statutFilter = 'actifs';
+            $criteria['statut'] = [StatutRendezVous::EN_ATTENTE, StatutRendezVous::PLANIFIE, StatutRendezVous::CONFIRME];
+        } elseif ($statutFilter === 'actifs') {
+            $criteria['statut'] = [StatutRendezVous::EN_ATTENTE, StatutRendezVous::PLANIFIE, StatutRendezVous::CONFIRME];
+        } elseif ($statutFilter !== '' && StatutRendezVous::tryFrom($statutFilter)) {
+            $criteria['statut'] = StatutRendezVous::from($statutFilter);
+        }
+        // Si $statutFilter est '', on ne filtre pas (tous les statuts)
+
         return $this->render('rendez_vous/index.html.twig', [
-            'rendezVous' => $rendezVousRepository->findBy([], ['dateHeure' => 'DESC']),
+            'rendezVous' => $rendezVousRepository->findBy($criteria, ['dateHeure' => 'DESC']),
             'form' => $form->createView(),
+            'statutFilter' => $statutFilter,
         ]);
     }
 

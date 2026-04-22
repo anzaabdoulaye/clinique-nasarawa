@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TelType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -175,6 +176,54 @@ class PatientType extends AbstractType
                     'placeholder' => 'Ex: 70 (kg)',
                     'inputmode' => 'decimal',
                 ],
+            ])
+
+            // ===== Constantes vitales =====
+            ->add('temperature', NumberType::class, [
+                'label' => 'Température (°C)',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: 37.5',
+                    'inputmode' => 'decimal',
+                    'step' => '0.1',
+                    'min' => '35',
+                    'max' => '42',
+                ],
+                'help' => 'Température corporelle en degrés Celsius.',
+            ])
+            ->add('tensionArterielle', TextType::class, [
+                'label' => 'Tension artérielle (mmHg)',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: 120/80',
+                ],
+                'help' => 'Format: Systolique/Diastolique (ex: 120/80)',
+            ])
+            ->add('frequenceCardiaque', IntegerType::class, [
+                'label' => 'Fréquence cardiaque (bpm)',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: 72',
+                    'inputmode' => 'numeric',
+                    'min' => '30',
+                    'max' => '200',
+                ],
+                'help' => 'Battements par minute.',
+            ])
+            ->add('frequenceRespiratoire', IntegerType::class, [
+                'label' => 'Fréquence respiratoire (cycles/min)',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control',
+                    'placeholder' => 'Ex: 16',
+                    'inputmode' => 'numeric',
+                    'min' => '8',
+                    'max' => '50',
+                ],
+                'help' => 'Cycles respiratoires par minute.',
             ])
 
             // ===== Antécédents (Textarea: mieux que TextType) =====

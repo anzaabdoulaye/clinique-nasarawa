@@ -53,6 +53,67 @@ class PatientRepository extends ServiceEntityRepository
         return $queryBuilder->getQuery()->getResult();
     }
 
+    /**
+     * Trouve les patients avec une couverture active
+     */
+    public function findPatientsWithActiveCouverture(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.couverturePriseEnCharge', 'c')
+            ->andWhere('c.actif = :actif')
+            ->setParameter('actif', true)
+            ->orderBy('p.nom', 'ASC')
+            ->addOrderBy('p.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve les patients avec une couverture inactive
+     */
+    public function findPatientsWithInactiveCouverture(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.couverturePriseEnCharge', 'c')
+            ->andWhere('c.actif = :actif')
+            ->setParameter('actif', false)
+            ->orderBy('p.nom', 'ASC')
+            ->addOrderBy('p.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve les patients enregistrés récemment
+     */
+    public function findPatientsRecent(int $days): array
+    {
+        $date = new \DateTimeImmutable("-{$days} days");
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.createdAt >= :date')
+            ->setParameter('date', $date)
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve les patients enregistrés ce mois
+     */
+    public function findPatientsThisMonth(): array
+    {
+        $now = new \DateTimeImmutable();
+        $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.createdAt >= :date')
+            ->setParameter('date', $startOfMonth)
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Patient[] Returns an array of Patient objects
     //     */

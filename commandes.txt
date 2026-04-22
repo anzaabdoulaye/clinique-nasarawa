@@ -21,3 +21,16 @@ composer install
 INSERT INTO public.utilisateur(nom,prenom,username,password,statut,roles,created_at,modified_at,force_password_change) 
 VALUES ('admin','admin','admin','$2y$13$DPC0Ak0e3WN8mJlvaTK4Pu/3G2n84J3FP65uCzRq3q7/pRLcD/1Gi','ACTIF','["ROLE_ADMIN"]',
 '2026-03-06 14:28:28','2026-03-06 14:28:28','false');
+
+
+
+
+Résumé des filtres appliqués :
+✅ Rendez-vous (statuts: En attente, Planifié, Confirmé par défaut)
+✅ Patients (30 derniers jours par défaut)
+✅ Perceptions (30 derniers jours par défaut)
+✅ Caisse/Pharmacie (30 derniers jours par défaut)
+✅ Laboratoire - Examens réalisés (30 derniers jours par défaut)
+✅ Factures (30 derniers jours par défaut)
+✅ Consultations (30 derniers jours par défaut)
+✅ Comptabilité matière - Bons (30 derniers jours par défaut)

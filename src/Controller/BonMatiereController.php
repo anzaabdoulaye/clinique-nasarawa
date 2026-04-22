@@ -37,16 +37,56 @@ final class BonMatiereController extends AbstractController
 ))]
     #[Route('', name: 'app_comptabilite_matiere_index', methods: ['GET'])]
     public function index(
+        Request $request,
         BonMatiereRepository $bonMatiereRepository,
         MedicamentRepository $medicamentRepository,
         LotRepository $lotRepository
     ): Response {
+        // Récupérer le filtre de période depuis les paramètres de requête
+        $periodeFilter = $request->query->get('periode');
+        if ($periodeFilter === null) {
+            // Par défaut, filtrer sur les bons des 30 derniers jours
+            $periodeFilter = 'recent';
+        }
+
+        $bons = $bonMatiereRepository->findBy([], ['dateBon' => 'DESC', 'id' => 'DESC']);
+
+        // Filtrer les bons par période
+        if ($periodeFilter === 'recent') {
+            $date = new \DateTimeImmutable('-30 days');
+            $bons = array_filter($bons, function($bon) use ($date) {
+                $dateBon = $bon->getDateBon();
+                return $dateBon && $dateBon >= $date;
+            });
+        } elseif ($periodeFilter === 'month') {
+            $now = new \DateTimeImmutable();
+            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
+            $bons = array_filter($bons, function($bon) use ($startOfMonth) {
+                $dateBon = $bon->getDateBon();
+                return $dateBon && $dateBon >= $startOfMonth;
+            });
+        } elseif ($periodeFilter === 'quarter') {
+            $date = new \DateTimeImmutable('-90 days');
+            $bons = array_filter($bons, function($bon) use ($date) {
+                $dateBon = $bon->getDateBon();
+                return $dateBon && $dateBon >= $date;
+            });
+        } elseif ($periodeFilter === 'year') {
+            $date = new \DateTimeImmutable('-365 days');
+            $bons = array_filter($bons, function($bon) use ($date) {
+                $dateBon = $bon->getDateBon();
+                return $dateBon && $dateBon >= $date;
+            });
+        }
+        // Pour 'all', garder tous les bons
+
         return $this->render('comptabilite_matiere/index.html.twig', [
-            'bons' => $bonMatiereRepository->findBy([], ['dateBon' => 'DESC', 'id' => 'DESC']),
+            'bons' => $bons,
             'types' => TypeBonMatiere::cases(),
             'motifs' => MotifMouvement::cases(),
             'medicaments' => $medicamentRepository->findBy(['actif' => true], ['nom' => 'ASC']),
             'lots' => $lotRepository->findBy([], ['id' => 'DESC']),
+            'periodeFilter' => $periodeFilter,
         ]);
     }
 

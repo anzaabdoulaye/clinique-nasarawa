@@ -39,9 +39,31 @@ final class PatientController extends AbstractController
             return $this->redirectToRoute('app_patient_index');
         }
 
+        // Récupérer le filtre de période depuis les paramètres de requête
+        $periodeFilter = $request->query->get('periode');
+        if ($periodeFilter === null) {
+            // Par défaut, filtrer sur les patients enregistrés récemment (30 derniers jours)
+            $periodeFilter = 'recent';
+        }
+
+        if ($periodeFilter === 'recent') {
+            $patients = $patientRepository->findPatientsRecent(30);
+        } elseif ($periodeFilter === 'month') {
+            $patients = $patientRepository->findPatientsThisMonth();
+        } elseif ($periodeFilter === 'quarter') {
+            $patients = $patientRepository->findPatientsRecent(90);
+        } elseif ($periodeFilter === 'year') {
+            $patients = $patientRepository->findPatientsRecent(365);
+        } elseif ($periodeFilter === 'all') {
+            $patients = $patientRepository->findAll();
+        } else {
+            $patients = $patientRepository->findAll();
+        }
+
         return $this->render('patient/index.html.twig', [
-            'patients' => $patientRepository->findAll(),
+            'patients' => $patients,
             'form' => $form->createView(),
+            'periodeFilter' => $periodeFilter,
         ]);
     }
 
