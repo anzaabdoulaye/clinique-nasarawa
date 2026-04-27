@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/patient')]
@@ -98,6 +100,42 @@ final class PatientController extends AbstractController
     {
         return $this->render('patient/show.html.twig', [
             'patient' => $patient,
+        ]);
+    }
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
+    #[Route('/{id}/pdf', name: 'app_patient_pdf', methods: ['GET'])]
+    public function printPdf(Patient $patient): Response
+    {
+        $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        $html = $this->renderView('patient/print.html.twig', [
+            'patient' => $patient,
+            'logo_path' => $logoBase64,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $pdfOutput = $dompdf->output();
+
+        return new Response($pdfOutput, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="fiche-patient-%s.pdf"', $patient->getCode()),
         ]);
     }
 

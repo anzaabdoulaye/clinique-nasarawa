@@ -37,10 +37,9 @@
                     </a>
 
                     {% if dossier.patient and dossier.patient.dossierMedical %}
-                        <a href="{{ path('app_consultation_index', {'dossierId': dossier.id}) }}"
-                           class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newConsultationModal" data-dossier-id="{{ dossier.id }}">
                             Nouvelle consultation
-                        </a>
+                        </button>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -248,4 +247,66 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Nouvelle Consultation -->
+<div class="modal fade" id="newConsultationModal" tabindex="-1" aria-labelledby="newConsultationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newConsultationModalLabel">Nouvelle consultation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="consultationFormContainer">
+                    <!-- Le formulaire sera chargé ici via AJAX -->
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('newConsultationModal');
+    const formContainer = document.getElementById('consultationFormContainer');
+
+    modal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const dossierId = button.getAttribute('data-dossier-id');
+
+        // Charger le formulaire via AJAX
+        const url = `/consultation/new-modal/${dossierId}`;
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            formContainer.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement du formulaire:', error);
+            formContainer.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement du formulaire.</div>';
+        });
+    });
+
+    // Réinitialiser le modal quand il se ferme
+    modal.addEventListener('hidden.bs.modal', function() {
+        formContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+            </div>
+        `;
+    });
+});
+</script>
 {% endblock %}
