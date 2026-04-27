@@ -66,11 +66,6 @@ class FacturationService
         $this->em->persist($facture);
     }
 
-    // On ne recrée pas / n’ajoute pas de ligne consultation si la consultation est clôturée
-    if ($consultation->estModifiable()) {
-        $this->assurerLigneConsultation($facture);
-    }
-
     $this->recalculerFacture($facture);
 
     return $facture;
@@ -160,7 +155,6 @@ class FacturationService
     }
 
     $this->supprimerLignesOrphelines($facture, $consultation);
-    $this->assurerLigneConsultation($facture);
     $this->recalculerFacture($facture);
 
     return $facture;
@@ -285,16 +279,8 @@ class FacturationService
 
     $this->recalculerFacture($facture);
 
-    $lignesNonConsultation = 0;
-    foreach ($facture->getLignes() as $ligneRestante) {
-        if ($ligneRestante->getPrescriptionPrestation() !== null) {
-            $lignesNonConsultation++;
-        }
-    }
-
-    if ($facture->getLignes()->isEmpty() || ($facture->getLignes()->count() === 1 && $lignesNonConsultation === 0)) {
-        $this->assurerLigneConsultation($facture);
-        $this->recalculerFacture($facture);
+    if ($facture->getLignes()->isEmpty()) {
+        // No lines left, facture is empty
     }
 }
 
@@ -354,9 +340,19 @@ class FacturationService
             $this->em->persist($ligneTimbre);
         }
 
+        // Calculer le montant de base sans le timbre
+        $montantBase = 0;
+        foreach ($facture->getLignes() as $ligne) {
+            if ($ligne->getType() !== 'TIMBRE') {
+                $montantBase += $ligne->getTotal();
+            }
+        }
+
+        $prixTimbre = $montantBase >= 5000 ? 200 : 0;
+
         $ligneTimbre->setLibelle('Timbre');
         $ligneTimbre->setQuantite(1);
-        $ligneTimbre->setPrixUnitaire(200);
+        $ligneTimbre->setPrixUnitaire($prixTimbre);
         $ligneTimbre->setType('TIMBRE');
         $ligneTimbre->setTypePrestationPEC(TypePrestationPEC::AUTRE);
     }

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\BonExamen;
 use App\Entity\BonExamenLigne;
 use App\Entity\Consultation;
+use App\Entity\DossierMedical;
 use App\Entity\PrescriptionPrestation;
 use  App\Entity\Utilisateur;
 use App\Enum\StatutConsultation;
@@ -28,6 +29,7 @@ use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelMedium;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
@@ -213,6 +215,103 @@ public function index(
     return $this->redirectToRoute('app_consultation_show', [
         'id' => $consultation->getId(),
     ]);
+}
+
+#[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_ACCUEIL') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
+))]
+#[Route('/new-modal/{dossierId}', name: 'app_consultation_new_modal', methods: ['GET', 'POST'])]
+public function newModal(
+    Request $request,
+    #[MapEntity(mapping: ['dossierId' => 'id'])]
+    DossierMedical $dossierMedical,
+    UtilisateurRepository $utilisateurRepository,
+    EntityManagerInterface $em,
+    FacturationService $facturationService
+): Response {
+    $consultation = new Consultation();
+    $consultation->setDossierMedical($dossierMedical);
+
+    $form = $this->createForm(ConsultationType::class, $consultation, [
+        'context' => 'admin',
+        'current_user' => $this->getUser(),
+        'action' => $this->generateUrl('app_consultation_new_modal', ['dossierId' => $dossierMedical->getId()]),
+        'method' => 'POST',
+    ]);
+
+    $form->handleRequest($request);
+
+    /** @var Utilisateur|null $currentUser */
+    $currentUser = $this->getUser();
+
+    if ($form->isSubmitted()) {
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            && !$this->isGranted('ROLE_ACCUEIL')
+            && !$this->isGranted('ROLE_MEDECIN')
+        ) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas créer de consultation.');
+        }
+
+        // Important : on force le médecin AVANT isValid()
+        if ($this->isGranted('ROLE_MEDECIN')) {
+            if (!$currentUser instanceof Utilisateur) {
+                throw $this->createAccessDeniedException('Utilisateur invalide.');
+            }
+
+            $consultation->setMedecin($currentUser);
+        }
+
+        if ($form->isValid()) {
+            if (!$this->isGranted('ROLE_MEDECIN') && null === $consultation->getMedecin()) {
+                $form->addError(new FormError('Le médecin est requis.'));
+            }
+
+            if (null === $consultation->getDossierMedical()) {
+                $form->addError(new FormError('Le dossier médical est requis.'));
+            }
+
+            $selectedRendezVous = $consultation->getRendezVous();
+            $selectedDossierMedical = $consultation->getDossierMedical();
+
+            if ($selectedRendezVous !== null && $selectedDossierMedical !== null) {
+                $rendezVousDossierMedical = $selectedRendezVous->getPatient()->getDossierMedical();
+
+                if ($rendezVousDossierMedical !== null && $rendezVousDossierMedical !== $selectedDossierMedical) {
+                    $form->get('dossierMedical')->addError(new FormError('Le dossier medical doit correspondre au patient du rendez-vous selectionne.'));
+                    $form->get('rendezVous')->addError(new FormError('Le rendez-vous selectionne est lie a un autre patient.'));
+                }
+            }
+
+            if ($form->isValid()) {
+                $em->persist($consultation);
+                $em->flush();
+
+                if ($request->isXmlHttpRequest()) {
+                    return $this->json([
+                        'success' => true,
+                        'message' => 'Consultation créée avec succès.',
+                        'redirect' => $this->generateUrl('app_consultation_show', ['id' => $consultation->getId()]),
+                    ]);
+                }
+
+                return $this->redirectToRoute('app_consultation_show', [
+                    'id' => $consultation->getId(),
+                ]);
+            }
+        }
+    }
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->render('consultation/_form_modal.html.twig', [
+            'form' => $form->createView(),
+            'consultation' => $consultation,
+            'dossier' => $dossierMedical,
+        ]);
+    }
+
+    // Si ce n'est pas AJAX, rediriger vers la page normale
+    return $this->redirectToRoute('app_consultation_index', ['dossierId' => $dossierMedical->getId()]);
 }
 
 #[IsGranted(new Expression(

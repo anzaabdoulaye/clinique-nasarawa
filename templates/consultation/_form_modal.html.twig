@@ -1,0 +1,108 @@
+{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            {{ form_label(form.dossierMedical, 'Dossier médical', {'label_attr': {'class': 'form-label'}}) }}
+            <div class="form-control bg-light">
+                <strong>{{ dossier.numeroDossier }}</strong> - {{ dossier.patient.nom }} {{ dossier.patient.prenom }}
+            </div>
+            {{ form_widget(form.dossierMedical, {'attr': {'class': 'd-none'}}) }}
+            {{ form_errors(form.dossierMedical) }}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="mb-3">
+            {{ form_label(form.medecin, 'Médecin', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.medecin, {'attr': {'class': 'form-select'}}) }}
+            {{ form_errors(form.medecin) }}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            {{ form_label(form.rendezVous, 'Rendez-vous (optionnel)', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.rendezVous, {'attr': {'class': 'form-select'}}) }}
+            {{ form_errors(form.rendezVous) }}
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.motifs, 'Motifs de consultation', {'label_attr': {'class': 'form-label'}}) }}
+    {{ form_widget(form.motifs, {'attr': {'class': 'form-control', 'rows': 3}}) }}
+    {{ form_errors(form.motifs) }}
+</div>
+
+<div class="d-flex justify-content-end gap-2">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-primary">
+        <i class="ri-save-line me-1"></i>Créer la consultation
+    </button>
+</div>
+{{ form_end(form) }}
+
+<script>
+// Gestion de la soumission AJAX du formulaire
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#newConsultationModal form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fermer le modal
+                    const modalElement = document.getElementById('newConsultationModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    // Afficher un message de succès
+                    if (typeof showToast === 'function') {
+                        showToast('Consultation créée avec succès!', 'success');
+                    } else {
+                        alert('Consultation créée avec succès!');
+                    }
+
+                    // Rediriger vers la page de la consultation
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    // Afficher les erreurs
+                    if (data.errors) {
+                        let errorHtml = '<div class="alert alert-danger"><ul>';
+                        for (let field in data.errors) {
+                            errorHtml += '<li>' + data.errors[field] + '</li>';
+                        }
+                        errorHtml += '</ul></div>';
+                        document.querySelector('#consultationFormContainer').innerHTML = errorHtml + form.outerHTML;
+                    } else if (data.message) {
+                        alert(data.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue lors de la création de la consultation.');
+            });
+        });
+    }
+});
+</script>
