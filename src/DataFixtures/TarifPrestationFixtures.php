@@ -10,6 +10,19 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class TarifPrestationFixtures extends Fixture
 {
+    private function resolveServiceExecution(CategorieTarif $categorie): ?string
+    {
+        return match ($categorie) {
+            CategorieTarif::EXAMEN_BIOLOGIQUE,
+            CategorieTarif::EXAMEN_FONCTIONNEL => 'laboratoire',
+
+            CategorieTarif::IMAGERIE => 'imagerie',
+            CategorieTarif::HOSPITALISATION => 'hospitalisation',
+
+            default => null,
+        };
+    }
+
     public function load(ObjectManager $manager): void
     {
         $slugger = new AsciiSlugger();
@@ -125,6 +138,8 @@ class TarifPrestationFixtures extends Fixture
             ['libelle' => 'Pousse seringue électrique', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 10000], // image ambiguë: "10000/24h" possible
         ];
 
+        
+
         foreach ($tarifs as $item) {
             $code = strtoupper((string) $slugger->slug($item['libelle']));
 
@@ -137,7 +152,9 @@ class TarifPrestationFixtures extends Fixture
             $tarif->setPrix($item['prix']);
             $tarif->setActif(true);
             $tarif->setCode($code);
-
+            $tarif->setServiceExecution(
+                $item['serviceExecution'] ?? $this->resolveServiceExecution($item['categorie'])
+            );
             $manager->persist($tarif);
         }
 

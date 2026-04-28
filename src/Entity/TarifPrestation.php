@@ -72,15 +72,17 @@ class TarifPrestation
     {
         $this->categorie = $categorie;
 
-        if ($categorie === CategorieTarif::EXAMEN_BIOLOGIQUE) {
+        // On vérifie si la catégorie fait partie des examens gérés par le labo
+        if ($categorie === CategorieTarif::EXAMEN_BIOLOGIQUE || $categorie === CategorieTarif::EXAMEN_FONCTIONNEL) {
             $this->serviceExecution = 'laboratoire';
-        } elseif ($this->serviceExecution === 'laboratoire') {
+        } 
+        // Si on change pour une catégorie qui n'est plus du ressort du labo, on réinitialise
+        elseif ($this->serviceExecution === 'laboratoire') {
             $this->serviceExecution = null;
         }
 
         return $this;
     }
-
     public function getPrix(): int
     {
         return $this->prix;

@@ -7,6 +7,10 @@ UPDATE tarif_prestation
 SET service_execution = 'laboratoire'
 WHERE categorie = 'examen_biologique';
 
+UPDATE tarif_prestation
+SET service_execution = 'laboratoire'
+WHERE categorie = 'examen_fonctionnel';
+
 composer require endroid/qr-code-bundle
 
 
