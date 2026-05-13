@@ -120,10 +120,11 @@ class TarifPrestationFixtures extends Fixture
 
             // ================= HOSPITALISATION =================
             ['libelle' => 'Caution hospitalisation', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 100000,'prixPriseEnCharge' => 100000],
-            ['libelle' => 'Hospitalisation chambre 2 lits', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 30000, 'prixPriseEnCharge' => 30000],
-            ['libelle' => 'Hospitalisation / jour : 1ère catégorie', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 30000,'prixPriseEnCharge' => 30000],
+            ['libelle' => 'Hospitalisation chambre 1 lit', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 20000, 'prixPriseEnCharge' => 30000],
+            ['libelle' => 'Hospitalisation Salle G 1 lit', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 10000, 'prixPriseEnCharge' => 20000],
+            ['libelle' => 'Hospitalisation / jour : 1ère catégorie', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 30000,'prixPriseEnCharge' => 40000],
             ['libelle' => 'Hospitalisation / jour : 2ème catégorie', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 20000,'prixPriseEnCharge' => 30000],
-            ['libelle' => 'Hospitalisation / jour : salle commune à 2 lits', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 15000,'prixPriseEnCharge' => 30000],
+            ['libelle' => 'Hospitalisation / jour : salle commune à 2 lits', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 10000,'prixPriseEnCharge' => 20000],
             ['libelle' => 'Mise en observation', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 10000,'prixPriseEnCharge' => 10000],
             ['libelle' => 'Mise en observation moins de 6 heures', 'categorie' => CategorieTarif::HOSPITALISATION, 'prix' => 5000,'prixPriseEnCharge' => 15000],
 
