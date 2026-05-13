@@ -10,17 +10,17 @@
         <div>
             <h2 class="fw-bold mb-1 text-dark">
                 <i class="ri-medicine-bottle-line me-2 text-primary"></i>
-                Médicaments
+                Consomables
             </h2>
             <p class="text-muted mb-0">
-                Gérez le catalogue des médicaments disponibles dans votre pharmacie.
+                Gérez le catalogue des Consomables disponibles dans votre pharmacie.
             </p>
         </div>
 
         <div>
             <a class="btn btn-primary shadow-sm" href="{{ path('app_medicament_new') }}">
                 <i class="ri-add-line me-1"></i>
-                Nouveau médicament
+                Nouveau Consomable
             </a>
         
             <a href="{{ path('app_pharmacie_index') }}" class="btn btn-outline-secondary">
@@ -35,9 +35,9 @@
         <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                 <div>
-                    <h5 class="mb-1 fw-semibold text-dark">Catalogue des médicaments</h5>
+                    <h5 class="mb-1 fw-semibold text-dark">Catalogue des Consomables</h5>
                     <small class="text-muted">
-                        Total : <span class="fw-semibold">{{ medicaments|length }}</span> médicament(s)
+                        Total : <span class="fw-semibold">{{ medicaments|length }}</span> Consomable(s)
                     </small>
                 </div>
             </div>
@@ -133,7 +133,7 @@
 
                                             <form method="post"
                                                   action="{{ path('app_medicament_delete', {id: m.id}) }}"
-                                                  onsubmit="return confirm('Supprimer ce médicament ?');"
+                                                  onsubmit="return confirm('Supprimer ce Consomable ?');"
                                                   class="d-inline-block m-0">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ m.id) }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
@@ -156,13 +156,13 @@
                             <i class="ri-medicine-bottle-line fs-2 text-muted"></i>
                         </div>
                     </div>
-                    <h5 class="fw-bold text-dark mb-2">Aucun médicament enregistré</h5>
+                    <h5 class="fw-bold text-dark mb-2">Aucun Consomable enregistré</h5>
                     <p class="text-muted mb-4">
-                        Ajoutez un médicament pour commencer à constituer votre catalogue pharmaceutique.
+                        Ajoutez un Consomable pour commencer à constituer votre catalogue pharmaceutique.
                     </p>
                     <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_medicament_new') }}">
                         <i class="ri-add-line me-1"></i>
-                        Nouveau médicament
+                        Nouveau Consomable
                     </a>
                 </div>
             {% endif %}

@@ -59,17 +59,17 @@
                     <div id="bon-lines">
                         <div class="border rounded-4 p-3 mb-3 bon-line bg-light-subtle">
                             <div class="row g-3 align-items-end">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Médicament</label>
-                                    <select name="lignes[0][medicament]" class="form-select" required>
-                                        <option value="">Sélectionner...</option>
-                                        {% for medicament in medicaments %}
-                                            <option value="{{ medicament.id }}">{{ medicament.nom }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
+<div class="col-md-3 bon-inventory-hidden" data-required="true">
+                            <label class="form-label fw-semibold">Consommable</label>
+                            <select name="lignes[0][medicament]" class="form-select" required>
+                                <option value="">Sélectionner...</option>
+                                {% for medicament in medicaments %}
+                                    <option value="{{ medicament.id }}">{{ medicament.nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                                <div class="col-md-2">
+                        <div class="col-md-2 bon-inventory-hidden">
                                     <label class="form-label fw-semibold">Lot</label>
                                     <select name="lignes[0][lot]" class="form-select">
                                         <option value="">Sélectionner...</option>
@@ -82,12 +82,12 @@
                                     <small class="text-muted d-block mt-1">Sélectionnez un lot existant ou renseignez-en un nouveau ci-dessous.</small>
                                 </div>
 
-                                <div class="col-md-2 bon-entree-only">
+                                <div class="col-md-2 bon-entree-only bon-inventory-hidden">
                                     <label class="form-label fw-semibold">Nouveau numéro lot</label>
                                     <input type="text" name="lignes[0][numeroLot]" class="form-control" placeholder="Ex: LOT-2026-001">
                                 </div>
 
-                                <div class="col-md-2 bon-entree-only">
+                                <div class="col-md-2 bon-entree-only bon-inventory-hidden">
                                     <label class="form-label fw-semibold">Péremption</label>
                                     <input type="date" name="lignes[0][datePeremption]" class="form-control">
                                 </div>
@@ -155,6 +155,43 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
+    const motifSelect = document.querySelector('select[name="motif"]');
+
+    const syncFields = function () {
+        const isEntree = typeSelect && typeSelect.value === 'ENTREE';
+        const isInventory = motifSelect && motifSelect.value === 'INVENTAIRE';
+
+        container.querySelectorAll('.bon-entree-only').forEach(function (fieldWrapper) {
+            const hide = !isEntree || isInventory;
+            fieldWrapper.classList.toggle('d-none', hide);
+            fieldWrapper.querySelectorAll('input, select').forEach(function (field) {
+                if (hide) {
+                    field.disabled = true;
+                } else {
+                    field.disabled = false;
+                }
+                if (fieldWrapper.dataset.required === 'true') {
+                    field.required = !hide;
+                }
+            });
+        });
+
+        container.querySelectorAll('.bon-inventory-hidden').forEach(function (fieldWrapper) {
+            const hide = isInventory;
+            fieldWrapper.classList.toggle('d-none', hide);
+            fieldWrapper.querySelectorAll('input, select').forEach(function (field) {
+                if (fieldWrapper.dataset.required === 'true') {
+                    field.required = !hide;
+                }
+                if (hide && field.name && field.name.endsWith('[medicament]') && !field.value) {
+                    if (field.options.length > 1) {
+                        field.selectedIndex = 1;
+                    }
+                }
+            });
+        });
+    };
+
     addBtn.addEventListener('click', function () {
         const firstLine = container.querySelector('.bon-line');
         if (!firstLine) return;
@@ -176,12 +213,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         container.appendChild(clone);
         index++;
-        syncEntreeFields();
+        syncFields();
     });
 
     if (typeSelect) {
-        typeSelect.addEventListener('change', syncEntreeFields);
+        typeSelect.addEventListener('change', syncFields);
     }
+
+    if (motifSelect) {
+        motifSelect.addEventListener('change', syncFields);
+    }
+
+    syncFields();
 
     document.addEventListener('click', function (e) {
         const btn = e.target.closest('.remove-line');

@@ -112,9 +112,18 @@
 
                         <div class="col-md-6">
                             <small class="text-muted d-block mb-1">Motif</small>
-                            <div class="fw-semibold text-dark">
-                                {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
-                            </div>
+                            {% if bon.motif.value == 'INVENTAIRE' %}
+                                <div>
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">
+                                        <i class="ri-stack-line me-1"></i>
+                                        {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
+                                    </span>
+                                </div>
+                            {% else %}
+                                <div class="fw-semibold text-dark">
+                                    {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="col-md-6">
@@ -198,7 +207,7 @@
                             <table class="table align-middle table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="fw-semibold text-dark">Médicament</th>
+                                        <th class="fw-semibold text-dark">Consommable</th>
                                         <th class="fw-semibold text-dark">Lot</th>
                                         <th class="fw-semibold text-dark">Péremption</th>
                                         <th class="fw-semibold text-dark">Quantité</th>

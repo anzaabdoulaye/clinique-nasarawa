@@ -4,12 +4,12 @@
 
 {% block body %}
 <div class="container">
-    <h1>Lots de médicaments</h1>
+    <h1>Lots de Consomable</h1>
     <a class="btn btn-primary mb-3" href="{{ path('app_lot_new') }}">Nouveau lot</a>
 
     <table class="table">
         <thead>
-            <tr><th>#</th><th>Médicament</th><th>Lot</th><th>Péremption</th><th>Quantité</th><th>Actions</th></tr>
+            <tr><th>#</th><th>Consomable</th><th>Lot</th><th>Péremption</th><th>Quantité</th><th>Actions</th></tr>
         </thead>
         <tbody>
             {% for lot in lots %}

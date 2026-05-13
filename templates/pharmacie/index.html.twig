@@ -10,7 +10,7 @@
                 <i class="ri-capsule-line me-2 text-primary"></i> Tableau de bord - Pharmacie
             </h3>
             <p class="text-muted mb-0">
-                Vue d’ensemble des médicaments, stocks, lots, ventes et alertes.
+                Vue d’ensemble des Consomables, stocks, lots, ventes et alertes.
             </p>
         </div>
 
@@ -19,7 +19,7 @@
                 <i class="ri-file-chart-line me-1"></i> Rapports
             </a>
             <a href="{{ path('app_medicament_index') }}" class="btn btn-primary">
-                <i class="ri-medicine-bottle-line me-1"></i> Médicaments
+                <i class="ri-medicine-bottle-line me-1"></i> Consomables
             </a>
             <a href="{{ path('app_lot_index') }}" class="btn btn-outline-primary">
                 <i class="ri-archive-line me-1"></i> Lots
@@ -41,7 +41,7 @@
                         <i class="ri-capsule-line fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Médicaments</div>
+                        <div class="text-muted small">Consomables</div>
                         <h4 class="mb-0 fw-bold">{{ totalMedicaments|default(0) }}</h4>
                     </div>
                 </div>
@@ -131,7 +131,7 @@
                             <i class="ri-archive-2-line me-1"></i> Gérer les lots
                         </a>
                         <a href="{{ path('app_medicament_index') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="ri-capsule-line me-1"></i> Voir médicaments
+                            <i class="ri-capsule-line me-1"></i> Voir consomables
                         </a>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0">
                     <h5 class="mb-0 fw-semibold">
-                        <i class="ri-error-warning-line me-2 text-warning"></i> Médicaments à stock faible
+                        <i class="ri-error-warning-line me-2 text-warning"></i> Consomables à stock faible
                     </h5>
                 </div>
                 <div class="card-body">
@@ -196,7 +196,7 @@
                             <table class="table align-middle table-hover mb-0 datatable-mi">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Médicament</th>
+                                        <th>Consomable</th>
                                         <th>Stock disponible</th>
                                         <th>Statut</th>
                                     </tr>
@@ -217,7 +217,7 @@
                     {% else %}
                         <div class="text-center text-muted py-4">
                             <i class="ri-inbox-line fs-2 d-block mb-2"></i>
-                            Aucun médicament en stock faible.
+                            Aucun consomable en stock faible.
                         </div>
                     {% endif %}
                 </div>
@@ -237,7 +237,7 @@
                             <table class="table align-middle table-hover mb-0 datatable-mi">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Médicament</th>
+                                        <th>Consomable</th>
                                         <th>Lot</th>
                                         <th>Péremption</th>
                                         <th>Qté</th>
@@ -282,8 +282,8 @@
                         <div class="col-12 col-md-4">
                             <a href="{{ path('app_medicament_index') }}" class="text-decoration-none">
                                 <div class="border rounded-3 p-3 h-100 hover-shadow">
-                                    <h6 class="fw-bold mb-1 text-dark">Médicaments</h6>
-                                    <p class="text-muted mb-0">Créer, modifier et consulter la liste des médicaments.</p>
+                                    <h6 class="fw-bold mb-1 text-dark">Consomables</h6>
+                                    <p class="text-muted mb-0">Créer, modifier et consulter la liste des Consomables.</p>
                                 </div>
                             </a>
                         </div>

@@ -13,7 +13,7 @@
                 Comptabilité matière
             </h2>
             <p class="text-muted mb-0">
-                Consultez et suivez les bons d’entrée, de sortie définitive et de sortie provisoire.
+                Consultez et suivez les bons d’entrée, de sortie définitive, de sortie provisoire et les mouvements d’inventaire.
             </p>
         </div>
 
@@ -205,9 +205,16 @@
                                     </td>
 
                                     <td>
-                                        <span class="fw-semibold text-dark">
-                                            {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
-                                        </span>
+                                        {% if bon.motif.value == 'INVENTAIRE' %}
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">
+                                                <i class="ri-stack-line me-1"></i>
+                                                {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
+                                            </span>
+                                        {% else %}
+                                            <span class="fw-semibold text-dark">
+                                                {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
+                                            </span>
+                                        {% endif %}
                                     </td>
 
                                     <td>

@@ -23,14 +23,14 @@
                     <td>
                         <a class="btn btn-sm btn-outline-secondary" href="{{ path('app_medicament_show', {id: m.id}) }}">Voir</a>
                         <a class="btn btn-sm btn-outline-primary" href="{{ path('app_medicament_edit', {id: m.id}) }}">Éditer</a>
-                        <form style="display:inline-block" method="post" action="{{ path('app_medicament_delete', {id: m.id}) }}" onsubmit="return confirm('Supprimer ce médicament ?');">
+                        <form style="display:inline-block" method="post" action="{{ path('app_medicament_delete', {id: m.id}) }}" onsubmit="return confirm('Supprimer ce consomable ?');">
                             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ m.id) }}" />
                             <button class="btn btn-sm btn-outline-danger">Supprimer</button>
                         </form>
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="7">Aucun médicament</td></tr>
+                <tr><td colspan="7">Aucun Consomable</td></tr>
             {% endfor %}
         </tbody>
     </table>
