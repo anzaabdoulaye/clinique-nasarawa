@@ -43,40 +43,46 @@ public function togglePriseEnCharge(
     FacturationService $facturationService,
     EntityManagerInterface $em
 ): JsonResponse {
-    $data = json_decode($request->getContent(), true);
-    $active = (bool) ($data['active'] ?? false);
-    $organismeId = $data['organismeId'] ?? null;
-    $taux = $data['taux'] ?? null;
+    try {
+        $data = json_decode($request->getContent(), true);
+        $active = (bool) ($data['active'] ?? false);
+        $organismeId = $data['organismeId'] ?? null;
+        $taux = $data['taux'] ?? null;
 
-    // Mise à jour des paramètres PEC
-    $facture->setPriseEnChargeActive($active);
-    if ($active) {
-        $facture->setPriseEnChargeManuelle(true);
-        if ($organismeId) {
-            $organisme = $em->getRepository(OrganismePriseEnCharge::class)->find($organismeId);
-            $facture->setOrganismePriseEnCharge($organisme);
+        $facture->setPriseEnChargeActive($active);
+        if ($active) {
+            $facture->setPriseEnChargeManuelle(true);
+            if ($organismeId) {
+                $organisme = $em->getRepository(OrganismePriseEnCharge::class)->find($organismeId);
+                $facture->setOrganismePriseEnCharge($organisme);
+            }
+            if ($taux !== null) {
+                $facture->setTauxPriseEnChargeManuel((int) $taux);
+            }
+        } else {
+            $facture->setPriseEnChargeManuelle(false);
+            $facture->setTauxPriseEnChargeManuel(null);
+            // Attention : ne pas réinitialiser l'organisme si nécessaire
         }
-        if ($taux !== null) {
-            $facture->setTauxPriseEnChargeManuel((int) $taux);
-        }
-    } else {
-        $facture->setPriseEnChargeManuelle(false);
-        $facture->setTauxPriseEnChargeManuel(null);
-        // Ne pas réinitialiser l'organisme ? À voir selon métier.
+
+        // Rafraîchir les prix unitaires en fonction de la PEC
+        $facturationService->rafraichirPrixUnitairesSelonPEC($facture);
+        // Recalculer les montants de la facture
+        $facturationService->recalculerFacture($facture);
+        $em->flush();
+
+        return $this->json([
+            'montantTotalBrut' => $facture->getMontantTotalBrut(),
+            'montantTotalPriseEnCharge' => $facture->getMontantTotalPriseEnCharge(),
+            'montantTotalPatient' => $facture->getMontantTotalPatient(),
+            'montantPayePatient' => $facture->getMontantPayePatient(),
+            'restePatient' => $facture->getRestePatient(),
+        ]);
+    } catch (\Exception $e) {
+        // Journaliser l'erreur pour debug (optionnel)
+        // $this->logger->error($e->getMessage());
+        return $this->json(['error' => $e->getMessage()], 500);
     }
-
-    // Recalcul complet (prix unitaires, PEC)
-    $facturationService->rafraichirPrixUnitairesSelonPEC($facture); // méthode à ajouter dans FacturationService
-    $facturationService->recalculerFacture($facture);
-    $em->flush();
-
-    return $this->json([
-        'montantTotalBrut' => $facture->getMontantTotalBrut(),
-        'montantTotalPriseEnCharge' => $facture->getMontantTotalPriseEnCharge(),
-        'montantTotalPatient' => $facture->getMontantTotalPatient(),
-        'montantPayePatient' => $facture->getMontantPayePatient(),
-        'restePatient' => $facture->getRestePatient(),
-    ]);
 }
 
 #[IsGranted(new Expression(

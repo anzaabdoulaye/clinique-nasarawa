@@ -441,12 +441,10 @@ function initForm() {
     // Calcul initial
     calculer();
 }
-
 function calculer() {
     const toggle = document.querySelector('.js-pec-toggle');
     if (!toggle) return;
 
-    const active = toggle.checked;
     const factureId = document.getElementById('facture_id')?.value;
     if (!factureId) return;
 
@@ -454,10 +452,7 @@ function calculer() {
     const organismeId = organismeSelect ? organismeSelect.value : null;
     const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"]');
     const taux = tauxSelect ? tauxSelect.value : null;
-
-    // Indicateur de chargement
-    const resteSpan = document.getElementById('pec-reste-patient');
-    if (resteSpan) resteSpan.innerHTML = '...';
+    const active = toggle.checked;
 
     fetch(`/perception/facture/${factureId}/toggle-pec`, {
         method: 'POST',
@@ -466,39 +461,35 @@ function calculer() {
     })
     .then(response => response.json())
     .then(data => {
-        // Mise à jour des affichages
+        if (data.error) throw new Error(data.error);
         const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
-        const setContent = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.textContent = fmt(val);
-                el.dataset.value = val;
-            }
-        };
         setContent('pec-total-brut', data.montantTotalBrut);
         setContent('pec-montant-pec', data.montantTotalPriseEnCharge);
         setContent('pec-part-patient', data.montantTotalPatient);
         setContent('pec-deja-paye', data.montantPayePatient);
         setContent('pec-reste-patient', data.restePatient);
-
-        // Mise à jour du champ montant max
+        // Mise à jour du champ montant
         const montantInput = document.querySelector('input[name*="montant"]');
         if (montantInput) {
             montantInput.max = data.restePatient;
             montantInput.dataset.max = data.restePatient;
             const helpText = montantInput.closest('.card-body')?.querySelector('.form-text');
-            if (helpText) {
-                helpText.innerHTML = `Max: <strong class="text-danger">${fmt(data.restePatient)} FCFA</strong>`;
-            }
-            if (parseInt(montantInput.value || 0) > data.restePatient) {
-                montantInput.value = data.restePatient;
-            }
+            if (helpText) helpText.innerHTML = `Max: <strong class="text-danger">${fmt(data.restePatient)} FCFA</strong>`;
+            if (parseInt(montantInput.value) > data.restePatient) montantInput.value = data.restePatient;
         }
     })
     .catch(error => {
         console.error('Erreur AJAX:', error);
-        if (resteSpan) resteSpan.innerHTML = 'Erreur';
+        document.getElementById('pec-reste-patient').textContent = 'Erreur';
     });
+}
+
+function setContent(id, val) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = new Intl.NumberFormat('fr-FR').format(val);
+        el.dataset.value = val;
+    }
 }
 </script>
     {% endblock %}

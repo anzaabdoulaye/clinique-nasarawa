@@ -21,8 +21,24 @@ class PriseEnChargeService
     {
         $dateReference = new \DateTimeImmutable();
 
-        $patient ??= $facture->getConsultation()?->getDossierMedical()?->getPatient();
-        $couverture = $this->getCouvertureActive($patient, $dateReference);
+        
+    
+    $patient ??= $facture->getConsultation()?->getDossierMedical()?->getPatient();
+    $couverture = $this->getCouvertureActive($patient, $dateReference);
+
+    // CORRECTION : On ne réinitialise QUE si ce n'est pas manuel 
+    // ET qu'aucun organisme n'est déjà assigné (cas de la modal)
+    if ($facture->isPriseEnChargeActive() && ($facture->isPriseEnChargeManuelle() || $facture->getOrganismePriseEnCharge())) {
+        // On garde l'organisme et le mode choisi
+    } else {
+        $facture->setOrganismePriseEnCharge($couverture?->getOrganisme());
+
+        if (!$couverture) {
+            $facture->setPriseEnChargeActive(false);
+            $facture->setPriseEnChargeManuelle(false);
+            $facture->setTauxPriseEnChargeManuel(null);
+        }
+    }
 
         if ($facture->isPriseEnChargeActive() && $facture->isPriseEnChargeManuelle()) {
             // On garde l'organisme choisi sur la facture
@@ -67,64 +83,69 @@ class PriseEnChargeService
         $this->mettreAJourStatutFacture($facture);
     }
 
+     private function determinerTauxApplicable(
+    Facture $facture,
+    ?PatientCouverture $couverture,
+    TypePrestationPEC $type,
+    \DateTimeInterface $dateReference
+): int {
+    // 1. Priorité au mode manuel sur facture (S'applique désormais à tous les types sauf Timbre)
+    if ($facture->isPriseEnChargeActive() && $facture->isPriseEnChargeManuelle()) {
+        $taux = (int) ($facture->getTauxPriseEnChargeManuel() ?? 0);
+
+        if ($type === TypePrestationPEC::HOSPITALISATION && $taux < 100) {
+            return 100;
+        }
+
+        return max(0, min(100, $taux));
+    }
+
+    // 2. PEC via couverture patient / conventions
+    if ($facture->isPriseEnChargeActive() && $couverture && $couverture->getOrganisme()) {
+        // Ici, si c'est AUTRE, la convention retournera probablement 0 (via vos fixtures)
+        $convention = $this->conventionRepository->findConventionActive(
+            $couverture->getOrganisme(),
+            $type,
+            $dateReference
+        );
+
+        if ($convention) {
+            return max(0, min(100, $convention->getTauxCouverture()));
+        }
+    }
+
+    return 0;
+}
+
     private function recalculerLigne(
-        FactureLigne $ligne,
-        Facture $facture,
-        ?PatientCouverture $couverture,
-        \DateTimeInterface $dateReference
-    ): void {
-        $montantBrut = max(0, $ligne->getQuantite() * $ligne->getPrixUnitaire());
+    FactureLigne $ligne,
+    Facture $facture,
+    ?PatientCouverture $couverture,
+    \DateTimeInterface $dateReference
+): void {
+    $montantBrut = max(0, $ligne->getQuantite() * $ligne->getPrixUnitaire());
+    $ligne->setTotal($montantBrut);
+    $ligne->setMontantBrut($montantBrut);
 
-        $ligne->setTotal($montantBrut);
-        $ligne->setMontantBrut($montantBrut);
+    $type = $ligne->getTypePrestationPEC() ?? $this->infererTypeDepuisAncienChamp($ligne);
+    $ligne->setTypePrestationPEC($type);
 
-        $type = $ligne->getTypePrestationPEC() ?? $this->infererTypeDepuisAncienChamp($ligne);
-        $ligne->setTypePrestationPEC($type);
-
+    // ✅ Ne forcer à 0 que pour le timbre physique, laisser le reste à determinerTauxApplicable
+    if ($ligne->getType() === 'TIMBRE') {
+        $taux = 0;
+    } else {
         $taux = $this->determinerTauxApplicable($facture, $couverture, $type, $dateReference);
-
-        $montantPriseEnCharge = (int) round($montantBrut * $taux / 100);
-        $montantPatient = $montantBrut - $montantPriseEnCharge;
-
-        $ligne->setTauxPriseEnCharge($taux);
-        $ligne->setMontantPriseEnCharge($montantPriseEnCharge);
-        $ligne->setMontantPatient($montantPatient);
     }
 
-    private function determinerTauxApplicable(
-        Facture $facture,
-        ?PatientCouverture $couverture,
-        TypePrestationPEC $type,
-        \DateTimeInterface $dateReference
-    ): int {
-        // 1. Priorité au mode manuel sur facture
-        if ($facture->isPriseEnChargeActive() && $facture->isPriseEnChargeManuelle()) {
-            $taux = (int) ($facture->getTauxPriseEnChargeManuel() ?? 0);
+    $montantPriseEnCharge = (int) round($montantBrut * $taux / 100);
+    $montantPatient = $montantBrut - $montantPriseEnCharge;
 
-            // Règle métier : hospitalisation à 100 % minimum
-            if ($type === TypePrestationPEC::HOSPITALISATION && $taux < 100) {
-                return 100;
-            }
+    $ligne->setTauxPriseEnCharge($taux);
+    $ligne->setMontantPriseEnCharge($montantPriseEnCharge);
+    $ligne->setMontantPatient($montantPatient);
+}
 
-            return max(0, min(100, $taux));
-        }
-
-        // 2. PEC via couverture patient / conventions
-        if ($facture->isPriseEnChargeActive() && $couverture && $couverture->getOrganisme()) {
-            $convention = $this->conventionRepository->findConventionActive(
-                $couverture->getOrganisme(),
-                $type,
-                $dateReference
-            );
-
-            if ($convention) {
-                return max(0, min(100, $convention->getTauxCouverture()));
-            }
-        }
-
-        // 3. Pas de PEC
-        return 0;
-    }
+   
 
     private function getCouvertureActive(?Patient $patient, \DateTimeInterface $date): ?PatientCouverture
     {

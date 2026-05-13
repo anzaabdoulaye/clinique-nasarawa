@@ -195,16 +195,23 @@ class FacturationService
         return $paiement;
     }
 
-    public function recalculerFacture(Facture $facture): void
-    {
-        $patient = $facture->getConsultation()?->getDossierMedical()?->getPatient();
+   public function recalculerFacture(Facture $facture): void
+{
+    $patient = $facture->getConsultation()?->getDossierMedical()?->getPatient();
 
-        $this->priseEnChargeService->recalculerFacture($facture, $patient);
+    // 1. IMPORTANT : Rafraîchir les prix unitaires selon l'état de la PEC
+    // car le prix d'une prestation peut différer si PEC active (prix conventionné)
+    $this->rafraichirPrixUnitairesSelonPEC($facture);
 
-        // Assurer que le timbre est correct après recalcul
-        $this->assurerLigneTimbre($facture);
-    }
+    // 2. Calcul initial via le service de prise en charge
+    $this->priseEnChargeService->recalculerFacture($facture, $patient);
 
+    // 3. Gérer le timbre (qui dépend du montant brut calculé ci-dessus)
+    $this->assurerLigneTimbre($facture);
+
+    // 4. Recalculer final pour intégrer la ligne de timbre (taux 0%)
+    $this->priseEnChargeService->recalculerFacture($facture, $patient);
+}
     public function mettreAJourStatutPrestations(Facture $facture): void
     {
         $statutFacture = $facture->getStatut();
@@ -342,20 +349,25 @@ class FacturationService
         }
 
         // Calculer le montant de base sans le timbre
-        $montantBase = 0;
-        foreach ($facture->getLignes() as $ligne) {
-            if ($ligne->getType() !== 'TIMBRE') {
-                $montantBase += $ligne->getTotal();
-            }
+       $montantBase = 0;
+    foreach ($facture->getLignes() as $ligne) {
+        if ($ligne->getType() !== 'TIMBRE') {
+            // Utiliser le montant brut de la ligne
+            $montantBase += ($ligne->getQuantite() * $ligne->getPrixUnitaire());
         }
+    }
 
-        $prixTimbre = $montantBase >= 5000 ? 200 : 0;
+    $prixTimbre = $montantBase >= 5000 ? 200 : 0;
 
-        $ligneTimbre->setLibelle('Timbre');
-        $ligneTimbre->setQuantite(1);
-        $ligneTimbre->setPrixUnitaire($prixTimbre);
-        $ligneTimbre->setType('TIMBRE');
-        $ligneTimbre->setTypePrestationPEC(TypePrestationPEC::AUTRE);
+    $ligneTimbre->setLibelle('Timbre');
+    $ligneTimbre->setQuantite(1);
+    $ligneTimbre->setPrixUnitaire($prixTimbre);
+    $ligneTimbre->setType('TIMBRE');
+    $ligneTimbre->setTypePrestationPEC(TypePrestationPEC::AUTRE);
+    
+    // Forcer le montant brut immédiatement pour que PriseEnChargeService le voie
+    $ligneTimbre->setMontantBrut($prixTimbre);
+    $ligneTimbre->setTotal($prixTimbre);
     }
 
     private function hydraterLigneDepuisPrescription(

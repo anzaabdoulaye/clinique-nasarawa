@@ -65,7 +65,7 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h5 class="mb-0">Liste des factures</h5>
                 <div class="d-flex align-items-center gap-2">
-                    <label for="periodeFilter" class="form-label mb-0 small fw-semibold">Filtrer par période:</label>
+                    <label for="periodeFilter" class="form-label mb-0 small fw-semibold">Filtrer par période :</label>
                     <select id="periodeFilter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
                         <option value="recent" {% if periodeFilter == 'recent' %}selected{% endif %}>30 derniers jours</option>
                         <option value="month" {% if periodeFilter == 'month' %}selected{% endif %}>Ce mois</option>
@@ -78,7 +78,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table align-middle">
+                <table class="table align-middle" id="facturesTable">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -120,10 +120,12 @@
                                     -
                                 {% endif %}
                             </td>
-                            <td>{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}</td>
-                            <td>{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</td>
-                            <td>{{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</td>
+                            <td data-order="{{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i:s') : '' }}">
+                                {{ facture.dateEmission ? facture.dateEmission|date('Y-m-d H:i') : '-' }}
+                            </td>
+                            <td data-order="{{ facture.montantTotal }}">{{ facture.montantTotal|number_format(0, ',', ' ') }} FCFA</td>
+                            <td data-order="{{ facture.montantPaye }}">{{ facture.montantPaye|number_format(0, ',', ' ') }} FCFA</td>
+                            <td data-order="{{ facture.resteAPayer }}">{{ facture.resteAPayer|number_format(0, ',', ' ') }} FCFA</td>
                             <td>
                                 {% if statut == 'brouillon' %}
                                     <span class="badge bg-secondary">Brouillon</span>
@@ -154,17 +156,17 @@
                                     Encaisser
                                 </button>
                             {% endif %}
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="9" class="text-center text-muted">Aucune facture trouvée.</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">Aucune facture trouvée.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
     </div>
 </div>
 
@@ -184,17 +186,93 @@
 {{ parent() }}
 <script>
 (function () {
-    // Gestionnaire pour le filtre de période
-    document.getElementById('periodeFilter').addEventListener('change', function() {
-        const selectedValue = this.value;
-        const url = new URL(window.location);
-        if (selectedValue && selectedValue !== 'all') {
-            url.searchParams.set('periode', selectedValue);
-        } else {
-            url.searchParams.set('periode', 'all');
+    // Filtre par période (recharge la page)
+    const periodeFilter = document.getElementById('periodeFilter');
+    if (periodeFilter) {
+        periodeFilter.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const url = new URL(window.location);
+            if (selectedValue && selectedValue !== 'all') {
+                url.searchParams.set('periode', selectedValue);
+            } else {
+                url.searchParams.set('periode', 'all');
+            }
+            window.location.href = url.toString();
+        });
+    }
+
+    // Initialisation DataTables spécifique pour cette table (avec les mêmes options que le projet)
+    if ($.fn.DataTable && document.getElementById('facturesTable') && {{ factures|length }} > 0) {
+        const $table = $('#facturesTable');
+        
+        // Éviter une double initialisation
+        if ($.fn.DataTable.isDataTable($table[0])) {
+            $table.DataTable().destroy();
         }
-        window.location.href = url.toString();
-    });
+        
+        // Reprendre la configuration globale du projet (langue, boutons, etc.)
+        const exportTitle = 'factures_perception';
+        const frenchLanguage = {
+            processing: "Traitement en cours...",
+            search: "Rechercher :",
+            lengthMenu: "Afficher _MENU_ éléments",
+            info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+            infoEmpty: "Aucun élément à afficher",
+            infoFiltered: "(filtré de _MAX_ éléments au total)",
+            loadingRecords: "Chargement...",
+            zeroRecords: "Aucun résultat trouvé",
+            emptyTable: "Aucune donnée disponible",
+            paginate: {
+                first: "Premier",
+                previous: "Précédent",
+                next: "Suivant",
+                last: "Dernier"
+            },
+            buttons: {
+                copy: "Copier",
+                csv: "CSV",
+                excel: "Excel",
+                pdf: "PDF",
+                print: "Imprimer"
+            }
+        };
+        
+        function buildExportButtons() {
+            return [
+                { extend: 'copyHtml5', text: '<i class="ri-file-copy-line me-1"></i> Copier', className: 'btn btn-light btn-sm', title: exportTitle, exportOptions: { columns: ':visible:not(.no-export)' } },
+                { extend: 'csvHtml5', text: '<i class="ri-file-text-line me-1"></i> CSV', className: 'btn btn-info btn-sm', title: exportTitle, exportOptions: { columns: ':visible:not(.no-export)' } },
+                { extend: 'excelHtml5', text: '<i class="ri-file-excel-2-line me-1"></i> Excel', className: 'btn btn-success btn-sm', title: exportTitle, exportOptions: { columns: ':visible:not(.no-export)' } },
+                { extend: 'pdfHtml5', text: '<i class="ri-file-pdf-line me-1"></i> PDF', className: 'btn btn-danger btn-sm', title: exportTitle, orientation: 'landscape', pageSize: 'A4', exportOptions: { columns: ':visible:not(.no-export)' }, customize: function(doc) { if (doc.content[1] && doc.content[1].table) doc.content[1].table.widths = Array(doc.content[1].table.body[0].length).fill('*'); doc.styles.tableHeader.alignment = 'center'; } },
+                { extend: 'print', text: '<i class="ri-printer-line me-1"></i> Imprimer', className: 'btn btn-secondary btn-sm', title: exportTitle, exportOptions: { columns: ':visible:not(.no-export)' } }
+            ];
+        }
+        
+        $table.DataTable({
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            searching: true,
+            ordering: true,
+            responsive: true,
+            deferRender: true,
+            language: frenchLanguage,
+            order: [[3, 'desc']], // Tri par date décroissante (colonne index 3)
+            columnDefs: [
+                { orderable: false, targets: [8] } // Désactiver le tri sur la colonne Actions
+            ],
+            dom: "<'row mb-3 align-items-center'<'col-md-8 dt-buttons-wrapper'B><'col-md-4 text-md-end'f>>" +
+                 "<'row'<'col-12'tr>>" +
+                 "<'row mt-3'<'col-md-5'i><'col-md-7'p>>",
+            buttons: buildExportButtons()
+        });
+    }
+    
+    // Recharger la page après fermeture de la modal d'encaissement pour mettre à jour les données
+    const encaissementModal = document.getElementById('encaissementModal');
+    if (encaissementModal) {
+        encaissementModal.addEventListener('hidden.bs.modal', function () {
+            window.location.reload();
+        });
+    }
 })();
 </script>
 {% endblock %}

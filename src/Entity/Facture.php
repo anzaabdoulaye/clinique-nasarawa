@@ -400,8 +400,8 @@ class Facture
 
     public function setTauxPriseEnChargeManuel(?int $tauxPriseEnChargeManuel): static
     {
-        if ($tauxPriseEnChargeManuel !== null && !\in_array($tauxPriseEnChargeManuel, [0, 80, 100], true)) {
-            throw new \InvalidArgumentException('Le taux manuel doit être 0, 80 ou 100.');
+        if ($tauxPriseEnChargeManuel !== null && !\in_array($tauxPriseEnChargeManuel, [0, 50, 60, 70, 80, 90, 100], true)) {
+            throw new \InvalidArgumentException('Le taux manuel doit être 0, 50, 60, 70, 80, 90 ou 100.');
         }
 
         $this->tauxPriseEnChargeManuel = $tauxPriseEnChargeManuel;
