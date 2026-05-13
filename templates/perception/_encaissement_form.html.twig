@@ -1,6 +1,7 @@
 {# _encaissement.html.twig ou _encaissement_form.html.twig #}
 
 {{ form_start(form) }}
+<input type="hidden" id="facture_id" value="{{ facture.id }}">
 
 <div class="modal-body">
     {# SECTION 1 : OPTIONS DE PRISE EN CHARGE #}
@@ -13,6 +14,7 @@
                         'role': 'switch'
                     }
                 }) }}
+
                 {{ form_label(form.priseEnChargeActive, null, {'label_attr': {'class': 'form-check-label fw-bold'}}) }}
             </div>
         </div>
@@ -20,10 +22,14 @@
         <div class="collapse {% if form.vars.value.priseEnChargeActive %}show{% endif %}" id="pec-fields-container">
             <div class="row g-3 p-3 bg-light border rounded mx-0">
                 <div class="col-md-6">
-                    {{ form_row(form.organismePriseEnCharge) }}
+                    {{ form_widget(form.organismePriseEnCharge, {
+                        attr: { 'class': 'js-pec-organisme' }
+                    }) }}
                 </div>
                 <div class="col-md-6">
-                    {{ form_row(form.tauxPriseEnChargeManuel) }}
+                    {{ form_widget(form.tauxPriseEnChargeManuel, {
+                        attr: { 'class': 'js-pec-taux' }
+                    }) }}
                 </div>
             </div>
         </div>

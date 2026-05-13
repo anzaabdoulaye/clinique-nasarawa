@@ -359,23 +359,41 @@ class FacturationService
     }
 
     private function hydraterLigneDepuisPrescription(
-        FactureLigne $ligne,
-        PrescriptionPrestation $prescription
+    FactureLigne $ligne,
+    PrescriptionPrestation $prescription
     ): void {
         $quantite = max(1, (int) $prescription->getQuantite());
-        $prixUnitaire = max(0, (int) $prescription->getPrixReference());
-        $typeLegacy = $prescription->getCategorieLabel();
-
-        $ligne->setLibelle($prescription->getLibelle() ?? 'Prestation');
+        $facture = $ligne->getFacture();
+        $tarif = $prescription->getTarifPrestation();
+        
+        // Déterminer le prix unitaire selon PEC active
+        $prixUnitaire = $tarif->getPrix();
+        if ($facture && $facture->isPriseEnChargeActive()) {
+            $prixSpecifique = $tarif->getPrixPriseEnCharge();
+            if ($prixSpecifique !== null && $prixSpecifique > 0) {
+                $prixUnitaire = $prixSpecifique;
+            }
+        }
+        
+        $ligne->setLibelle($prescription->getLibelle() ?? $tarif->getLibelle());
         $ligne->setQuantite($quantite);
         $ligne->setPrixUnitaire($prixUnitaire);
-        $ligne->setType($typeLegacy);
+        $ligne->setType($prescription->getCategorieLabel());
         $ligne->setTypePrestationPEC(
             $this->determinerTypePrestationPECDepuisPrescription($prescription)
         );
-
-        // Valeur immédiatement cohérente avant recalcul global
+        
         $ligne->setTotal($quantite * $prixUnitaire);
+    }
+
+    public function rafraichirPrixUnitairesSelonPEC(Facture $facture): void
+    {
+        foreach ($facture->getLignes() as $ligne) {
+            $prescription = $ligne->getPrescriptionPrestation();
+            if ($prescription) {
+                $this->hydraterLigneDepuisPrescription($ligne, $prescription);
+            }
+        }
     }
 
     private function supprimerLignesOrphelines(Facture $facture, Consultation $consultation): void

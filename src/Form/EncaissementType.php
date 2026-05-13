@@ -64,11 +64,6 @@ class EncaissementType extends AbstractType
                         'value' => 0,
                         'message' => 'Le montant doit être supérieur ou égal à zéro.',
                     ]),
-                    // SUPPRIMEZ ou COMMENTEZ celle-ci :
-                    // new LessThanOrEqual([
-                    //     'value' => $maxAmount,
-                    //     'message' => 'Le montant ne doit pas dépasser le reste patient à payer.',
-                    // ]),
                 ],
                 'attr' => [
                     'min' => 0,

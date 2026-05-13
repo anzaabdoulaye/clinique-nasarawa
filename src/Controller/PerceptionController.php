@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Facture;
+use App\Entity\OrganismePriseEnCharge;
 use App\Entity\Paiement;
 use App\Entity\Utilisateur;
 use App\Form\EncaissementType;
@@ -25,12 +26,58 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
 use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/perception')]
 final class PerceptionController extends AbstractController
 {
+
+
+#[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"))]
+#[Route('/facture/{id}/toggle-pec', name: 'app_perception_toggle_pec', methods: ['POST'])]
+public function togglePriseEnCharge(
+    Facture $facture,
+    Request $request,
+    FacturationService $facturationService,
+    EntityManagerInterface $em
+): JsonResponse {
+    $data = json_decode($request->getContent(), true);
+    $active = (bool) ($data['active'] ?? false);
+    $organismeId = $data['organismeId'] ?? null;
+    $taux = $data['taux'] ?? null;
+
+    // Mise à jour des paramètres PEC
+    $facture->setPriseEnChargeActive($active);
+    if ($active) {
+        $facture->setPriseEnChargeManuelle(true);
+        if ($organismeId) {
+            $organisme = $em->getRepository(OrganismePriseEnCharge::class)->find($organismeId);
+            $facture->setOrganismePriseEnCharge($organisme);
+        }
+        if ($taux !== null) {
+            $facture->setTauxPriseEnChargeManuel((int) $taux);
+        }
+    } else {
+        $facture->setPriseEnChargeManuelle(false);
+        $facture->setTauxPriseEnChargeManuel(null);
+        // Ne pas réinitialiser l'organisme ? À voir selon métier.
+    }
+
+    // Recalcul complet (prix unitaires, PEC)
+    $facturationService->rafraichirPrixUnitairesSelonPEC($facture); // méthode à ajouter dans FacturationService
+    $facturationService->recalculerFacture($facture);
+    $em->flush();
+
+    return $this->json([
+        'montantTotalBrut' => $facture->getMontantTotalBrut(),
+        'montantTotalPriseEnCharge' => $facture->getMontantTotalPriseEnCharge(),
+        'montantTotalPatient' => $facture->getMontantTotalPatient(),
+        'montantPayePatient' => $facture->getMontantPayePatient(),
+        'restePatient' => $facture->getRestePatient(),
+    ]);
+}
 
 #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_PERCEPTION')"

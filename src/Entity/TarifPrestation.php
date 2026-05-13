@@ -27,6 +27,9 @@ class TarifPrestation
     #[ORM\Column(type: 'integer')]
     private int $prix = 0;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $prixPriseEnCharge = null;
+
     #[ORM\Column(options: ['default' => true])]
     private bool $actif = true;
 
@@ -91,6 +94,17 @@ class TarifPrestation
     public function setPrix(int $prix): static
     {
         $this->prix = max(0, $prix);
+        return $this;
+    }
+
+    public function getPrixPriseEnCharge(): ?int
+    {
+        return $this->prixPriseEnCharge;
+    }
+
+    public function setPrixPriseEnCharge(?int $prixPriseEnCharge): self
+    {
+        $this->prixPriseEnCharge = $prixPriseEnCharge;
         return $this;
     }
 

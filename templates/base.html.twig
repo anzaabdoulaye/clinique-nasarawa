@@ -443,61 +443,62 @@ function initForm() {
 }
 
 function calculer() {
-    console.log('Calcul en cours...');
-    
-    const totalEl = document.getElementById('pec-total-brut');
-    const dejaPayeEl = document.getElementById('pec-deja-paye');
     const toggle = document.querySelector('.js-pec-toggle');
-    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"], select[id*="tauxPriseEnChargeManuel"]');
-    
-    if (!totalEl) {
-        console.error('Total brut non trouvé');
-        return;
-    }
-    
-    const totalBrut = parseInt(totalEl.dataset.value || 0);
-    const dejaPaye = parseInt(dejaPayeEl?.dataset.value || 0);
-    const pecActive = toggle ? toggle.checked : false;
-    const taux = (pecActive && tauxSelect && tauxSelect.value) ? parseInt(tauxSelect.value) : 0;
-    
-    console.log('Données:', {totalBrut, dejaPaye, pecActive, taux});
-    
-    const montantPec = Math.round((totalBrut * taux) / 100);
-    const partPatient = totalBrut - montantPec;
-    const reste = Math.max(0, partPatient - dejaPaye);
-    
-    console.log('Résultat:', {montantPec, partPatient, reste});
-    
-    // Mise à jour affichage
-    const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
-    
-    const update = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.textContent = fmt(val);
-            el.dataset.value = val;
+    if (!toggle) return;
+
+    const active = toggle.checked;
+    const factureId = document.getElementById('facture_id')?.value;
+    if (!factureId) return;
+
+    const organismeSelect = document.querySelector('select[name*="organismePriseEnCharge"]');
+    const organismeId = organismeSelect ? organismeSelect.value : null;
+    const tauxSelect = document.querySelector('select[name*="tauxPriseEnChargeManuel"]');
+    const taux = tauxSelect ? tauxSelect.value : null;
+
+    // Indicateur de chargement
+    const resteSpan = document.getElementById('pec-reste-patient');
+    if (resteSpan) resteSpan.innerHTML = '...';
+
+    fetch(`/perception/facture/${factureId}/toggle-pec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ active, organismeId, taux })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Mise à jour des affichages
+        const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
+        const setContent = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = fmt(val);
+                el.dataset.value = val;
+            }
+        };
+        setContent('pec-total-brut', data.montantTotalBrut);
+        setContent('pec-montant-pec', data.montantTotalPriseEnCharge);
+        setContent('pec-part-patient', data.montantTotalPatient);
+        setContent('pec-deja-paye', data.montantPayePatient);
+        setContent('pec-reste-patient', data.restePatient);
+
+        // Mise à jour du champ montant max
+        const montantInput = document.querySelector('input[name*="montant"]');
+        if (montantInput) {
+            montantInput.max = data.restePatient;
+            montantInput.dataset.max = data.restePatient;
+            const helpText = montantInput.closest('.card-body')?.querySelector('.form-text');
+            if (helpText) {
+                helpText.innerHTML = `Max: <strong class="text-danger">${fmt(data.restePatient)} FCFA</strong>`;
+            }
+            if (parseInt(montantInput.value || 0) > data.restePatient) {
+                montantInput.value = data.restePatient;
+            }
         }
-    };
-    
-    update('pec-montant-pec', montantPec);
-    update('pec-part-patient', partPatient);
-    update('pec-reste-patient', reste);
-    
-    // Mise à jour input max
-    const montantInput = document.querySelector('input[name*="montant"], input[id*="montant"]');
-    if (montantInput) {
-        montantInput.max = reste;
-        montantInput.dataset.max = reste;
-        
-        const helpText = montantInput.closest('.card-body, .form-group, div')?.querySelector('.form-text');
-        if (helpText) {
-            helpText.innerHTML = `Max: <strong class="text-danger">${fmt(reste)} FCFA</strong>`;
-        }
-        
-        if (parseInt(montantInput.value || 0) > reste) {
-            montantInput.value = reste;
-        }
-    }
+    })
+    .catch(error => {
+        console.error('Erreur AJAX:', error);
+        if (resteSpan) resteSpan.innerHTML = 'Erreur';
+    });
 }
 </script>
     {% endblock %}
