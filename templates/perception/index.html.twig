@@ -148,13 +148,10 @@
                                 </a>
 
                             {% if facture.resteAPayer > 0 and statut != 'annule' %}
-                                <button type="button"
-                                        class="btn btn-sm btn-success js-open-encaissement"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#encaissementModal"
-                                        data-url="{{ path('app_perception_facture_encaisser', {id: facture.id}) }}">
+                                <a href="{{ path('app_perception_facture_show', {id: facture.id}) }}"
+                                   class="btn btn-sm btn-outline-primary">
                                     Encaisser
-                                </button>
+                                </a>
                             {% endif %}
                             </td>
                         </tr>

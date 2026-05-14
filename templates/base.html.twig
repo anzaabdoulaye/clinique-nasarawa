@@ -441,7 +441,7 @@ function initForm() {
     // Calcul initial
     calculer();
 }
-function calculer() {
+window.calculer = function calculer() {
     const toggle = document.querySelector('.js-pec-toggle');
     if (!toggle) return;
 

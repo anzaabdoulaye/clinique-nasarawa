@@ -142,5 +142,106 @@
 
 {% block javascripts %}
 {{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalElement = document.getElementById('encaissementModal');
+    if (!modalElement) return;
 
+    // Référence au conteneur du formulaire
+    const modalContent = document.getElementById('encaissementModalContent');
+
+    // Nettoyage complet après fermeture
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        // 1. Vider le contenu pour éviter les résidus
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3 mb-0">Chargement…</p>
+                </div>
+            `;
+        }
+        // 2. Retirer manuellement l'attribut aria-hidden qui peut rester bloqué
+        modalElement.removeAttribute('aria-hidden');
+        // 3. Optionnel : retirer la classe 'show' et l'overlay
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+    });
+
+    // Gestion de l'ouverture
+    document.querySelectorAll('.js-open-encaissement').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.dataset.url;
+            if (!url) return;
+
+            // Afficher le loader
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <div class="modal-body text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-3">Chargement...</p>
+                    </div>
+                `;
+            }
+
+            // Ouvrir la modal
+            const bsModal = new bootstrap.Modal(modalElement);
+            bsModal.show();
+
+            // Charger le formulaire
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                if (modalContent) {
+                    modalContent.innerHTML = html;
+                    // Réattacher les événements après chargement
+                    attachFormEvents(modalContent);
+                    // Enlever le focus du bouton "Annuler" s'il est focusé automatiquement
+                    setTimeout(() => {
+                        const firstInput = modalContent.querySelector('input:not([type="hidden"]), select, textarea');
+                        if (firstInput) firstInput.focus();
+                    }, 50);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur chargement:', error);
+                if (modalContent) {
+                    modalContent.innerHTML = '<div class="modal-body text-danger">Erreur de chargement</div>';
+                }
+            });
+        });
+    });
+
+    // Fonction pour réattacher les événements du formulaire (toggle PEC, calculs, etc.)
+    function attachFormEvents(container) {
+        // Réimplémentez ici vos fonctions de calcul (calculer, setContent, etc.)
+        // Exemple simple pour le toggle PEC
+        const toggle = container.querySelector('.js-pec-toggle');
+        if (toggle) {
+            toggle.addEventListener('change', function() {
+                const pecContainer = document.getElementById('pec-fields-container');
+                if (pecContainer) {
+                    if (this.checked) pecContainer.classList.add('show');
+                    else pecContainer.classList.remove('show');
+                }
+                // Appel de votre fonction calculer() si définie globalement
+                if (typeof window.calculer === 'function') window.calculer();
+            });
+        }
+
+        // Réattacher l'écouteur sur le bouton "Annuler" pour éviter le focus persistant
+        const cancelBtn = container.querySelector('[data-bs-dismiss="modal"]');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                // Forcer le blur avant la fermeture réelle
+                this.blur();
+            });
+        }
+    }
+});
+</script>
 {% endblock %}
