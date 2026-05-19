@@ -105,7 +105,13 @@
                     <tbody>
                     {% for ligne in facture.lignes %}
                         <tr>
-                            <td>{{ ligne.libelle }}</td>
+                            <td>{{ ligne.libelle }}
+                                {# Ajout du suffixe PEC si la ligne est prise en charge #}
+                                {% if facture.priseEnChargeActive and ligne.montantPriseEnCharge > 0 %}
+                                    <span class="badge bg-info text-dark ms-1">PEC</span>
+                                {% endif %}
+                            </td>
+                            
                             <td>{{ ligne.type ? ligne.type|replace({'_':' '})|title : '-' }}</td>
                             <td>{{ ligne.quantite }}</td>
                             <td>{{ ligne.prixUnitaire|number_format(0, ',', ' ') }} FCFA</td>

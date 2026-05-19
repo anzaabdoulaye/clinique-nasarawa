@@ -408,7 +408,7 @@
                         {% for l in facture.lignes %}
                             <tr>
                                 <td>{{ l.type }}</td>
-                                <td>{{ l.libelle }}</td>
+                                <td>{{ l.libelle }}{% if facture.isPriseEnChargeActive and l.montantPriseEnCharge > 0 %} PEC{% endif %}</td>
                                 <td class="right">{{ l.quantite }}</td>
                                 <td class="right">{{ l.prixUnitaire|number_format(0, '.', ' ') }}</td>
                                 <td class="right">{{ l.total|number_format(0, '.', ' ') }}</td>

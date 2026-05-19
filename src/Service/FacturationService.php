@@ -438,6 +438,21 @@ class FacturationService
         }
     }
 
+    public function getLibelleAffiche(FactureLigne $ligne): string
+    {
+        $libelle = $ligne->getLibelle();
+        
+        // On vérifie si la facture associée est en mode PEC active
+        if ($ligne->getFacture()->isPriseEnChargeActive() && $ligne->getMontantPriseEnCharge() > 0) {
+            // On évite d'ajouter le suffixe s'il est déjà présent
+            if (!str_ends_with($libelle, ' PEC')) {
+                return $libelle . ' PEC';
+            }
+        }
+        
+        return $libelle;
+    }
+
     private function determinerTypePrestationPECDepuisPrescription(
         PrescriptionPrestation $prescription
     ): TypePrestationPEC {
