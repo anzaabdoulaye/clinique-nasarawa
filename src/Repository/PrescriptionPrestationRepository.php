@@ -64,12 +64,54 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    private function groupByConsultation(array $prestations): array
+    {
+        $grouped = [];
+
+        foreach ($prestations as $prestation) {
+
+            $consultation = $prestation->getConsultation();
+
+            if (!$consultation) {
+                continue;
+            }
+
+            $consultationId = $consultation->getId();
+
+            if (!isset($grouped[$consultationId])) {
+
+                $patient =
+                    $consultation->getDossierMedical()?->getPatient()
+                    ?? $consultation->getRendezVous()?->getPatient();
+
+                $grouped[$consultationId] = [
+                    'consultation' => $consultation,
+                    'patient' => $patient,
+                    'medecin' => $consultation->getMedecin(),
+                    'prestations' => [],
+                    'nombreExamens' => 0,
+
+                    // utile pour les tris
+                    'dateCreation' => $prestation->getCreatedAt(),
+                    'dateModification' => $prestation->getModifiedAt(),
+                ];
+            }
+
+            $grouped[$consultationId]['prestations'][] = $prestation;
+            $grouped[$consultationId]['nombreExamens']++;
+        }
+
+        return array_values($grouped);
+    }
+
      public function findExamensLaboAPrendreEnCharge(): array
     {
-        return $this->createQueryBuilder('pp')
+        $prestations = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.dossierMedical', 'dm')->addSelect('dm')
+            ->leftJoin('dm.patient', 'patientDossier')->addSelect('patientDossier')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('r.patient', 'patientRdv')->addSelect('patientRdv')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
@@ -79,6 +121,8 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
             ->orderBy('pp.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $this->groupByConsultation($prestations);
     }
 
     /**
@@ -88,10 +132,12 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
      */
     public function findExamensLaboEnCours(): array
     {
-        return $this->createQueryBuilder('pp')
+        $prestations = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.dossierMedical', 'dm')->addSelect('dm')
+            ->leftJoin('dm.patient', 'patientDossier')->addSelect('patientDossier')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('r.patient', 'patientRdv')->addSelect('patientRdv')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
@@ -101,6 +147,8 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
             ->orderBy('pp.modifiedAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $this->groupByConsultation($prestations);
     }
 
     /**
@@ -110,19 +158,23 @@ class PrescriptionPrestationRepository extends ServiceEntityRepository
      */
     public function findExamensLaboRealises(): array
     {
-        return $this->createQueryBuilder('pp')
+        $prestations = $this->createQueryBuilder('pp')
             ->leftJoin('pp.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.dossierMedical', 'dm')->addSelect('dm')
+            ->leftJoin('dm.patient', 'patientDossier')->addSelect('patientDossier')
             ->leftJoin('c.rendezVous', 'r')->addSelect('r')
-            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('r.patient', 'patientRdv')->addSelect('patientRdv')
             ->leftJoin('c.medecin', 'm')->addSelect('m')
             ->leftJoin('pp.tarifPrestation', 'tp')->addSelect('tp')
             ->andWhere('pp.statut = :statut')
             ->andWhere('tp.serviceExecution = :service')
-            ->setParameter('statut', StatutPrescriptionPrestation::REALISE)
+            ->setParameter('statut', StatutPrescriptionPrestation::EN_COURS)
             ->setParameter('service', 'laboratoire')
             ->orderBy('pp.modifiedAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $this->groupByConsultation($prestations);
     }
 
     public function findExamensLaboPayesParConsultation(int $consultationId): array

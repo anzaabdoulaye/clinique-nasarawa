@@ -2,10 +2,9 @@
     <table class="table table-borderless align-middle table-hover mb-0 datatable labo-table">
         <thead>
             <tr>
-                <th class="text-muted small fw-semibold">#</th>
-                <th class="text-muted small fw-semibold">Patient</th>
-                <th class="text-muted small fw-semibold">Examen</th>
                 <th class="text-muted small fw-semibold">Consultation</th>
+                <th class="text-muted small fw-semibold">Patient</th>
+                <th class="text-muted small fw-semibold">Examens</th>
                 <th class="text-muted small fw-semibold">Médecin</th>
                 <th class="text-muted small fw-semibold">Date prescription</th>
                 <th class="text-muted small fw-semibold">Statut</th>
@@ -14,122 +13,203 @@
         </thead>
 
         <tbody>
-        {% for prestation in prestations %}
-            {% set consultation = prestation.consultation %}
-            {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-            {% set dossier = consultation ? consultation.dossierMedical|default(null) : null %}
-            {% set patient = dossier and dossier.patient is defined and dossier.patient ? dossier.patient : (rdv ? rdv.patient|default(null) : null) %}
-            {% set statut = prestation.statut.value %}
+
+        {% for item in consultations %}
+
+            {% set consultation = item.consultation %}
+            {% set patient = item.patient %}
+            {% set medecin = item.medecin %}
+            {% set prestations = item.prestations %}
+            {% set nombreExamens = item.nombreExamens %}
+
+            {% set firstPrestation = prestations|first %}
+            {% set statut = firstPrestation ? firstPrestation.statut.value : '' %}
 
             {% set patientNom = patient
                 ? patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim)
                 : 'Patient non renseigné'
             %}
 
-            {% set medecinNom = consultation and consultation.medecin
-                ? consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim)
+            {% set medecinNom = medecin
+                ? medecin.nomComplet|default((medecin.nom|default('') ~ ' ' ~ medecin.prenom|default(''))|trim)
                 : 'Non assigné'
             %}
 
             <tr>
+
+                {# Consultation #}
                 <td>
-                    <span class="fw-semibold text-dark">#{{ prestation.id }}</span>
+                    <div class="fw-semibold text-dark">
+                        #{{ consultation.id }}
+                    </div>
+
+                    <div class="text-muted small">
+                        {{ nombreExamens }} examen(s)
+                    </div>
                 </td>
 
+                {# Patient #}
                 <td>
                     <div class="d-flex align-items-center gap-3">
                         <div class="patient-avatar">
                             <i class="ri-user-3-line"></i>
                         </div>
+
                         <div>
                             <div class="fw-semibold text-dark">
                                 {{ patientNom ?: '-' }}
                             </div>
+
                             <div class="text-muted small">
+
                                 {% if patient and patient.code is defined and patient.code %}
                                     Code : {{ patient.code }}
-                                {% elseif rdv %}
-                                    Rendez-vous #{{ rdv.id }}
-                                {% elseif dossier %}
-                                    Dossier {{ dossier.numeroDossier|default('#' ~ dossier.id) }}
+
+                                {% elseif consultation.rendezVous %}
+                                    Rendez-vous #{{ consultation.rendezVous.id }}
+
+                                {% elseif consultation.dossierMedical %}
+                                    Dossier {{ consultation.dossierMedical.numeroDossier|default('#' ~ consultation.dossierMedical.id) }}
+
                                 {% else %}
                                     Patient non lié
                                 {% endif %}
+
                             </div>
                         </div>
                     </div>
                 </td>
 
+                {# Examens regroupés #}
+                <td style="min-width: 320px;">
+
+                    <div class="d-flex flex-wrap gap-2">
+
+                        {% for prestation in prestations %}
+
+                            <span class="badge rounded-pill bg-info-subtle text-info border px-3 py-2">
+
+                                {{ prestation.tarifPrestation.libelle }}
+
+                            </span>
+
+                        {% endfor %}
+
+                    </div>
+
+                </td>
+
+                {# Médecin #}
                 <td>
                     <div class="fw-semibold text-dark">
-                        {{ prestation.tarifPrestation.libelle }}
-                    </div>
-                    <div class="text-muted small">
-                        {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}
+                        {{ medecinNom }}
                     </div>
                 </td>
 
+                {# Date #}
                 <td>
-                    <div class="fw-semibold text-dark">
-                        {% if consultation %}
-                            #{{ consultation.id }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </div>
-                </td>
 
-                <td>
-                    <div class="fw-semibold text-dark">{{ medecinNom }}</div>
-                </td>
+                    {% if firstPrestation and firstPrestation.createdAt %}
 
-                <td>
-                    <div class="fw-semibold text-dark">
-                        {{ prestation.createdAt ? prestation.createdAt|date('d/m/Y') : '-' }}
-                    </div>
-                    <div class="text-muted small">
-                        {{ prestation.createdAt ? prestation.createdAt|date('H:i') : '' }}
-                    </div>
-                </td>
+                        <div class="fw-semibold text-dark">
+                            {{ firstPrestation.createdAt|date('d/m/Y') }}
+                        </div>
 
-                <td>
-                    {% if statut == 'paye' %}
-                        <span class="badge rounded-pill text-bg-warning px-3 py-2">
-                            <i class="ri-time-line me-1"></i> À traiter
-                        </span>
-                    {% elseif statut == 'en_cours' %}
-                        <span class="badge rounded-pill text-bg-primary px-3 py-2">
-                            <i class="ri-loader-4-line me-1"></i> En cours
-                        </span>
-                    {% elseif statut == 'realise' %}
-                        <span class="badge rounded-pill text-bg-success px-3 py-2">
-                            <i class="ri-checkbox-circle-line me-1"></i> Réalisé
-                        </span>
+                        <div class="text-muted small">
+                            {{ firstPrestation.createdAt|date('H:i') }}
+                        </div>
+
                     {% else %}
+                        -
+                    {% endif %}
+
+                </td>
+
+                {# Statut #}
+                <td>
+
+                    {% if statut == 'paye' %}
+
+                        <span class="badge rounded-pill text-bg-warning px-3 py-2">
+                            <i class="ri-time-line me-1"></i>
+                            À traiter
+                        </span>
+
+                    {% elseif statut == 'en_cours' %}
+
+                        <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                            <i class="ri-loader-4-line me-1"></i>
+                            En cours
+                        </span>
+
+                    {% elseif statut == 'realise' %}
+
+                        <span class="badge rounded-pill text-bg-success px-3 py-2">
+                            <i class="ri-checkbox-circle-line me-1"></i>
+                            Réalisé
+                        </span>
+
+                    {% else %}
+
                         <span class="badge rounded-pill text-bg-dark px-3 py-2">
                             {{ statut|replace({'_':' '})|title }}
                         </span>
+
                     {% endif %}
+
                 </td>
 
+                {# Actions #}
                 <td class="text-end">
+
                     <div class="d-flex justify-content-end flex-wrap gap-2">
-                        <a href="{{ path('app_laboratoire_show', {id: prestation.id}) }}"
-                           class="btn btn-sm btn-primary rounded-pill px-3">
-                            <i class="ri-eye-line me-1"></i> Voir
+
+                        <a href="{{ path('app_laboratoire_consultation_show', {
+                            id: consultation.id
+                        }) }}"
+                        class="btn btn-sm btn-primary rounded-pill px-3">
+
+                            <i class="ri-eye-line me-1"></i>
+                            Ouvrir
+
                         </a>
 
-                        {% if consultation %}
-                            <a href="{{ path('app_laboratoire_bon_show', {id: consultation.id}) }}"
-                               class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                <i class="ri-file-text-line me-1"></i> Bon d'examen
-                            </a>
-                        {% endif %}
-                        
+                        <a href="{{ path('app_laboratoire_bon_print', {
+                            id: consultation.id
+                        }) }}"
+                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
+
+                            <i class="ri-printer-line me-1"></i>
+                            Imprimer
+
+                        </a>
+
                     </div>
+
+                </td>
+
+            </tr>
+
+        {% else %}
+
+            <tr>
+                <td colspan="7" class="text-center py-5">
+
+                    <div class="d-flex flex-column align-items-center">
+
+                        <i class="ri-flask-line fs-1 text-muted mb-3"></i>
+
+                        <div class="fw-semibold text-muted">
+                            {{ emptyMessage }}
+                        </div>
+
+                    </div>
+
                 </td>
             </tr>
+
         {% endfor %}
+
         </tbody>
     </table>
 </div>

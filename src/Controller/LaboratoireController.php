@@ -33,56 +33,99 @@ final class LaboratoireController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
 ))]
     #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
-    public function index(Request $request, PrescriptionPrestationRepository $repository): Response
-    {
-        $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
-        $enCours = $repository->findExamensLaboEnCours();
-        
-        // Récupérer le filtre de période pour les examens réalisés
-        $periodeFilter = $request->query->get('periode');
-        if ($periodeFilter === null) {
-            // Par défaut, filtrer sur les examens réalisés des 30 derniers jours
-            $periodeFilter = 'recent';
+    public function index(
+    Request $request,
+    PrescriptionPrestationRepository $repository
+): Response {
+
+    // Consultations labo à traiter
+    $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
+
+    // Consultations labo en cours
+    $enCours = $repository->findExamensLaboEnCours();
+
+    // Consultations labo réalisées
+    $realises = $repository->findExamensLaboRealises();
+
+    /**
+     * Filtre période
+     */
+    $periodeFilter = $request->query->get('periode', 'recent');
+
+    /**
+     * Filtrage des consultations réalisées
+     */
+    if ($periodeFilter !== 'all') {
+
+        $dateReference = null;
+
+        switch ($periodeFilter) {
+
+            case 'recent':
+                $dateReference = new \DateTimeImmutable('-30 days');
+                break;
+
+            case 'month':
+                $now = new \DateTimeImmutable();
+
+                $dateReference = $now
+                    ->setDate(
+                        (int) $now->format('Y'),
+                        (int) $now->format('m'),
+                        1
+                    )
+                    ->setTime(0, 0, 0);
+
+                break;
+
+            case 'quarter':
+                $dateReference = new \DateTimeImmutable('-90 days');
+                break;
+
+            case 'year':
+                $dateReference = new \DateTimeImmutable('-365 days');
+                break;
         }
 
-        $realises = $repository->findExamensLaboRealises();
+        if ($dateReference !== null) {
 
-        // Filtrer les examens réalisés par période
-        if ($periodeFilter === 'recent') {
-            $date = new \DateTimeImmutable('-30 days');
-            $realises = array_filter($realises, function($prestation) use ($date) {
-                $createdAt = $prestation->getCreatedAt();
-                return $createdAt && $createdAt >= $date;
-            });
-        } elseif ($periodeFilter === 'month') {
-            $now = new \DateTimeImmutable();
-            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
-            $realises = array_filter($realises, function($prestation) use ($startOfMonth) {
-                $createdAt = $prestation->getCreatedAt();
-                return $createdAt && $createdAt >= $startOfMonth;
-            });
-        } elseif ($periodeFilter === 'quarter') {
-            $date = new \DateTimeImmutable('-90 days');
-            $realises = array_filter($realises, function($prestation) use ($date) {
-                $createdAt = $prestation->getCreatedAt();
-                return $createdAt && $createdAt >= $date;
-            });
-        } elseif ($periodeFilter === 'year') {
-            $date = new \DateTimeImmutable('-365 days');
-            $realises = array_filter($realises, function($prestation) use ($date) {
-                $createdAt = $prestation->getCreatedAt();
-                return $createdAt && $createdAt >= $date;
-            });
+            $realises = array_values(array_filter(
+                $realises,
+                function (array $item) use ($dateReference): bool {
+
+                    /**
+                     * dateCreation vient du groupByConsultation()
+                     */
+                    $createdAt = $item['dateCreation'] ?? null;
+
+                    return $createdAt instanceof \DateTimeInterface
+                        && $createdAt >= $dateReference;
+                }
+            ));
         }
-        // Pour 'all', garder tous les examens réalisés
-
-        return $this->render('laboratoire/index.html.twig', [
-            'aTraiter' => $aTraiter,
-            'enCours' => $enCours,
-            'realises' => $realises,
-            'periodeFilter' => $periodeFilter,
-        ]);
     }
+
+    /**
+     * Statistiques globales
+     */
+    $totalConsultations =
+        count($aTraiter)
+        + count($enCours)
+        + count($realises);
+
+    return $this->render('laboratoire/index.html.twig', [
+
+        'aTraiter' => $aTraiter,
+
+        'enCours' => $enCours,
+
+        'realises' => $realises,
+
+        'periodeFilter' => $periodeFilter,
+
+        'totalConsultations' => $totalConsultations,
+    ]);
+}
 
     #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
@@ -111,6 +154,100 @@ final class LaboratoireController extends AbstractController
             'consultationResultsCount' => count($prestationsAvecResultatsConsultation),
         ]);
     }
+
+
+    #[IsGranted(new Expression(
+    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
+))]
+#[Route(
+    '/consultation/{id}',
+    name: 'app_laboratoire_consultation_show',
+    methods: ['GET']
+)]
+public function consultationShow(
+    Consultation $consultation,
+    PrescriptionPrestationRepository $repository
+): Response {
+
+    /**
+     * Tous les examens labo de la consultation
+     */
+    $prestations = $repository->findExamensLaboPayesParConsultation(
+        $consultation->getId()
+    );
+
+    if (empty($prestations)) {
+
+        $this->addFlash(
+            'warning',
+            'Aucun examen laboratoire trouvé pour cette consultation.'
+        );
+
+        return $this->redirectToRoute('app_laboratoire_index');
+    }
+
+    /**
+     * Patient
+     */
+    $patient = $consultation->getDossierMedical()?->getPatient()
+        ?? $consultation->getRendezVous()?->getPatient();
+
+    /**
+     * Statistiques
+     */
+    $total = count($prestations);
+
+    $nombrePayes = 0;
+    $nombreEnCours = 0;
+    $nombreRealises = 0;
+
+    foreach ($prestations as $prestation) {
+
+        switch ($prestation->getStatut()) {
+
+            case StatutPrescriptionPrestation::PAYE:
+                $nombrePayes++;
+                break;
+
+            case StatutPrescriptionPrestation::EN_COURS:
+                $nombreEnCours++;
+                break;
+
+            case StatutPrescriptionPrestation::REALISE:
+                $nombreRealises++;
+                break;
+        }
+    }
+
+    /**
+     * Progression
+     */
+    $progression = $total > 0
+        ? round(($nombreRealises * 100) / $total)
+        : 0;
+
+    return $this->render(
+        'laboratoire/consultation_show.html.twig',
+        [
+
+            'consultation' => $consultation,
+
+            'patient' => $patient,
+
+            'prestations' => $prestations,
+
+            'total' => $total,
+
+            'nombrePayes' => $nombrePayes,
+
+            'nombreEnCours' => $nombreEnCours,
+
+            'nombreRealises' => $nombreRealises,
+
+            'progression' => $progression,
+        ]
+    );
+}
 
     #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
