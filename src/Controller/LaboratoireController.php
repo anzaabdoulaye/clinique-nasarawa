@@ -166,7 +166,7 @@ final class LaboratoireController extends AbstractController
 )]
 public function consultationShow(
     Consultation $consultation,
-    PrescriptionPrestationRepository $repository
+    PrescriptionPrestationRepository $repository    
 ): Response {
 
     /**
