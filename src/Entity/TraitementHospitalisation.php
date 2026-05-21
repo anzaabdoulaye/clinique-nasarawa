@@ -36,6 +36,9 @@ class TraitementHospitalisation
     #[ORM\Column(type: 'json', nullable: true)]
     private array $heuresAdministration = [];
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $planification = [];
+
     #[ORM\OneToMany(mappedBy: 'traitement', targetEntity: AdministrationTraitement::class, orphanRemoval: true)]
     private Collection $administrations;
 
@@ -232,5 +235,81 @@ class TraitementHospitalisation
         }
 
         return false;
+    }
+
+    public function getPlanification(): array
+{
+    return $this->planification ?? [];
+}
+
+public function setPlanification(?array $planification): self
+{
+    $this->planification = $planification ?? [];
+    return $this;
+}
+
+/**
+ * Retourne les heures d'administration pour une date donnée
+ */
+public function getHeuresPourDate(\DateTimeInterface $date): array
+{
+    $dateKey = $date->format('Y-m-d');
+    $planif = $this->getPlanification();
+
+    if (isset($planif[$dateKey]) && is_array($planif[$dateKey])) {
+        return $planif[$dateKey];
+    }
+
+    // Fallback sur l'ancien système (heuresAdministration) si la planification est vide pour cette date
+    // ET que le traitement est actif à cette date
+    if (!empty($this->heuresAdministration) && $this->isActiveOnDate($date)) {
+        return $this->heuresAdministration;
+    }
+
+    return [];
+}
+
+/**
+ * Vérifie si le traitement est actif à une date donnée (entre dateDebut et dateFin)
+ */
+public function isActiveOnDate(\DateTimeInterface $date): bool
+{
+    if ($this->dateDebut && $date < $this->dateDebut) return false;
+    if ($this->dateFin && $date > $this->dateFin) return false;
+    return true;
+}
+
+
+
+
+
+
+    /**
+     * Retourne toutes les dates planifiées (clés du tableau)
+     */
+    public function getDatesPlanifiees(): array
+    {
+        $dates = array_keys($this->getPlanification());
+        sort($dates);
+        return $dates;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function updatePlanificationFromLegacy(): void
+    {
+        if (empty($this->planification) && !empty($this->heuresAdministration) && $this->dateDebut && $this->dateFin) {
+            // Générer la planification pour chaque jour de la période
+            $period = new \DatePeriod(
+                $this->dateDebut,
+                new \DateInterval('P1D'),
+                $this->dateFin->modify('+1 day')
+            );
+            $planif = [];
+            foreach ($period as $date) {
+                $planif[$date->format('Y-m-d')] = $this->heuresAdministration;
+            }
+            $this->planification = $planif;
+        }
     }
 }

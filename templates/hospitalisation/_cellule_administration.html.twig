@@ -1,0 +1,32 @@
+{# templates/hospitalisation/_cellule_administration.html.twig #}
+{% set scheduled = traitement.isScheduledAtHour(date, heure) %}
+{% set administered = administration is not null %}
+{% set lateAdministered = administered and administration.statut == 'retard' %}
+{% set isToday = date|date('Y-m-d') == today|date('Y-m-d') %}
+{% set slotDeadlineTs = (date|date('Y-m-d') ~ ' ' ~ '%02d'|format(heure) ~ ':00:00')|date_modify('+1 hour')|date('U') %}
+{% set missed = scheduled and isToday and slotDeadlineTs <= nowTs and not administered %}
+{% set upcoming = scheduled and isToday and slotDeadlineTs > nowTs and not administered %}
+{% set canToggle = (administered and canRemoveAdministration) or (not administered and traitement.isWithinPeriodAt(date, heure)) %}
+
+<td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }} {{ lateAdministered ? 'hour-late' : '' }} {{ missed ? 'hour-missed' : '' }} {{ upcoming ? 'hour-upcoming' : '' }}">
+    {% if scheduled %}
+        <button type="button"
+                class="admin-cell-btn js-admin-toggle"
+                data-url="{{ path('app_administration_traitement_toggle', {'id': traitement.id}) }}"
+                data-date="{{ date|date('Y-m-d') }}"
+                data-heure="{{ heure }}"
+                data-administered="{{ administered ? '1' : '0' }}"
+                data-late-required="{{ (not administered and traitement.isLateSlotAt(date, heure)) ? '1' : '0' }}"
+                {{ canToggle ? '' : 'disabled' }}>
+            {% if lateAdministered %}
+                <i class="fa fa-clock text-white"></i>
+            {% elseif administered %}
+                <i class="fa fa-check text-white"></i>
+            {% elseif missed %}
+                <i class="fa fa-exclamation text-danger"></i>
+            {% else %}
+                <span class="admin-dot"></span>
+            {% endif %}
+        </button>
+    {% endif %}
+</td>

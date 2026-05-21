@@ -1,0 +1,62 @@
+{% if traitement.planification is empty %}
+    <tr data-traitement-id="{{ traitement.id }}">
+        <td colspan="26" class="text-center text-muted py-3">
+            Aucune planification définie pour ce traitement.
+        </td>
+    </tr>
+{% else %}
+    {% for dateStr, heuresJour in traitement.planification %}
+        {% set currentDate = date(dateStr) %}
+        <tr data-traitement-id="{{ traitement.id }}">
+            <td class="text-start fw-bold small medic-text">
+                <div>{{ traitement.description }}</div>
+                <div class="small text-muted mt-1">ID: {{ traitement.id }}</div>
+                <div class="treatment-actions">
+                    <button type="button" class="btn btn-sm btn-outline-secondary js-edit-treatment" data-id="{{ traitement.id }}">✏️</button>
+                    {% if canDeleteTreatment is defined and canDeleteTreatment %}
+                        <form method="post" action="{{ path('app_traitement_hospitalisation_delete', {'id': traitement.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer ce traitement ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ traitement.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </td>
+            <td class="text-muted small">{{ currentDate|date('d/m/Y') }}</td>
+            {% for h in 0..23 %}
+                {% set scheduled = h in heuresJour %}
+                {% set administration = traitement.getAdministrationAt(currentDate, h) %}
+                {% set administered = administration is not null %}
+                {% set lateAdministered = administration and administration.statut == 'retard' %}
+                {% set isToday = currentDate|date('Y-m-d') == today|default('now'|date('Y-m-d')) %}
+                {% set nowTs = nowTs|default('now'|date('U')) %}
+                {% set slotDeadlineTs = (currentDate|date('Y-m-d') ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date_modify('+1 hour')|date('U') %}
+                {% set missed = scheduled and isToday and slotDeadlineTs <= nowTs and not administered %}
+                {% set upcoming = scheduled and isToday and slotDeadlineTs > nowTs and not administered %}
+                {% set canToggle = (administered and canRemoveAdministration is defined and canRemoveAdministration) or (not administered and traitement.isWithinPeriodAt(currentDate, h)) %}
+
+                <td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }} {{ lateAdministered ? 'hour-late' : '' }} {{ missed ? 'hour-missed' : '' }} {{ upcoming ? 'hour-upcoming' : '' }}">
+                    {% if scheduled %}
+                        <button type="button"
+                                class="admin-cell-btn js-admin-toggle"
+                                data-url="{{ path('app_administration_traitement_toggle', {'id': traitement.id}) }}"
+                                data-date="{{ currentDate|date('Y-m-d') }}"
+                                data-heure="{{ h }}"
+                                data-administered="{{ administered ? '1' : '0' }}"
+                                data-late-required="{{ (not administered and traitement.isLateSlotAt(currentDate, h)) ? '1' : '0' }}"
+                                {{ canToggle ? '' : 'disabled' }}>
+                            {% if lateAdministered %}
+                                <i class="fa fa-clock text-white"></i>
+                            {% elseif administered %}
+                                <i class="fa fa-check text-white"></i>
+                            {% elseif missed %}
+                                <i class="fa fa-exclamation text-danger"></i>
+                            {% else %}
+                                <span class="admin-dot"></span>
+                            {% endif %}
+                        </button>
+                    {% endif %}
+                </td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+{% endif %}

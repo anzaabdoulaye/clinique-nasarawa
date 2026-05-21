@@ -4,6 +4,7 @@
 
 {% block body %}
 <style>
+    /* ... tous les styles existants ... */
     .hs-wrap { max-width: 1100px; margin: 0 auto; }
     .hs-card { border: 1px solid rgba(0,0,0,.06); border-radius: 16px; background: #fff; }
     .hs-card .card-header { background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); border-top-left-radius: 16px; border-top-right-radius: 16px; }
@@ -156,24 +157,28 @@
     }
 </style>
 
+{# templates/hospitalisation/show.html.twig.html.twig #}
+
 {# Initialisation des variables #}
 {% set statut = hospitalisation.statut.value ?? hospitalisation.statut %}
 {% set patient = hospitalisation.dossierMedical.patient ?? null %}
 {% set today = "now"|date("Y-m-d") %}
-{% set currentHour = "now"|date("G") %}
 {% set nowTs = "now"|date("U") %}
 {% set missedCount = 0 %}
 {% set endingTodayCount = 0 %}
 {% set canRemoveAdministration = is_granted('ROLE_MEDECIN') or is_granted('ROLE_ADMIN') %}
 {% set canDeleteTreatment = is_granted('ROLE_ADMIN') %}
 
+{# Calcul des traitements se terminant aujourd'hui et des administrations manquées #}
 {% for t in hospitalisation.traitements %}
     {% if t.dateFin and t.dateFin|date("Y-m-d") == today %}
         {% set endingTodayCount = endingTodayCount + 1 %}
     {% endif %}
 
     {% if t.dateDebut and t.dateFin and t.dateDebut|date("Y-m-d") <= today and t.dateFin|date("Y-m-d") >= today %}
-        {% for h in t.heuresAdministration %}
+        {# Utiliser la planification si disponible, sinon fallback #}
+        {% set heuresDuJour = t.getHeuresPourDate("now"|date_modify("midnight")) %}
+        {% for h in heuresDuJour %}
             {% set deadlineTs = (today ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date_modify('+1 hour')|date('U') %}
             {% if deadlineTs <= nowTs and not t.isAdministeredAt("now"|date_modify("midnight"), h) %}
                 {% set missedCount = missedCount + 1 %}
@@ -286,102 +291,22 @@
             <table class="table table-bordered align-middle table-soins">
                 <thead>
                     <tr>
-                        <th class="text-start medic-col">Consomable / Soin</th>
+                        <th class="text-start medic-col">Consommable / Soin</th>
                         <th style="min-width: 100px;">Période</th>
                         {% for h in 0..23 %}
                             <th class="hour-cell">{{ h }}h</th>
                         {% endfor %}
                     </tr>
                 </thead>
-                <tbody>
-                    {% for t in hospitalisation.traitements %}
-                        {% set startTs = t.dateDebut ? t.dateDebut|date('U') : null %}
-                        {% set endTs = t.dateFin ? t.dateFin|date('U') : null %}
-                        {% set dayCount = (startTs and endTs and endTs >= startTs)
-                            ? ((endTs - startTs) / 86400)|round(0, 'floor')
-                            : 0
-                        %}
-
-                        {% for i in 0..dayCount %}
-                            {% set currentDate = t.dateDebut|date_modify('+' ~ i ~ ' day') %}
-
-                            <tr>
-                                {% if i == 0 %}
-                                    <td class="text-start fw-bold small medic-text" rowspan="{{ dayCount + 1 }}">
-                                        <div>{{ t.description }}</div>
-
-                                        {% if t.dateDebut and t.dateFin and t.dateDebut|date("Y-m-d") <= today and t.dateFin|date("Y-m-d") >= today %}
-                                            <span class="badge-alert badge-alert-info">Actif aujourd’hui</span>
-                                        {% endif %}
-
-                                        {% if t.dateFin and t.dateFin|date("Y-m-d") == today %}
-                                            <span class="badge-alert badge-alert-warning">Fin aujourd’hui</span>
-                                        {% endif %}
-
-                                        {% if t.heuresAdministration is empty %}
-                                            <span class="badge-alert badge-alert-danger">Aucune heure</span>
-                                        {% endif %}
-
-                                        {% if canDeleteTreatment %}
-                                            <div class="treatment-actions">
-                                                <form method="post"
-                                                      action="{{ path('app_traitement_hospitalisation_delete', {'id': t.id}) }}"
-                                                      onsubmit="return confirm('Voulez-vous vraiment supprimer ce traitement ?');">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ t.id) }}">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                        <i class="fa fa-trash me-1"></i> Supprimer
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                {% endif %}
-
-                                <td class="text-muted small">
-                                    {{ currentDate|date('d/m/Y') }}
-                                </td>
-
-                                {% for h in 0..23 %}
-                                    {% set scheduled = h in t.heuresAdministration %}
-                                    {% set administration = t.getAdministrationAt(currentDate, h) %}
-                                    {% set administered = administration is not null %}
-                                    {% set lateAdministered = administration and administration.statut == 'retard' %}
-                                    {% set isToday = currentDate|date('Y-m-d') == today %}
-                                    {% set slotStartTs = (currentDate|date('Y-m-d') ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date('U') %}
-                                    {% set slotDeadlineTs = (currentDate|date('Y-m-d') ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date_modify('+1 hour')|date('U') %}
-                                    {% set missed = scheduled and isToday and slotDeadlineTs <= nowTs and not administered %}
-                                    {% set upcoming = scheduled and isToday and slotStartTs <= nowTs and nowTs < slotDeadlineTs and not administered %}
-                                    {% set lateRequired = scheduled and not administered and t.isLateSlotAt(currentDate, h) %}
-                                    {% set canToggle = (administered and canRemoveAdministration) or (not administered and t.isWithinPeriodAt(currentDate, h)) %}
-
-                                    <td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }} {{ lateAdministered ? 'hour-late' : '' }} {{ missed ? 'hour-missed' : '' }} {{ upcoming ? 'hour-upcoming' : '' }}">
-                                        {% if scheduled %}
-                                            <button
-                                                type="button"
-                                                class="admin-cell-btn js-admin-toggle"
-                                                data-url="{{ path('app_administration_traitement_toggle', {'id': t.id}) }}"
-                                                data-date="{{ currentDate|date('Y-m-d') }}"
-                                                data-heure="{{ h }}"
-                                                data-administered="{{ administered ? '1' : '0' }}"
-                                                data-late-required="{{ lateRequired ? '1' : '0' }}"
-                                                title="{% if administered and not canRemoveAdministration %}Seul un compte médecin ou admin peut retirer ce traitement{% elseif not canToggle %}Période non encore arrivée{% elseif lateAdministered %}Traitement en retard{% if administration.observation %} - {{ administration.observation }}{% endif %}{% elseif administered %}Administré{% elseif missed %}Administration manquée{% elseif upcoming %}À administrer maintenant{% else %}Prévu{% endif %}"
-                                                {{ canToggle ? '' : 'disabled' }}
-                                            >
-                                                {% if lateAdministered %}
-                                                    <i class="fa fa-clock text-white"></i>
-                                                {% elseif administered %}
-                                                    <i class="fa fa-check text-white"></i>
-                                                {% elseif missed %}
-                                                    <i class="fa fa-exclamation text-danger"></i>
-                                                {% else %}
-                                                    <span class="admin-dot"></span>
-                                                {% endif %}
-                                            </button>
-                                        {% endif %}
-                                    </td>
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
+                <tbody id="traitements-list">
+                    {% for traitement in hospitalisation.traitements %}
+                        {% include 'hospitalisation/_traitement_rows.html.twig' with {
+                            traitement: traitement,
+                            today: today,
+                            nowTs: nowTs,
+                            canRemoveAdministration: canRemoveAdministration,
+                            canDeleteTreatment: canDeleteTreatment
+                        } only %}
                     {% else %}
                         <tr>
                             <td colspan="26" class="text-center py-4 text-muted small">
@@ -395,6 +320,7 @@
     </div>
 </div>
 
+{# Modals #}
 <div class="modal fade" id="ajaxModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -422,13 +348,8 @@
                 <div class="modal-body">
                     <div class="mb-0">
                         <label for="lateReasonObservation" class="form-label fw-semibold">Explication obligatoire</label>
-                        <textarea
-                            id="lateReasonObservation"
-                            class="form-control"
-                            rows="4"
-                            placeholder="Précisez pourquoi ce traitement est administré en retard..."
-                            required
-                        ></textarea>
+                        <textarea id="lateReasonObservation" class="form-control" rows="4" 
+                                  placeholder="Précisez pourquoi ce traitement est administré en retard..." required></textarea>
                         <div class="form-text">Cette justification sera enregistrée avec l’administration du traitement.</div>
                     </div>
                 </div>
@@ -442,88 +363,28 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    <script>
+    <script src="{{ asset('assets/js/traitement-form.js') }}"></script>
+     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // ========== MODAL AJAX ==========
             const modalElement = document.getElementById('ajaxModal');
             const modalBody = document.getElementById('ajaxModalBody');
             const modalTitle = document.getElementById('ajaxModalTitle');
-
-            if (!modalElement || !modalBody || !modalTitle) {
-                return;
-            }
+            if (!modalElement || !modalBody || !modalTitle) return;
 
             const ajaxModal = new bootstrap.Modal(modalElement);
-
-            const xhrHeaders = {
-                'X-Requested-With': 'XMLHttpRequest'
-            };
-
-            document.addEventListener('click', async function (e) {
-                const btn = e.target.closest('.js-ajax-modal');
-                if (!btn) return;
-
-                e.preventDefault();
-
-                const url = btn.dataset.url;
-                const title = btn.dataset.title || 'Formulaire';
-
-                modalTitle.textContent = title;
-                modalBody.innerHTML = `
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status"></div>
-                    </div>
-                `;
-                ajaxModal.show();
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: xhrHeaders
-                    });
-
-                    const contentType = response.headers.get('content-type') || '';
-
-                    if (contentType.includes('application/json')) {
-                        const data = await response.json();
-                        if (data.form) {
-                            modalBody.innerHTML = data.form;
-                            bindAjaxForm(modalBody.querySelector('form'));
-                        } else {
-                            modalBody.innerHTML = `
-                                <div class="alert alert-danger mb-0">
-                                    Impossible de charger le formulaire.
-                                </div>
-                            `;
-                        }
-                    } else {
-                        modalBody.innerHTML = await response.text();
-                        bindAjaxForm(modalBody.querySelector('form'));
-                    }
-                } catch (error) {
-                    console.error('Erreur chargement modal :', error);
-                    modalBody.innerHTML = `
-                        <div class="alert alert-danger mb-0">
-                            Une erreur est survenue lors du chargement.
-                        </div>
-                    `;
-                }
-            });
+            const xhrHeaders = { 'X-Requested-With': 'XMLHttpRequest' };
 
             function bindAjaxForm(form) {
                 if (!form) return;
-
                 form.addEventListener('submit', async function (e) {
                     e.preventDefault();
-
                     const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                    }
+                    if (submitBtn) submitBtn.disabled = true;
 
                     const action = form.getAttribute('action') || window.location.href;
                     const formData = new FormData(form);
@@ -534,70 +395,152 @@
                             body: formData,
                             headers: xhrHeaders
                         });
+                        const data = await response.json();
 
-                        const contentType = response.headers.get('content-type') || '';
-
-                        if (contentType.includes('application/json')) {
-                            const data = await response.json();
-
-                            if (data.success) {
-                                ajaxModal.hide();
+                        if (data.success) {
+                            ajaxModal.hide();
+                            if (data.html) {
+                                const tbody = document.getElementById('traitements-list');
+                                if (data.traitementId) {
+                                    const existingRows = tbody.querySelectorAll(`tr[data-traitement-id="${data.traitementId}"]`);
+                                    existingRows.forEach(row => row.remove());
+                                }
+                                tbody.insertAdjacentHTML('beforeend', data.html);
+                            } else {
                                 window.location.reload();
-                                return;
                             }
-
+                        } else {
                             if (data.form) {
                                 modalBody.innerHTML = data.form;
                                 bindAjaxForm(modalBody.querySelector('form'));
-                                return;
-                            }
-
-                            let errorsHtml = '';
-                            if (Array.isArray(data.errors) && data.errors.length > 0) {
-                                errorsHtml = `
-                                    <div class="alert alert-danger">
-                                        <ul class="mb-0">
-                                            ${data.errors.map(error => `<li>${error}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                `;
+                                if (typeof initTraitementForm === 'function') {
+                                    initTraitementForm();
+                                }
                             } else {
-                                errorsHtml = `
-                                    <div class="alert alert-danger">
-                                        Le formulaire contient des erreurs.
-                                    </div>
-                                `;
+                                alert(data.errors ? data.errors.join('\n') : 'Erreur lors de l\'enregistrement');
                             }
-
-                            modalBody.innerHTML = errorsHtml + modalBody.innerHTML;
-                        } else {
-                            // HTML response (form re-rendered with errors)
-                            modalBody.innerHTML = await response.text();
-                            bindAjaxForm(modalBody.querySelector('form'));
                         }
-
                     } catch (error) {
-                        console.error('Erreur soumission formulaire :', error);
-                        modalBody.innerHTML = `
-                            <div class="alert alert-danger mb-0">
-                                Une erreur est survenue lors de l'enregistrement.
-                            </div>
-                        `;
+                        console.error(error);
+                        alert('Erreur serveur.');
                     } finally {
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                        }
+                        if (submitBtn) submitBtn.disabled = false;
                     }
                 });
             }
+
+            // Ouverture du modal
+            document.addEventListener('click', async function (e) {
+                const btn = e.target.closest('.js-ajax-modal');
+                if (!btn) return;
+                e.preventDefault();
+
+                const url = btn.dataset.url;
+                const title = btn.dataset.title || 'Formulaire';
+                modalTitle.textContent = title;
+                modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+                ajaxModal.show();
+
+                try {
+                    const response = await fetch(url, { method: 'GET', headers: xhrHeaders });
+                    const data = await response.json();
+                    if (data.form) {
+                        modalBody.innerHTML = data.form;
+                        if (typeof initTraitementForm === 'function') {
+                            initTraitementForm();
+                        }
+                        bindAjaxForm(modalBody.querySelector('form'));
+                    } else if (data.error) {
+                        modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    } else {
+                        modalBody.innerHTML = '<div class="alert alert-danger">Impossible de charger le formulaire.</div>';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    modalBody.innerHTML = '<div class="alert alert-danger">Erreur de chargement.</div>';
+                }
+            });
+
+            // ========== ADMINISTRATION TOGGLE ==========
+            document.addEventListener('click', async function (e) {
+                const btn = e.target.closest('.js-admin-toggle');
+                if (!btn) return;
+                e.preventDefault();
+
+                const url = btn.dataset.url;
+                const date = btn.dataset.date;
+                const heure = btn.dataset.heure;
+                const isAdministered = btn.dataset.administered === '1';
+                const lateRequired = btn.dataset.lateRequired === '1';
+
+                async function submitAdministration(observation = '') {
+                    const formData = new FormData();
+                    formData.append('date', date);
+                    formData.append('heure', heure);
+                    if (observation) formData.append('observation', observation);
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const data = await response.json();
+
+                        if (data.success && data.cellHtml) {
+                            const td = btn.closest('.hour-cell');
+                            if (td) td.outerHTML = data.cellHtml;
+                        } else {
+                            alert(data.message || 'Erreur lors de la mise à jour.');
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert('Erreur serveur.');
+                    }
+                }
+
+                if (!isAdministered && lateRequired) {
+                    const lateModalElement = document.getElementById('lateReasonModal');
+                    const lateForm = document.getElementById('lateReasonForm');
+                    const lateObservation = document.getElementById('lateReasonObservation');
+                    if (!lateModalElement || !lateForm || !lateObservation) {
+                        alert('Formulaire de justification introuvable.');
+                        return;
+                    }
+                    const lateModal = bootstrap.Modal.getOrCreateInstance(lateModalElement);
+                    lateObservation.value = '';
+                    lateModal.show();
+
+                    const submitHandler = async function (event) {
+                        event.preventDefault();
+                        const observation = lateObservation.value.trim();
+                        if (!observation) {
+                            lateObservation.focus();
+                            return;
+                        }
+                        lateModal.hide();
+                        lateForm.removeEventListener('submit', submitHandler);
+                        await submitAdministration(observation);
+                    };
+                    lateForm.addEventListener('submit', submitHandler);
+                    lateModalElement.addEventListener('hidden.bs.modal', function cleanup() {
+                        lateForm.removeEventListener('submit', submitHandler);
+                        lateModalElement.removeEventListener('hidden.bs.modal', cleanup);
+                    });
+                    return;
+                }
+
+                await submitAdministration();
+            });
         });
     </script>
+    
 
     <script>
+        // Gestion des clics sur les boutons d'administration (toggle)
         document.addEventListener('click', async function (e) {
             const btn = e.target.closest('.js-admin-toggle');
             if (!btn) return;
-
             e.preventDefault();
 
             const url = btn.dataset.url;
@@ -605,32 +548,26 @@
             const heure = btn.dataset.heure;
             const isAdministered = btn.dataset.administered === '1';
             const lateRequired = btn.dataset.lateRequired === '1';
-            const lateReasonModalElement = document.getElementById('lateReasonModal');
-            const lateReasonForm = document.getElementById('lateReasonForm');
-            const lateReasonObservation = document.getElementById('lateReasonObservation');
 
             async function submitAdministration(observation = '') {
                 const formData = new FormData();
                 formData.append('date', date);
                 formData.append('heure', heure);
-
-                if (observation) {
-                    formData.append('observation', observation);
-                }
+                if (observation) formData.append('observation', observation);
 
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
                         body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
-
                     const data = await response.json();
 
-                    if (data.success) {
-                        window.location.reload();
+                    if (data.success && data.cellHtml) {
+                        // Remplacer la cellule par la nouvelle version
+                        const td = btn.closest('.hour-cell');
+                        if (td) td.outerHTML = data.cellHtml;
+                        // Recharger éventuellement les compteurs d'alertes (optionnel)
                     } else {
                         alert(data.message || 'Erreur lors de la mise à jour.');
                     }
@@ -641,36 +578,34 @@
             }
 
             if (!isAdministered && lateRequired) {
-                if (!lateReasonModalElement || !lateReasonForm || !lateReasonObservation) {
-                    alert('Le formulaire de justification est introuvable.');
+                const lateModalElement = document.getElementById('lateReasonModal');
+                const lateForm = document.getElementById('lateReasonForm');
+                const lateObservation = document.getElementById('lateReasonObservation');
+                if (!lateModalElement || !lateForm || !lateObservation) {
+                    alert('Formulaire de justification introuvable.');
                     return;
                 }
-
-                const lateReasonModal = bootstrap.Modal.getOrCreateInstance(lateReasonModalElement);
-                lateReasonObservation.value = '';
-                lateReasonModal.show();
+                const lateModal = bootstrap.Modal.getOrCreateInstance(lateModalElement);
+                lateObservation.value = '';
+                lateModal.show();
 
                 const submitHandler = async function (event) {
                     event.preventDefault();
-
-                    const observation = lateReasonObservation.value.trim();
+                    const observation = lateObservation.value.trim();
                     if (!observation) {
-                        lateReasonObservation.focus();
+                        lateObservation.focus();
                         return;
                     }
-
-                    lateReasonModal.hide();
-                    lateReasonForm.removeEventListener('submit', submitHandler);
+                    lateModal.hide();
+                    lateForm.removeEventListener('submit', submitHandler);
                     await submitAdministration(observation);
                 };
+                lateForm.addEventListener('submit', submitHandler);
 
-                lateReasonForm.addEventListener('submit', submitHandler);
-
-                lateReasonModalElement.addEventListener('hidden.bs.modal', function cleanupHandler() {
-                    lateReasonForm.removeEventListener('submit', submitHandler);
-                    lateReasonModalElement.removeEventListener('hidden.bs.modal', cleanupHandler);
+                lateModalElement.addEventListener('hidden.bs.modal', function cleanup() {
+                    lateForm.removeEventListener('submit', submitHandler);
+                    lateModalElement.removeEventListener('hidden.bs.modal', cleanup);
                 });
-
                 return;
             }
 
