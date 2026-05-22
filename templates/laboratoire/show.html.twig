@@ -58,13 +58,21 @@
                 </button>
             {% else %}
                 {% if statut == 'en_cours' %}
-                    <button type="button"
-                            class="btn btn-outline-dark js-open-resultat"
-                            data-bs-toggle="modal"
-                            data-bs-target="#resultatLaboratoireModal"
+                    {# Bouton pour déclencher l'ouverture de la modale #}
+                    <button type="button" 
+                            class="btn btn-primary js-open-result-modal" 
                             data-url="{{ path('app_laboratoire_resultat_edit', {id: prestation.id}) }}">
-                        {{ prestation.resultatLaboratoire ? 'Modifier le résultat' : 'Saisir le résultat' }}
+                        <i class="ri-edit-line me-1"></i> Saisir / Modifier le résultat
                     </button>
+
+                    {# Conteneur de la modale (à placer tout en bas de votre fichier show.html.twig) #}
+                    <div class="modal fade" id="resultatModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+                            <div class="modal-content shadow-lg border-0" id="resultatModalContent">
+                                {# Le contenu sera injecté ici par AJAX #}
+                            </div>
+                        </div>
+                    </div>
                 {% else %}
                     <button class="btn btn-outline-dark" disabled>
                         Saisir le résultat
@@ -322,4 +330,123 @@
             });
         });
     </script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('resultatModal');
+    if (!modalEl) return;
+    
+    const modalContent = document.getElementById('resultatModalContent');
+    const bsModal = new bootstrap.Modal(modalEl);
+
+    // 1. Ouvrir la modale et charger le formulaire
+    document.querySelectorAll('.js-open-result-modal').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.dataset.url;
+            
+            // Afficher un loader esthétique
+            modalContent.innerHTML = `
+                <div class="p-5 text-center">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <div class="mt-3 text-muted">Chargement du formulaire de résultat...</div>
+                </div>`;
+            bsModal.show();
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(res => res.text())
+                .then(html => {
+                    modalContent.innerHTML = html;
+                    initCollection();
+                    initFormSubmit(url);
+                })
+                .catch(err => {
+                    modalContent.innerHTML = '<div class="p-4 alert alert-danger m-3">Une erreur est survenue lors du chargement.</div>';
+                });
+        });
+    });
+
+    // 2. Gestion des lignes dynamiques (CollectionType)
+    function initCollection() {
+        const container = document.getElementById('resultat-lignes');
+        if (!container) return;
+        
+        let index = parseInt(container.dataset.index);
+
+        // Bouton Ajouter
+        const addBtn = document.querySelector('.js-add-result-line');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                let prototype = container.dataset.prototype;
+                let newForm = prototype.replace(/__name__/g, index);
+                index++;
+                container.insertAdjacentHTML('beforeend', newForm);
+                
+                // Petit effet visuel
+                const newlyAdded = container.lastElementChild;
+                newlyAdded.style.opacity = '0';
+                newlyAdded.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    newlyAdded.style.transition = 'all 0.3s ease';
+                    newlyAdded.style.opacity = '1';
+                    newlyAdded.style.transform = 'translateY(0)';
+                }, 10);
+            });
+        }
+
+        // Bouton Supprimer (Délégation d'événement)
+        container.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.js-remove-result-line');
+            if (removeBtn) {
+                const item = removeBtn.closest('.js-result-line-item');
+                item.style.transition = 'all 0.3s ease';
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(-10px)';
+                setTimeout(() => item.remove(), 300);
+            }
+        });
+    }
+
+    // 3. Soumission du formulaire en AJAX
+    function initFormSubmit(submitUrl) {
+        const form = document.getElementById('resultatLaboratoireForm');
+        if (!form) return;
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = form.querySelector('.js-submit-resultat');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Enregistrement...';
+            btn.disabled = true;
+
+            fetch(submitUrl, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => {
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return res.json().then(data => {
+                        if(data.success) {
+                            bsModal.hide();
+                            // Recharge la page pour actualiser les badges (En cours -> Réalisé) 
+                            // et afficher les boutons d'impression
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    // S'il y a des erreurs de validation Symfony, on réaffiche le formulaire avec les erreurs
+                    return res.text().then(html => {
+                        modalContent.innerHTML = html;
+                        initCollection();
+                        initFormSubmit(submitUrl);
+                    });
+                }
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -1,0 +1,44 @@
+{# templates/hospitalisation/_form_bilan.html.twig #}
+
+{{ form_start(form, {'attr': {'id': 'form-bilan-hospitalisation'}}) }}
+    
+    <div class="alert bg-primary-subtle border-primary-subtle text-primary small mb-4">
+        <i class="fa fa-info-circle me-1"></i> Renseignez les diagnostics et les résultats des examens paracliniques.
+    </div>
+
+    <div class="row g-4">
+        {# Section Diagnostics #}
+        <div class="col-12">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Diagnostics</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form_row(form.hypothesesDiagnostiques) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.diagnosticPositif) }}
+                </div>
+            </div>
+        </div>
+
+        {# Section Bilan Paraclinique #}
+        <div class="col-12">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Bilan Paraclinique</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form_row(form.bilanImagerie) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.bilanBiologie) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save me-1"></i> Enregistrer le bilan
+        </button>
+    </div>
+
+{{ form_end(form) }}

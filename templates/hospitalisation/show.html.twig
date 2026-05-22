@@ -261,9 +261,136 @@
                     </div>
                 </div>
             </div>
+
+            {# ====== ANTÉCÉDENTS DU PATIENT ====== #}
+    <div class="hs-section shadow-sm mb-4">
+        <div class="hs-section-title d-flex justify-content-between align-items-center mb-3">
+            <span><i class="fa fa-history text-primary"></i> Antécédents (Dossier Médical)</span>
+
+            <a href="{{ path('app_dossier_medical_edit', {
+    'id': hospitalisation.dossierMedical.id, 
+    'redirect_to': path('app_hospitalisation_show', {'id': hospitalisation.id})
+}) }}" class="btn btn-sm btn-light border">
+    <i class="fa fa-external-link-alt me-1"></i> Modifier le dossier
+</a>
+        </div>
+        <div class="row g-3 small">
+            <div class="col-md-3">
+                <span class="text-muted d-block fw-bold mb-1">Médicaux</span>
+                <span class="text-dark">{{ hospitalisation.dossierMedical.antecedents.medicaux | default('—') }}</span>
+            </div>
+            <div class="col-md-3">
+                <span class="text-muted d-block fw-bold mb-1">Chirurgicaux</span>
+                <span class="text-dark">{{ hospitalisation.dossierMedical.antecedents.chirurgicaux | default('—') }}</span>
+            </div>
+            <div class="col-md-3">
+                <span class="text-muted d-block fw-bold mb-1">Gynéco-obst.</span>
+                <span class="text-dark">{{ hospitalisation.dossierMedical.antecedents.gyneco_obstetricaux | default('—') }}</span>
+            </div>
+            <div class="col-md-3">
+                <span class="text-muted d-block fw-bold mb-1">Mode de vie</span>
+                <span class="text-dark">{{ hospitalisation.dossierMedical.antecedents.mode_vie | default('—') }}</span>
+            </div>
         </div>
     </div>
+            {# ====== BILAN ET DIAGNOSTICS ====== #}
+    <div class="hs-section shadow-sm mb-4">
+        <div class="hs-section-title d-flex justify-content-between align-items-center mb-3">
+            <span><i class="fa fa-stethoscope text-primary"></i> Diagnostics & Bilan Paraclinique</span>
+            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN') %}
+                <button type="button" class="btn btn-sm btn-outline-primary js-ajax-modal"
+                        data-url="{{ path('app_hospitalisation_edit_bilan', {'id': hospitalisation.id}) }}"
+                        data-title="Mettre à jour le Bilan">
+                    <i class="fa fa-pen me-1"></i> Compléter
+                </button>
+            {% endif %}
+        </div>
 
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 bg-light border rounded h-100">
+                    <h6 class="fw-bold text-muted mb-2 small text-uppercase">Hypothèses diagnostiques</h6>
+                    <div class="text-dark small" style="white-space: pre-line;">{{ hospitalisation.hypothesesDiagnostiques ?: 'Aucune hypothèse renseignée.' }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-primary-subtle border border-primary-subtle rounded h-100">
+                    <h6 class="fw-bold text-primary mb-2 small text-uppercase">Diagnostic Positif Retenu</h6>
+                    <div class="text-dark fw-medium small" style="white-space: pre-line;">{{ hospitalisation.diagnosticPositif ?: 'En attente de diagnostic.' }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 border rounded h-100">
+                    <h6 class="fw-bold text-muted mb-2 small text-uppercase">Bilan Imagerie</h6>
+                    <div class="text-dark small" style="white-space: pre-line;">{{ hospitalisation.bilanParaclinique.imagerie ?? 'Aucun résultat d\'imagerie.' }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 border rounded h-100">
+                    <h6 class="fw-bold text-muted mb-2 small text-uppercase">Bilan Biologie</h6>
+                    <div class="text-dark small" style="white-space: pre-line;">{{ hospitalisation.bilanParaclinique.biologie ?? 'Aucun résultat biologique.' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+{# ====== CONSTANTES & EXAMENS CLINIQUES ====== #}
+    <div class="hs-section shadow-sm mb-4">
+        <div class="hs-section-title d-flex justify-content-between align-items-center mb-3">
+            <span><i class="fa fa-heartbeat text-danger"></i> Constantes & Suivi Clinique</span>
+            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER') %}
+                <button type="button" class="btn btn-sm btn-outline-danger js-ajax-modal"
+                        data-url="{{ path('app_hospitalisation_add_constantes', {'id': hospitalisation.id}) }}"
+                        data-title="Nouvelle prise de constantes">
+                    <i class="fa fa-plus me-1"></i> Ajouter
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-bordered align-middle text-center small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date & Heure</th>
+                        <th>Temp.</th>
+                        <th>TA</th>
+                        <th>Pouls</th>
+                        <th>SaO2</th>
+                        <th>Poids</th>
+                        <th>Signes</th>
+                        <th class="text-start">Observations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# On trie pour avoir la plus récente en haut #}
+                    {% for constante in hospitalisation.examensCliniques|sort((a, b) => b.datePrise <=> a.datePrise) %}
+                        <tr>
+                            <td class="fw-bold text-nowrap">{{ constante.datePrise|date('d/m/Y H:i') }}</td>
+                            <td>
+                                {% if constante.temperature %}
+                                    <span class="{{ constante.temperature > 38 ? 'text-danger fw-bold' : '' }}">{{ constante.temperature }} °C</span>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>{{ constante.tensionArterielle ?: '-' }}</td>
+                            <td>{{ constante.pouls ? constante.pouls ~ ' bpm' : '-' }}</td>
+                            <td>{{ constante.saturationOxygene ? constante.saturationOxygene ~ ' %' : '-' }}</td>
+                            <td>{{ constante.poids ? constante.poids ~ ' kg' : '-' }}</td>
+                            <td>
+                                {% if constante.deshydratation %}<span class="badge bg-warning text-dark me-1">Déshydr.</span>{% endif %}
+                                {% if constante.oedeme %}<span class="badge bg-info text-dark">Œdème</span>{% endif %}
+                            </td>
+                            <td class="text-start">{{ constante.notes ?: '-' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-muted py-4 text-center">Aucune constante enregistrée pour le moment.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {# ====== PLAN DE TRAITEMENT (FEUILLE DE SOINS) ====== #}
     <div class="hs-section shadow-sm">
         <div class="hs-section-title d-flex justify-content-between align-items-center">
@@ -429,7 +556,7 @@
                 });
             }
 
-            // Ouverture du modal
+           // Ouverture du modal
             document.addEventListener('click', async function (e) {
                 const btn = e.target.closest('.js-ajax-modal');
                 if (!btn) return;
@@ -443,17 +570,28 @@
 
                 try {
                     const response = await fetch(url, { method: 'GET', headers: xhrHeaders });
-                    const data = await response.json();
-                    if (data.form) {
-                        modalBody.innerHTML = data.form;
-                        if (typeof initTraitementForm === 'function') {
-                            initTraitementForm();
+                    
+                    // 1. On lit la réponse brute en TEXTE
+                    const text = await response.text(); 
+                    
+                    try {
+                        // 2. On essaie de la convertir en JSON
+                        const data = JSON.parse(text); 
+                        if (data.form) {
+                            modalBody.innerHTML = data.form;
+                            if (typeof initTraitementForm === 'function') {
+                                initTraitementForm();
+                            }
+                            bindAjaxForm(modalBody.querySelector('form'));
+                        } else if (data.error) {
+                            modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        } else {
+                            modalBody.innerHTML = '<div class="alert alert-danger">Impossible de charger le formulaire.</div>';
                         }
-                        bindAjaxForm(modalBody.querySelector('form'));
-                    } else if (data.error) {
-                        modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-                    } else {
-                        modalBody.innerHTML = '<div class="alert alert-danger">Impossible de charger le formulaire.</div>';
+                    } catch (jsonError) {
+                        // 3. LA MAGIE : Si ce n'est pas du JSON, c'est l'erreur 500 de Symfony !
+                        // On l'affiche directement dans la modale pour pouvoir la lire.
+                        modalBody.innerHTML = text; 
                     }
                 } catch (error) {
                     console.error(error);
@@ -462,10 +600,15 @@
             });
 
             // ========== ADMINISTRATION TOGGLE ==========
+            // (Assurez-vous de n'avoir qu'un seul bloc de ce code dans votre page !)
             document.addEventListener('click', async function (e) {
                 const btn = e.target.closest('.js-admin-toggle');
                 if (!btn) return;
                 e.preventDefault();
+
+                // 1. Verrouillage anti-double-clic !
+                if (btn.hasAttribute('disabled')) return;
+                btn.setAttribute('disabled', 'true');
 
                 const url = btn.dataset.url;
                 const date = btn.dataset.date;
@@ -487,15 +630,42 @@
                         });
                         const data = await response.json();
 
-                        if (data.success && data.cellHtml) {
+                        if (data.success) {
                             const td = btn.closest('.hour-cell');
-                            if (td) td.outerHTML = data.cellHtml;
+                            if (data.checked) {
+                                // Le soin vient d'être administré (Coché)
+                                btn.dataset.administered = '1';
+                                td.classList.add('hour-active');
+                                td.classList.remove('hour-missed', 'hour-upcoming');
+                                
+                                if (data.late) {
+                                    td.classList.add('hour-late');
+                                    btn.innerHTML = '<i class="fa fa-clock text-white"></i>';
+                                } else {
+                                    btn.innerHTML = '<i class="fa fa-check text-white"></i>';
+                                }
+                            } else {
+                                // Le soin vient d'être annulé (Décoché)
+                                btn.dataset.administered = '0';
+                                td.classList.remove('hour-active', 'hour-late');
+                                
+                                // 2. Amélioration : Si on décoche un soin en retard, on le remet en rouge (missed)
+                                if (lateRequired) {
+                                    td.classList.add('hour-missed');
+                                    btn.innerHTML = '<i class="fa fa-exclamation text-danger"></i>';
+                                } else {
+                                    btn.innerHTML = '<span class="admin-dot"></span>';
+                                }
+                            }
                         } else {
                             alert(data.message || 'Erreur lors de la mise à jour.');
                         }
                     } catch (error) {
                         console.error(error);
                         alert('Erreur serveur.');
+                    } finally {
+                        // 3. Déverrouillage du bouton une fois la requête terminée
+                        btn.removeAttribute('disabled');
                     }
                 }
 
@@ -503,10 +673,13 @@
                     const lateModalElement = document.getElementById('lateReasonModal');
                     const lateForm = document.getElementById('lateReasonForm');
                     const lateObservation = document.getElementById('lateReasonObservation');
+                    
                     if (!lateModalElement || !lateForm || !lateObservation) {
                         alert('Formulaire de justification introuvable.');
+                        btn.removeAttribute('disabled');
                         return;
                     }
+
                     const lateModal = bootstrap.Modal.getOrCreateInstance(lateModalElement);
                     lateObservation.value = '';
                     lateModal.show();
@@ -522,94 +695,25 @@
                         lateForm.removeEventListener('submit', submitHandler);
                         await submitAdministration(observation);
                     };
-                    lateForm.addEventListener('submit', submitHandler);
-                    lateModalElement.addEventListener('hidden.bs.modal', function cleanup() {
+
+                    // Gestion de l'annulation (fermeture de la modale sans valider)
+                    const hideHandler = function () {
                         lateForm.removeEventListener('submit', submitHandler);
-                        lateModalElement.removeEventListener('hidden.bs.modal', cleanup);
-                    });
+                        lateModalElement.removeEventListener('hidden.bs.modal', hideHandler);
+                        // On réactive le bouton si l'utilisateur a annulé
+                        if (btn.hasAttribute('disabled')) {
+                            btn.removeAttribute('disabled');
+                        }
+                    };
+
+                    lateForm.addEventListener('submit', submitHandler);
+                    lateModalElement.addEventListener('hidden.bs.modal', hideHandler);
+                    
                     return;
                 }
 
                 await submitAdministration();
             });
-        });
-    </script>
-    
-
-    <script>
-        // Gestion des clics sur les boutons d'administration (toggle)
-        document.addEventListener('click', async function (e) {
-            const btn = e.target.closest('.js-admin-toggle');
-            if (!btn) return;
-            e.preventDefault();
-
-            const url = btn.dataset.url;
-            const date = btn.dataset.date;
-            const heure = btn.dataset.heure;
-            const isAdministered = btn.dataset.administered === '1';
-            const lateRequired = btn.dataset.lateRequired === '1';
-
-            async function submitAdministration(observation = '') {
-                const formData = new FormData();
-                formData.append('date', date);
-                formData.append('heure', heure);
-                if (observation) formData.append('observation', observation);
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    const data = await response.json();
-
-                    if (data.success && data.cellHtml) {
-                        // Remplacer la cellule par la nouvelle version
-                        const td = btn.closest('.hour-cell');
-                        if (td) td.outerHTML = data.cellHtml;
-                        // Recharger éventuellement les compteurs d'alertes (optionnel)
-                    } else {
-                        alert(data.message || 'Erreur lors de la mise à jour.');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    alert('Erreur serveur.');
-                }
-            }
-
-            if (!isAdministered && lateRequired) {
-                const lateModalElement = document.getElementById('lateReasonModal');
-                const lateForm = document.getElementById('lateReasonForm');
-                const lateObservation = document.getElementById('lateReasonObservation');
-                if (!lateModalElement || !lateForm || !lateObservation) {
-                    alert('Formulaire de justification introuvable.');
-                    return;
-                }
-                const lateModal = bootstrap.Modal.getOrCreateInstance(lateModalElement);
-                lateObservation.value = '';
-                lateModal.show();
-
-                const submitHandler = async function (event) {
-                    event.preventDefault();
-                    const observation = lateObservation.value.trim();
-                    if (!observation) {
-                        lateObservation.focus();
-                        return;
-                    }
-                    lateModal.hide();
-                    lateForm.removeEventListener('submit', submitHandler);
-                    await submitAdministration(observation);
-                };
-                lateForm.addEventListener('submit', submitHandler);
-
-                lateModalElement.addEventListener('hidden.bs.modal', function cleanup() {
-                    lateForm.removeEventListener('submit', submitHandler);
-                    lateModalElement.removeEventListener('hidden.bs.modal', cleanup);
-                });
-                return;
-            }
-
-            await submitAdministration();
         });
     </script>
 {% endblock %}

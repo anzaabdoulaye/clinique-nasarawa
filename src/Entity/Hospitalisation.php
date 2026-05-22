@@ -50,8 +50,21 @@ class Hospitalisation
     #[ORM\Column(enumType: StatutHospitalisation::class)]
     private StatutHospitalisation $statut = StatutHospitalisation::EN_COURS;
 
-    #[ORM\OneToOne(mappedBy: 'hospitalisation', targetEntity: ExamenClinique::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    private ?ExamenClinique $examenClinique = null;
+    // ✅ NOUVEAU CODE (OneToMany pour les constantes)
+    #[ORM\OneToMany(mappedBy: 'hospitalisation', targetEntity: ExamenClinique::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $examensCliniques;
+
+    // ✅ NOUVEAUX CHAMPS (Diagnostics et Bilans)
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $bilanParaclinique = [];
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $hypothesesDiagnostiques = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $diagnosticPositif = null;
+
+    
 
     #[ORM\OneToOne(mappedBy: 'hospitalisation', targetEntity: ExamenNeurologique::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private ?ExamenNeurologique $examenNeurologique = null;
@@ -59,26 +72,24 @@ class Hospitalisation
     #[ORM\OneToMany(mappedBy: 'hospitalisation', targetEntity: ExamenComplementaire::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $examensComplementaires;
 
-    #[ORM\OneToMany(mappedBy: 'hospitalisation', targetEntity: Antecedent::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    private Collection $antecedents;
-
     #[ORM\OneToMany(mappedBy: 'hospitalisation', targetEntity: TraitementHospitalisation::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $traitements;
 
-    public function __construct()
+   public function __construct()
     {
-        // ✅ Important: initialiser toutes les collections
         $this->examensComplementaires = new ArrayCollection();
         $this->antecedents = new ArrayCollection();
         $this->traitements = new ArrayCollection();
-
-        // ✅ Valeur par défaut utile (sinon propriété non initialisée)
+        // ✅ Initialiser la nouvelle collection
+        $this->examensCliniques = new ArrayCollection(); 
         $this->dateAdmission = new \DateTimeImmutable();
     }
 
     // --------------------
     // GETTERS
     // --------------------
+
+    
 
     public function getId(): ?int
     {
@@ -263,25 +274,6 @@ class Hospitalisation
         return $this;
     }
 
-    public function addAntecedent(Antecedent $antecedent): self
-    {
-        if (!$this->antecedents->contains($antecedent)) {
-            $this->antecedents->add($antecedent);
-            $antecedent->setHospitalisation($this);
-        }
-        return $this;
-    }
-
-    public function removeAntecedent(Antecedent $antecedent): self
-    {
-        if ($this->antecedents->removeElement($antecedent)) {
-            if ($antecedent->getHospitalisation() === $this) {
-                $antecedent->setHospitalisation(null);
-            }
-        }
-        return $this;
-    }
-
     public function addTraitement(TraitementHospitalisation $traitement): self
     {
         if (!$this->traitements->contains($traitement)) {
@@ -310,5 +302,71 @@ class Hospitalisation
         $self->motifAdmission = $motif;
 
         return $self;
+    }
+
+    // ✅ NOUVELLES METHODES pour les examens cliniques (constantes)
+    /**
+     * @return Collection<int, ExamenClinique>
+     */
+    public function getExamensCliniques(): Collection
+    {
+        return $this->examensCliniques;
+    }
+
+    public function addExamenClinique(ExamenClinique $examenClinique): self
+    {
+        if (!$this->examensCliniques->contains($examenClinique)) {
+            $this->examensCliniques->add($examenClinique);
+            $examenClinique->setHospitalisation($this);
+        }
+        return $this;
+    }
+
+    public function removeExamenClinique(ExamenClinique $examenClinique): self
+    {
+        if ($this->examensCliniques->removeElement($examenClinique)) {
+            if ($examenClinique->getHospitalisation() === $this) {
+                $examenClinique->setHospitalisation(null);
+            }
+        }
+        return $this;
+    }
+
+    // ✅ NOUVELLES METHODES pour les bilans et diagnostics
+    public function getBilanParaclinique(): ?array
+    {
+        // Retourne une structure par défaut si vide, très pratique pour les formulaires Twig
+        return $this->bilanParaclinique ?? [
+            'imagerie' => null,
+            'biologie' => null,
+        ];
+    }
+
+    public function setBilanParaclinique(?array $bilanParaclinique): self
+    {
+        $this->bilanParaclinique = $bilanParaclinique;
+        return $this;
+    }
+
+    public function getHypothesesDiagnostiques(): ?string
+    {
+        return $this->hypothesesDiagnostiques;
+    }
+
+    public function setHypothesesDiagnostiques(?string $hypothesesDiagnostiques): self
+    {
+        $this->hypothesesDiagnostiques = $hypothesesDiagnostiques;
+        return $this;
+    }
+
+    public function getDiagnosticPositif(): ?string
+    {
+        return $this->diagnosticPositif;
+    }
+
+    public function setDiagnosticPositif(?string $diagnosticPositif): self
+    {
+        $this->diagnosticPositif = $diagnosticPositif;
+        return $this;
     }
 }

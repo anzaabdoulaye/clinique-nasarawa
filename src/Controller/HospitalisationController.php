@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Hospitalisation;
 use App\Form\HospitalisationType;
+use App\Form\HospitalisationBilanType; // ✅ NOUVEL IMPORT
 use App\Repository\HospitalisationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,16 +21,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/hospitalisation')]
 final class HospitalisationController extends AbstractController
 {
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"))]
     #[Route(name: 'app_hospitalisation_index', methods: ['GET','POST'])]
-    public function index(
-        Request $request,
-        HospitalisationRepository $repository,
-        EntityManagerInterface $em
-    ): Response {
-
+    public function index(Request $request, HospitalisationRepository $repository, EntityManagerInterface $em): Response 
+    {
         $hospitalisation = new Hospitalisation();
         $form = $this->createForm(HospitalisationType::class, $hospitalisation);
         $form->handleRequest($request);
@@ -37,20 +32,16 @@ final class HospitalisationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($hospitalisation);
             $em->flush();
-
             return $this->redirectToRoute('app_hospitalisation_index');
         }
 
         return $this->render('hospitalisation/index.html.twig', [
             'hospitalisations' => $repository->findBy([], ['id' => 'DESC']),
-            'form' => $form->createView(), // ✅ IMPORTANT
+            'form' => $form->createView(),
         ]);
     }
 
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"))]
     #[Route('/{id}', name: 'app_hospitalisation_show', methods: ['GET'])]
     public function show(Hospitalisation $hospitalisation): Response
     {
@@ -59,20 +50,15 @@ final class HospitalisationController extends AbstractController
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"
-))]
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"))]
     #[Route('/{id}/print', name: 'app_hospitalisation_print', methods: ['GET'])]
     public function print(Hospitalisation $hospitalisation): Response
     {
-        // configure Dompdf according to your needs
         $options = new Options();
         $options->set('defaultFont', 'Helvetica');
         $options->set('isRemoteEnabled', true);
 
         $dompdf = new Dompdf($options);
-
-        // render Twig template to HTML
         $html = $this->renderView('hospitalisation/print.html.twig', [
             'hospitalisation' => $hospitalisation,
         ]);
@@ -81,52 +67,41 @@ final class HospitalisationController extends AbstractController
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        // return PDF response
-        $pdfOutput = $dompdf->output();
-
-        return new Response($pdfOutput, 200, [
+        return new Response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('inline; filename="hospitalisation-%d.pdf"', $hospitalisation->getId()),
         ]);
     }
 
-
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN')"
-))]
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN')"))]
     #[Route('/{id}/edit', name: 'app_hospitalisation_edit', methods: ['GET','POST'])]
-    public function edit(
-        Request $request,
-        Hospitalisation $hospitalisation,
-        EntityManagerInterface $em
-    ): Response {
-
-        $form = $this->createForm(HospitalisationType::class, $hospitalisation);
+    public function edit(Request $request, Hospitalisation $hospitalisation, EntityManagerInterface $em): Response 
+    {
+        $form = $this->createForm(HospitalisationType::class, $hospitalisation, [
+            'action' => $this->generateUrl('app_hospitalisation_edit', ['id' => $hospitalisation->getId()]),
+        ]);
         $form->handleRequest($request);
 
-        // === GET AJAX → Charger le formulaire dans le modal
         if ($request->isXmlHttpRequest() && $request->isMethod('GET')) {
-            return $this->render('hospitalisation/_form.html.twig', [
+            $html = $this->renderView('hospitalisation/_form.html.twig', [
                 'form' => $form->createView(),
                 'hospitalisation' => $hospitalisation,
             ]);
+            return new JsonResponse(['form' => $html]);
         }
 
-        // === POST AJAX → Soumission du formulaire
         if ($request->isXmlHttpRequest() && $request->isMethod('POST')) {
-
             if ($form->isSubmitted() && $form->isValid()) {
-
                 $em->flush();
-
                 return new JsonResponse(['success' => true]);
             }
 
-            // Formulaire invalide → renvoyer le formulaire avec les erreurs
-            return $this->render('hospitalisation/_form.html.twig', [
+            // ✅ CORRECTION DU BUG AJAX (On renvoie du JSON même en cas d'erreur)
+            $html = $this->renderView('hospitalisation/_form.html.twig', [
                 'form' => $form->createView(),
                 'hospitalisation' => $hospitalisation,
             ]);
+            return new JsonResponse(['success' => false, 'form' => $html]);
         }
 
         return $this->render('hospitalisation/_form.html.twig', [
@@ -135,23 +110,98 @@ final class HospitalisationController extends AbstractController
         ]);
     }
 
+    // ✅ NOUVELLE MÉTHODE : Gestion indépendante du Bilan et Diagnostic
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN')"))]
+    #[Route('/{id}/edit-bilan', name: 'app_hospitalisation_edit_bilan', methods: ['GET','POST'])]
+    public function editBilan(Request $request, Hospitalisation $hospitalisation, EntityManagerInterface $em): Response 
+    {
+        // On génère l'URL d'action pour que le formulaire pointe bien vers cette méthode
+        $form = $this->createForm(HospitalisationBilanType::class, $hospitalisation, [
+            'action' => $this->generateUrl('app_hospitalisation_edit_bilan', ['id' => $hospitalisation->getId()]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($request->isXmlHttpRequest() && $request->isMethod('GET')) {
+            $html = $this->renderView('hospitalisation/_form_bilan.html.twig', [
+                'form' => $form->createView(),
+                'hospitalisation' => $hospitalisation,
+            ]);
+            return new JsonResponse(['form' => $html]);
+        }
+
+        if ($request->isXmlHttpRequest() && $request->isMethod('POST')) {
+            if ($form->isSubmitted() && $form->isValid()) {
+                $em->flush();
+                return new JsonResponse(['success' => true]);
+            }
+
+            // Renvoyer les erreurs en JSON
+            $html = $this->renderView('hospitalisation/_form_bilan.html.twig', [
+                'form' => $form->createView(),
+                'hospitalisation' => $hospitalisation,
+            ]);
+            return new JsonResponse(['success' => false, 'form' => $html]);
+        }
+
+        // Fallback standard
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+            $this->addFlash('success', 'Bilan mis à jour.');
+            return $this->redirectToRoute('app_hospitalisation_show', ['id' => $hospitalisation->getId()]);
+        }
+
+        return $this->render('hospitalisation/_form_bilan.html.twig', [
+            'form' => $form->createView(),
+            'hospitalisation' => $hospitalisation,
+        ]);
+    }
+
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"))]
+    #[Route('/{id}/add-constantes', name: 'app_hospitalisation_add_constantes', methods: ['GET','POST'])]
+    public function addConstantes(Request $request, Hospitalisation $hospitalisation, EntityManagerInterface $em): Response 
+    {
+        $examen = new \App\Entity\ExamenClinique();
+        $examen->setHospitalisation($hospitalisation);
+        
+        $form = $this->createForm(\App\Form\ExamenCliniqueType::class, $examen, [
+            'action' => $this->generateUrl('app_hospitalisation_add_constantes', ['id' => $hospitalisation->getId()]),
+        ]);
+        $form->handleRequest($request);
+
+        if ($request->isXmlHttpRequest()) {
+            if ($request->isMethod('POST')) {
+                if ($form->isSubmitted() && $form->isValid()) {
+                    $em->persist($examen);
+                    $em->flush();
+                    return new JsonResponse(['success' => true]);
+                }
+                
+                // Formulaire invalide : on renvoie les erreurs
+                $html = $this->renderView('hospitalisation/_form_constantes.html.twig', [
+                    'form' => $form->createView()
+                ]);
+                return new JsonResponse(['success' => false, 'form' => $html]);
+            }
+            
+            // GET AJAX : on renvoie le formulaire vierge
+            $html = $this->renderView('hospitalisation/_form_constantes.html.twig', [
+                'form' => $form->createView()
+            ]);
+            return new JsonResponse(['form' => $html]);
+        }
+
+        // Fallback si on tente d'accéder sans AJAX
+        return $this->redirectToRoute('app_hospitalisation_show', ['id' => $hospitalisation->getId()]);
+    }
 
     #[IsGranted('ROLE_ADMIN')]
     #[Route('/{id}', name: 'app_hospitalisation_delete', methods: ['POST'])]
-    public function delete(
-        Request $request,
-        Hospitalisation $hospitalisation,
-        EntityManagerInterface $em
-    ): Response {
-
-        if ($this->isCsrfTokenValid(
-            'delete'.$hospitalisation->getId(),
-            $request->getPayload()->getString('_token')
-        )) {
+    public function delete(Request $request, Hospitalisation $hospitalisation, EntityManagerInterface $em): Response 
+    {
+        if ($this->isCsrfTokenValid('delete'.$hospitalisation->getId(), $request->getPayload()->getString('_token'))) {
             $em->remove($hospitalisation);
             $em->flush();
         }
-
         return $this->redirectToRoute('app_hospitalisation_index');
     }
 }

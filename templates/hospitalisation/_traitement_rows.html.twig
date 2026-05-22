@@ -12,13 +12,6 @@
                 <div>{{ traitement.description }}</div>
                 <div class="small text-muted mt-1">ID: {{ traitement.id }}</div>
                 <div class="treatment-actions">
-                    <button type="button" class="btn btn-sm btn-outline-secondary js-edit-treatment" data-id="{{ traitement.id }}">✏️</button>
-                    {% if canDeleteTreatment is defined and canDeleteTreatment %}
-                        <form method="post" action="{{ path('app_traitement_hospitalisation_delete', {'id': traitement.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer ce traitement ?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ traitement.id) }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
-                        </form>
-                    {% endif %}
                 </div>
             </td>
             <td class="text-muted small">{{ currentDate|date('d/m/Y') }}</td>
@@ -27,12 +20,21 @@
                 {% set administration = traitement.getAdministrationAt(currentDate, h) %}
                 {% set administered = administration is not null %}
                 {% set lateAdministered = administration and administration.statut == 'retard' %}
-                {% set isToday = currentDate|date('Y-m-d') == today|default('now'|date('Y-m-d')) %}
+                
                 {% set nowTs = nowTs|default('now'|date('U')) %}
+                
+                {# Calculs exacts des timestamps pour cette cellule #}
+                {% set slotTimeTs = (currentDate|date('Y-m-d') ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date('U') %}
                 {% set slotDeadlineTs = (currentDate|date('Y-m-d') ~ ' ' ~ '%02d'|format(h) ~ ':00:00')|date_modify('+1 hour')|date('U') %}
-                {% set missed = scheduled and isToday and slotDeadlineTs <= nowTs and not administered %}
-                {% set upcoming = scheduled and isToday and slotDeadlineTs > nowTs and not administered %}
-                {% set canToggle = (administered and canRemoveAdministration is defined and canRemoveAdministration) or (not administered and traitement.isWithinPeriodAt(currentDate, h)) %}
+                
+                {% set missed = scheduled and slotDeadlineTs <= nowTs and not administered %}
+                {% set upcoming = scheduled and slotTimeTs > nowTs and not administered %}
+                
+                {# ✅ NOUVELLE LOGIQUE : On peut cocher si l'heure planifiée est arrivée ou dépassée (slotTimeTs <= nowTs) #}
+                {% set canToggle = (administered and canRemoveAdministration is defined and canRemoveAdministration) or (not administered and scheduled and slotTimeTs <= nowTs) %}
+                
+                {# ✅ On exige une justification si c'est "missed" (deadline d'1h dépassée) #}
+                {% set lateRequired = missed %}
 
                 <td class="hour-cell {{ scheduled ? 'scheduled-cell' : '' }} {{ administered ? 'hour-active' : '' }} {{ lateAdministered ? 'hour-late' : '' }} {{ missed ? 'hour-missed' : '' }} {{ upcoming ? 'hour-upcoming' : '' }}">
                     {% if scheduled %}
@@ -42,7 +44,7 @@
                                 data-date="{{ currentDate|date('Y-m-d') }}"
                                 data-heure="{{ h }}"
                                 data-administered="{{ administered ? '1' : '0' }}"
-                                data-late-required="{{ (not administered and traitement.isLateSlotAt(currentDate, h)) ? '1' : '0' }}"
+                                data-late-required="{{ lateRequired ? '1' : '0' }}"
                                 {{ canToggle ? '' : 'disabled' }}>
                             {% if lateAdministered %}
                                 <i class="fa fa-clock text-white"></i>

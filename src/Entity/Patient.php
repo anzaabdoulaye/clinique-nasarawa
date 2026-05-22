@@ -292,6 +292,16 @@ class Patient
         return $this;
     }
 
+
+    public function getAge(): ?int
+    {
+        if (!$this->dateNaissance) {
+            return null;
+        }
+
+        return $this->dateNaissance->diff(new \DateTime())->y;
+    }
+
     // emergency contact getters/setters
     public function getEmergencyContactName(): ?string
     {

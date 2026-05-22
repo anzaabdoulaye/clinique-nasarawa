@@ -1,801 +1,400 @@
+{# templates/hospitalisation/print.html.twig #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fiche d'Hospitalisation #{{ hospitalisation.id }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+        }
 
-
-{% block body %}
-<style>
-    @page {
-        size: A4 portrait;
-        margin: 5mm;
-    }
-
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: DejaVu Sans, Arial, sans-serif;
-        font-size: 9.5px;
-        color: #1f2937;
-        background: #ffffff;
-    }
-
-    .document {
-        width: 100%;
-    }
-
-    .sheet {
-        border: 1px solid #d7dee7;
-        padding: 6px;
-        background: #ffffff;
-    }
-
-    .top-bar {
-        height: 6px;
-        background: linear-gradient(90deg, #0f4c81 0%, #1d6fa5 55%, #7db4d8 100%);
-        margin-bottom: 8px;
-        border-radius: 4px;
-    }
-
-    .header-table,
-    .meta-table,
-    .summary-table,
-    .footer-table,
-    .signature-table,
-    .vitals-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .header-table td,
-    .meta-table td,
-    .summary-table td,
-    .footer-table td,
-    .signature-table td {
-        vertical-align: top;
-    }
-
-    .clinic-logo {
-        width: 23mm;
-        height: 23mm;
-        border: 1px solid #cfd8e3;
-        padding: 2px;
-        background: #ffffff;
-        border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.08);
-    }
-
-    .clinic h1 {
-        margin: 0 0 4px 0;
-        font-size: 13.5px;
-        font-weight: bold;
-        color: #0f4c81;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        line-height: 1.15;
-    }
-
-    .clinic .sub {
-        font-size: 7.8px;
-        line-height: 1.45;
-        color: #4b5563;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 8px;
-        font-weight: bold;
-        letter-spacing: 0.04em;
-        border: 1px solid #d1d5db;
-        background: #f8fafc;
-        color: #374151;
-        text-transform: uppercase;
-    }
-
-    .badge-soft-success {
-        background: #ecfdf5;
-        border-color: #b7ebcf;
-        color: #166534;
-    }
-
-    .badge-soft-warning {
-        background: #fffbeb;
-        border-color: #f6dd9b;
-        color: #92400e;
-    }
-
-    .badge-soft-danger {
-        background: #fef2f2;
-        border-color: #f1b3b3;
-        color: #b91c1c;
-    }
-
-    .badge-soft-primary {
-        background: #eff6ff;
-        border-color: #bfdbfe;
-        color: #1d4ed8;
-    }
-
-    .separator {
-        border-bottom: 1px solid #d7dee7;
-        margin: 8px 0;
-    }
-
-    .title-box {
-        text-align: center;
-        margin-bottom: 8px;
-    }
-
-    .title-box .title {
-        font-size: 12.5px;
-        font-weight: bold;
-        color: #0f4c81;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-
-    .title-box .subtitle {
-        margin-top: 3px;
-        font-size: 7.4px;
-        color: #6b7280;
-    }
-
-    .meta-box,
-    .summary-box,
-    .box {
-        border: 1px solid #d7dee7;
-        border-radius: 8px;
-    }
-
-    .meta-box {
-        padding: 6px;
-        margin-bottom: 7px;
-        background: #fbfdff;
-    }
-
-    .meta-table td {
-        width: 50%;
-        padding: 4px 5px;
-        line-height: 1.35;
-    }
-
-    .meta-label {
-        display: block;
-        font-size: 7px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #6b7280;
-        margin-bottom: 1px;
-    }
-
-    .meta-value {
-        display: block;
-        font-size: 9.4px;
-        font-weight: bold;
-        color: #111827;
-    }
-
-    .summary-box {
-        margin-bottom: 7px;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    .summary-table td {
-        width: 25%;
-        padding: 6px 7px;
-        border-right: 1px solid #e5ebf2;
-        background: #ffffff;
-    }
-
-    .summary-table td:last-child {
-        border-right: none;
-    }
-
-    .summary-kicker {
-        font-size: 7px;
-        text-transform: uppercase;
-        color: #6b7280;
-        letter-spacing: 0.05em;
-        margin-bottom: 2px;
-    }
-
-    .summary-value {
-        font-size: 9px;
-        font-weight: bold;
-        color: #0f172a;
-        line-height: 1.35;
-    }
-
-    .section {
-        margin-top: 6px;
-    }
-
-    .section-title {
-        padding: 5px 7px;
-        font-size: 9px;
-        font-weight: bold;
-        color: #0f4c81;
-        background: #f5f9fc;
-        border: 1px solid #d7dee7;
-        border-bottom: none;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
-    }
-
-    .box {
-        padding: 7px;
-        line-height: 1.45;
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-        background: #ffffff;
-    }
-
-    .box p {
-        margin: 0 0 4px 0;
-    }
-
-    .grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px 10px;
-    }
-
-    .grid-3 {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 6px 10px;
-    }
-
-    .field-label {
-        display: block;
-        font-size: 7px;
-        text-transform: uppercase;
-        color: #6b7280;
-        margin-bottom: 1px;
-        letter-spacing: 0.04em;
-    }
-
-    .field-value {
-        display: block;
-        font-size: 9px;
-        font-weight: bold;
-        color: #111827;
-    }
-
-    .vitals-table th,
-    .vitals-table td {
-        border: 1px solid #d7dee7;
-        padding: 4px;
-        text-align: center;
-        font-size: 8.4px;
-    }
-
-    .vitals-table th {
-        background: #f8fbfe;
-        color: #0f4c81;
-        font-weight: bold;
-    }
-
-    .footer-block {
-        border-top: 1px dashed #d1d5db;
-        margin-top: 8px;
-        padding-top: 7px;
-    }
-
-    .footer-left {
-        font-size: 8px;
-        color: #6b7280;
-        line-height: 1.45;
-        padding-right: 8px;
-    }
-
-    .qr-box {
-        width: 30mm;
-        text-align: center;
-        border: 1px solid #d7dee7;
-        border-radius: 8px;
-        padding: 4px;
-        background: #f8fbfe;
-    }
-
-    .qr-box img {
-        width: 21mm;
-        height: 21mm;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        padding: 2px;
-    }
-
-    .qr-label {
-        margin-top: 3px;
-        font-size: 7px;
-        line-height: 1.3;
-        color: #6b7280;
-        word-break: break-word;
-    }
-
-    .signature-table {
-        margin-top: 12px;
-    }
-
-    .signature-block {
-        text-align: center;
-        vertical-align: bottom;
-        height: 62px;
-        padding: 0 8px;
-    }
-
-    .signature-title {
-        font-size: 8px;
-        color: #6b7280;
-        margin-bottom: 38px;
-    }
-
-    .line {
-        border-top: 1px solid #000;
-        padding-top: 4px;
-        font-size: 8px;
-        color: #6b7280;
-    }
-
-    .footer-note {
-        margin-top: 8px;
-        padding: 5px 4px 0;
-        text-align: center;
-        font-size: 8.6px;
-        font-weight: bold;
-        color: #0f4c81;
-        border-top: 1px dashed #d1d5db;
-        letter-spacing: 0.03em;
-    }
-
-    .no-print {
-        display: none;
-    }
-
-    @media screen {
         body {
-            background: #f9fafb;
+            margin: 0;
+            padding: 0;
+            font-family: DejaVu Sans, Helvetica, Arial, sans-serif;
+            font-size: 9.5px;
+            color: #1f2937;
+            background: #ffffff;
         }
 
-        .document {
-            max-width: 148mm;
-            margin: 12px auto;
-            padding: 10px;
-            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        .document { width: 100%; }
+
+        .sheet {
+            padding: 0;
+            background: #ffffff;
         }
 
-        .no-print {
-            display: block;
-            margin-bottom: 10px;
-            text-align: right;
+        .top-bar {
+            height: 6px;
+            background: #0f4c81; /* Fallback couleur unie pour Dompdf */
+            margin-bottom: 8px;
+            border-radius: 4px;
         }
 
-        .btn-print,
-        .btn-back {
+        table { width: 100%; border-collapse: collapse; }
+        td, th { vertical-align: top; }
+
+        .clinic-logo {
+            width: 20mm;
+            height: 20mm;
+            border: 1px solid #cfd8e3;
+            padding: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .clinic h1 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .clinic .sub {
+            font-size: 8px;
+            line-height: 1.4;
+            color: #4b5563;
+        }
+
+        .badge {
             display: inline-block;
-            padding: 7px 11px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            text-decoration: none;
-            font-size: 11px;
-            cursor: pointer;
-            background: #fff;
+            padding: 4px 10px;
+            font-size: 9px;
+            font-weight: bold;
+            border: 1px solid #0f4c81;
+            background: #eff6ff;
+            color: #0f4c81;
+            text-transform: uppercase;
+            border-radius: 10px;
+        }
+
+        .separator {
+            border-bottom: 1px solid #d7dee7;
+            margin: 8px 0;
+        }
+
+        .title-box { text-align: center; margin-bottom: 10px; }
+        .title-box .title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #0f4c81;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .title-box .subtitle {
+            margin-top: 3px;
+            font-size: 8px;
+            color: #6b7280;
+        }
+
+        .meta-box, .box {
+            border: 1px solid #d7dee7;
+            border-radius: 4px;
+        }
+
+        .meta-box { background: #fbfdff; padding: 6px; margin-bottom: 10px; }
+        .meta-table td { padding: 4px 5px; width: 50%; }
+
+        .field-label {
+            display: block;
+            font-size: 8px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 2px;
+            font-weight: bold;
+        }
+
+        .field-value {
+            display: block;
+            font-size: 10px;
+            font-weight: bold;
             color: #111827;
-            margin-left: 8px;
         }
 
-        .btn-primary {
-            background: #0f4c81;
-            color: #fff;
-            border-color: #0f4c81;
+        .section { margin-top: 10px; }
+        .section-title {
+            padding: 5px 7px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #0f4c81;
+            background: #f5f9fc;
+            border: 1px solid #d7dee7;
+            border-bottom: none;
+            text-transform: uppercase;
         }
-    }
 
-    @media print {
-        .no-print {
-            display: none !important;
+        .box {
+            padding: 8px;
+            line-height: 1.45;
+            background: #ffffff;
+            border-top: none;
+            border: 1px solid #d7dee7;
         }
-    }
-</style>
 
-{# ===== Données clinique ===== #}
-{% set clinic_name = 'CLINIQUE NEUROLOGIQUE NASSARAWA' %}
-{% set clinic_nif = '120402/R' %}
-{% set clinic_rccm = 'NE-NIM-01-2024-B12-00145' %}
-{% set clinic_addr = 'Yantala Haut, Avenue du Daoura YN 187, Niamey - Niger' %}
-{% set clinic_phone = '20 75 51 02 / 82 09 61 12' %}
-{% set clinic_bp = 'BP : 2120 Niamey' %}
-{% set clinic_email = 'nassrawaclinique@gmail.com' %}
+        /* Dompdf compatible Grid alternatives */
+        .layout-table td { padding: 4px 8px 8px 0; }
+        .col-25 { width: 25%; }
+        .col-33 { width: 33.33%; }
+        .col-50 { width: 50%; }
+        .col-100 { width: 100%; padding-bottom: 8px; }
 
-{# ===== Données hospitalisation ===== #}
-{% set patient = hospitalisation.dossierMedical.patient ?? null %}
-{% set patientNom = patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '—' %}
-{% set dossier = hospitalisation.dossierMedical.numeroDossier ?? (patient.code ?? '—') %}
-{% set telephone = patient and patient.telephone is defined ? patient.telephone : '—' %}
-{% set sexe = patient and patient.sexe is defined ? patient.sexe : '—' %}
-{% set age = patient and patient.age is defined ? patient.age : '—' %}
-{% set medecinNom = medecin.nomComplet ?? (hospitalisation.medecinReferent.nomComplet ?? '—') %}
-{% set dateAdmission = hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('d/m/Y H:i') : '—' %}
-{% set dateSortie = hospitalisation.dateSortie ? hospitalisation.dateSortie|date('d/m/Y H:i') : '—' %}
-{% set numeroHosp = hospitalisation.numero ?? ('HOSP-' ~ hospitalisation.id) %}
-{% set statut = hospitalisation.statut is defined and hospitalisation.statut ? hospitalisation.statut.value : (hospitalisation.dateSortie ? 'SORTIE' : 'EN COURS') %}
-{% set chambreLit = (hospitalisation.chambre ?? '—') ~ ' / ' ~ (hospitalisation.lit ?? '—') %}
-{% set badgeClass = 'badge-soft-warning' %}
+        .text-content { font-size: 9.5px; font-weight: normal; color: #374151; }
 
-{% if statut in ['EN_COURS', 'ACTIVE', 'ACTIF', 'HOSPITALISE'] %}
-    {% set badgeClass = 'badge-soft-primary' %}
-{% elseif statut in ['TERMINE', 'SORTIE', 'CLOTURE'] %}
-    {% set badgeClass = 'badge-soft-success' %}
-{% elseif statut in ['ANNULE', 'REFUSE'] %}
-    {% set badgeClass = 'badge-soft-danger' %}
-{% endif %}
+        .data-table th, .data-table td {
+            border: 1px solid #d7dee7;
+            padding: 4px;
+            text-align: center;
+            font-size: 8.5px;
+        }
+        .data-table th { background: #f8fbfe; color: #0f4c81; font-weight: bold; }
 
-{% set _qr = qr_data is defined ? qr_data : (qrCodeDataUri is defined ? qrCodeDataUri : null) %}
-{% set motif = hospitalisation.motif ?? '—' %}
-{% set diagnosticEntree = hospitalisation.diagnosticEntree ?? '—' %}
-{% set diagnosticRetenu = hospitalisation.diagnosticRetenu ?? '—' %}
-{% set traitements = hospitalisation.traitementsPrescrits ?? '—' %}
-{% set notesInf = hospitalisation.notesInfirmieres ?? '—' %}
-{% set showUrl = verifyUrl is defined ? verifyUrl : absolute_url(path('app_hospitalisation_show', {'id': hospitalisation.id})) %}
+        .signature-table { margin-top: 20px; }
+        .signature-block { text-align: center; height: 60px; padding: 0 10px; }
+        .signature-title { font-size: 9px; color: #6b7280; margin-bottom: 45px; font-weight: bold;}
+        .line { border-top: 1px solid #000; padding-top: 4px; font-size: 8px; color: #6b7280; }
 
-<div class="document">
-    <div class="sheet">
+        .footer-note {
+            margin-top: 15px;
+            padding-top: 5px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: bold;
+            color: #0f4c81;
+            border-top: 1px dashed #d1d5db;
+        }
+    </style>
+</head>
+<body>
 
-        {# <div class="no-print">
-            <a href="{{ path('app_hospitalisation_show', {'id': hospitalisation.id}) }}" class="btn-back">Retour</a>
-            <button type="button" onclick="window.print()" class="btn-print btn-primary">Imprimer</button>
-        </div> #}
+    {# Initialisation des variables #}
+    {% set dossier = hospitalisation.dossierMedical %}
+    {% set patient = dossier.patient %}
+    {% set patientNom = patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '—' %}
+    {% set medecinNom = hospitalisation.medecinReferent ? (hospitalisation.medecinReferent.nom ~ ' ' ~ hospitalisation.medecinReferent.prenom) : '—' %}
+    {% set dateAdmission = hospitalisation.dateAdmission ? hospitalisation.dateAdmission|date('d/m/Y H:i') : '—' %}
+    {% set dateSortie = hospitalisation.dateSortie ? hospitalisation.dateSortie|date('d/m/Y H:i') : '—' %}
+    {% set statut = hospitalisation.statut.value ?? hospitalisation.statut %}
 
-        <div class="top-bar"></div>
+    <div class="document">
+        <div class="sheet">
+            <div class="top-bar"></div>
 
-        <table class="header-table">
-            <tr>
-                <td style="width:18%;">
-                    {% if logo_path is defined and logo_path %}
-                        <img src="{{ logo_path }}" alt="Logo Clinique Nassarawa" class="clinic-logo">
-                    {% endif %}
-                </td>
-
-                <td style="width:58%;">
-                    <div class="clinic">
-                        <h1>{{ clinic_name }}</h1>
-                        <div class="sub">
-                            <strong>NIF :</strong> {{ clinic_nif }}<br>
-                            <strong>RCCM :</strong> {{ clinic_rccm }}<br>
-                            <strong>Adresse :</strong> {{ clinic_addr }}<br>
-                            <strong>Tél :</strong> {{ clinic_phone }}<br>
-                            <strong>{{ clinic_bp }}</strong><br>
-                            <strong>Email :</strong> {{ clinic_email }}
+            {# --- EN-TÊTE --- #}
+            <table>
+                <tr>
+                    <td style="width:15%;">
+                        <img src="{{ absolute_url(asset('assets/images/logo.jpeg')) }}" alt="Logo Clinique" class="clinic-logo">
+                    </td>
+                    <td style="width:60%;">
+                        <div class="clinic">
+                            <h1>Clinique Neurologique Nassarawa</h1>
+                            <div class="sub">
+                                <strong>NIF :</strong> 120402/R | <strong>RCCM :</strong> NE-NIM-01-2024-B12-00145<br>
+                                <strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey<br>
+                                <strong>Tél :</strong> 20 75 51 02 / 82 09 61 12<br>
+                                <strong>Email :</strong> nassrawaclinique@gmail.com
+                            </div>
                         </div>
-                    </div>
-                </td>
-
-                <td style="width:24%; text-align:right;">
-                    <span class="badge {{ badgeClass }}">{{ statut }}</span>
-                </td>
-            </tr>
-        </table>
-
-        <div class="separator"></div>
-
-        <div class="title-box">
-            <div class="title">Fiche d’hospitalisation</div>
-            <div class="subtitle">
-                Référence : {{ numeroHosp }} | Généré le {{ "now"|date('d/m/Y H:i') }}
-            </div>
-        </div>
-
-        <div class="meta-box">
-            <table class="meta-table">
-                <tr>
-                    <td>
-                        <span class="meta-label">Patient</span>
-                        <span class="meta-value">{{ patientNom }}</span>
                     </td>
-                    <td>
-                        <span class="meta-label">Dossier médical</span>
-                        <span class="meta-value">{{ dossier }}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <span class="meta-label">Médecin référent</span>
-                        <span class="meta-value">{{ medecinNom }}</span>
-                    </td>
-                    <td>
-                        <span class="meta-label">Date d’admission</span>
-                        <span class="meta-value">{{ dateAdmission }}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <span class="meta-label">Téléphone</span>
-                        <span class="meta-value">{{ telephone }}</span>
-                    </td>
-                    <td>
-                        <span class="meta-label">Date de sortie</span>
-                        <span class="meta-value">{{ dateSortie }}</span>
-                    </td>
+                    <td style="width:25%; text-align:right;">
+                        </td>
                 </tr>
             </table>
-        </div>
 
-        <div class="summary-box">
-            <table class="summary-table">
-                <tr>
-                    <td>
-                        <div class="summary-kicker">Sexe</div>
-                        <div class="summary-value">{{ sexe }}</div>
-                    </td>
-                    <td>
-                        <div class="summary-kicker">Âge</div>
-                        <div class="summary-value">{{ age }}</div>
-                    </td>
-                    <td>
-                        <div class="summary-kicker">Chambre / Lit</div>
-                        <div class="summary-value">{{ chambreLit }}</div>
-                    </td>
-                    <td>
-                        <div class="summary-kicker">Service</div>
-                        <div class="summary-value">{{ hospitalisation.service ?? '—' }}</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
+            <div class="separator"></div>
 
-        <div class="section">
-            <div class="section-title">Admission</div>
-            <div class="box">
-                <div class="grid-2">
-                    <div>
-                        <span class="field-label">Mode d’admission</span>
-                        <span class="field-value">{{ hospitalisation.modeAdmission ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Contexte</span>
-                        <span class="field-value">{{ hospitalisation.contexte ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Unité</span>
-                        <span class="field-value">{{ hospitalisation.unite ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Infirmier(ère)</span>
-                        <span class="field-value">{{ hospitalisation.infirmierGarde ?? '—' }}</span>
-                    </div>
-                </div>
-                <div style="margin-top:6px;">
-                    <span class="field-label">Motif d’hospitalisation</span>
-                    <span class="field-value">{{ motif }}</span>
-                </div>
+            <div class="title-box">
+                <div class="title">Fiche d’hospitalisation</div>
+                <div class="subtitle">Référence : HOSP-{{ hospitalisation.id }} | Imprimé le {{ "now"|date('d/m/Y H:i') }}</div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="section-title">Anamnèse et antécédents</div>
-            <div class="box">
-                <div style="margin-bottom:6px;">
-                    <span class="field-label">Histoire de la maladie</span>
-                    <span class="field-value">{{ hospitalisation.histoireMaladie ?? '—' }}</span>
-                </div>
-
-                <div class="grid-2">
-                    <div>
-                        <span class="field-label">Antécédents médicaux</span>
-                        <span class="field-value">{{ hospitalisation.antecedentsMedicaux ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Antécédents chirurgicaux</span>
-                        <span class="field-value">{{ hospitalisation.antecedentsChirurgicaux ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Allergies</span>
-                        <span class="field-value">{{ hospitalisation.allergies ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Traitements habituels</span>
-                        <span class="field-value">{{ hospitalisation.traitementsHabituels ?? '—' }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <div class="section-title">Constantes et examen clinique</div>
-            <div class="box">
-                <table class="vitals-table">
+            {# --- INFOS PATIENT & SÉJOUR --- #}
+            <div class="meta-box">
+                <table class="meta-table">
                     <tr>
-                        <th>T°</th>
-                        <th>TA</th>
-                        <th>FC</th>
-                        <th>FR</th>
-                        <th>SpO2</th>
-                        <th>Poids</th>
-                        <th>Taille</th>
-                        <th>Glycémie</th>
+                        <td>
+                            <span class="field-label">Patient</span>
+                            <span class="field-value">{{ patientNom }}</span>
+                        </td>
+                        <td>
+                            <span class="field-label">Dossier médical</span>
+                            <span class="field-value">{{ dossier.numeroDossier }}</span>
+                        </td>
                     </tr>
                     <tr>
-                        <td>{{ hospitalisation.temperature ?? '—' }}</td>
-                        <td>{{ hospitalisation.tension ?? '—' }}</td>
-                        <td>{{ hospitalisation.fc ?? '—' }}</td>
-                        <td>{{ hospitalisation.fr ?? '—' }}</td>
-                        <td>{{ hospitalisation.spo2 ?? '—' }}</td>
-                        <td>{{ hospitalisation.poids ?? '—' }}</td>
-                        <td>{{ hospitalisation.taille ?? '—' }}</td>
-                        <td>{{ hospitalisation.glycemie ?? '—' }}</td>
+                        <td>
+                            <span class="field-label">Médecin référent</span>
+                            <span class="field-value">{{ medecinNom }}</span>
+                        </td>
+                        <td>
+                            <span class="field-label">Date d’admission</span>
+                            <span class="field-value">{{ dateAdmission }}</span>
+                        </td>
                     </tr>
                 </table>
+            </div>
 
-                <div class="grid-2" style="margin-top:7px;">
-                    <div>
-                        <span class="field-label">Conscience / Glasgow</span>
-                        <span class="field-value">{{ hospitalisation.conscience ?? '—' }} / {{ hospitalisation.glasgow ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Douleur EVA</span>
-                        <span class="field-value">{{ hospitalisation.eva ?? '—' }}/10</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Hydratation</span>
-                        <span class="field-value">{{ hospitalisation.hydratation ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Signes généraux</span>
-                        <span class="field-value">{{ hospitalisation.signesGeneraux ?? '—' }}</span>
-                    </div>
-                </div>
-
-                <div class="grid-2" style="margin-top:7px;">
-                    <div>
-                        <span class="field-label">Examen cardio</span>
-                        <span class="field-value">{{ hospitalisation.examenCardio ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Examen respiratoire</span>
-                        <span class="field-value">{{ hospitalisation.examenResp ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Examen digestif</span>
-                        <span class="field-value">{{ hospitalisation.examenDigestif ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Examen neurologique</span>
-                        <span class="field-value">{{ hospitalisation.examenNeuro ?? '—' }}</span>
-                    </div>
+            {# --- ADMISSION & ANAMNÈSE --- #}
+            <div class="section">
+                <div class="section-title">Admission & Anamnèse</div>
+                <div class="box">
+                    <table class="layout-table">
+                        <tr>
+                            <td class="col-100">
+                                <span class="field-label">Motif d'admission</span>
+                                <span class="text-content">{{ hospitalisation.motifAdmission ?: '—' }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-100">
+                                <span class="field-label">Histoire de la maladie</span>
+                                <span class="text-content">{{ hospitalisation.histoireMaladie|nl2br ?: '—' }}</span>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="section-title">Diagnostics et soins</div>
-            <div class="box">
-                <div style="margin-bottom:5px;">
-                    <span class="field-label">Diagnostic d’entrée</span>
-                    <span class="field-value">{{ diagnosticEntree }}</span>
-                </div>
-                <div style="margin-bottom:5px;">
-                    <span class="field-label">Diagnostic retenu</span>
-                    <span class="field-value">{{ diagnosticRetenu }}</span>
-                </div>
-                <div style="margin-bottom:5px;">
-                    <span class="field-label">Diagnostics associés</span>
-                    <span class="field-value">{{ hospitalisation.diagnosticsAssocies ?? '—' }}</span>
-                </div>
-                <div>
-                    <span class="field-label">Plan de soins</span>
-                    <span class="field-value">{{ hospitalisation.planSoins ?? '—' }}</span>
+            {# --- ANTÉCÉDENTS (JSON) --- #}
+            <div class="section">
+                <div class="section-title">Antécédents du patient</div>
+                <div class="box">
+                    <table class="layout-table">
+                        <tr>
+                            <td class="col-50">
+                                <span class="field-label">Médicaux</span>
+                                <span class="text-content">{{ dossier.antecedents.medicaux|default('—') }}</span>
+                            </td>
+                            <td class="col-50">
+                                <span class="field-label">Chirurgicaux</span>
+                                <span class="text-content">{{ dossier.antecedents.chirurgicaux|default('—') }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-50">
+                                <span class="field-label">Gynéco-obstétricaux</span>
+                                <span class="text-content">{{ dossier.antecedents.gyneco_obstetricaux|default('—') }}</span>
+                            </td>
+                            <td class="col-50">
+                                <span class="field-label">Mode de vie / Autres</span>
+                                <span class="text-content">{{ dossier.antecedents.mode_vie|default('—') }}</span>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="section-title">Prescriptions et surveillance</div>
-            <div class="box">
-                <div style="margin-bottom:5px;">
-                    <span class="field-label">Traitements prescrits</span>
-                    <span class="field-value">{{ traitements }}</span>
-                </div>
-                <div class="grid-2">
-                    <div>
-                        <span class="field-label">Perfusions / Solutés</span>
-                        <span class="field-value">{{ hospitalisation.perfusions ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Régime</span>
-                        <span class="field-value">{{ hospitalisation.regime ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Actes / Procédures</span>
-                        <span class="field-value">{{ hospitalisation.actes ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Examens de contrôle</span>
-                        <span class="field-value">{{ hospitalisation.examensControle ?? '—' }}</span>
-                    </div>
-                </div>
-
-                <div style="margin-top:7px;">
-                    <span class="field-label">Notes infirmières</span>
-                    <span class="field-value">{{ notesInf }}</span>
+            {# --- DIAGNOSTICS & BILAN PARACLINIQUE --- #}
+            <div class="section">
+                <div class="section-title">Bilan Paraclinique & Diagnostics</div>
+                <div class="box">
+                    <table class="layout-table">
+                        <tr>
+                            <td class="col-50">
+                                <span class="field-label">Hypothèses Diagnostiques</span>
+                                <span class="text-content">{{ hospitalisation.hypothesesDiagnostiques|nl2br ?: '—' }}</span>
+                            </td>
+                            <td class="col-50">
+                                <span class="field-label">Diagnostic Positif Retenu</span>
+                                <span class="field-value">{{ hospitalisation.diagnosticPositif|nl2br ?: 'En attente' }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-50">
+                                <span class="field-label">Bilan Imagerie</span>
+                                <span class="text-content">{{ hospitalisation.bilanParaclinique.imagerie|default('—')|nl2br }}</span>
+                            </td>
+                            <td class="col-50">
+                                <span class="field-label">Bilan Biologie</span>
+                                <span class="text-content">{{ hospitalisation.bilanParaclinique.biologie|default('—')|nl2br }}</span>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="section-title">Sortie / fin d’hospitalisation</div>
-            <div class="box">
-                <div class="grid-2">
-                    <div>
-                        <span class="field-label">Date / Heure sortie</span>
-                        <span class="field-value">{{ dateSortie }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Mode de sortie</span>
-                        <span class="field-value">{{ hospitalisation.modeSortie ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Diagnostic final</span>
-                        <span class="field-value">{{ hospitalisation.diagnosticFinal ?? '—' }}</span>
-                    </div>
-                    <div>
-                        <span class="field-label">Durée de séjour</span>
-                        <span class="field-value">{{ hospitalisation.dureeSejour ?? '—' }} jours</span>
-                    </div>
-                </div>
-
-                <div style="margin-top:6px;">
-                    <span class="field-label">Recommandations</span>
-                    <span class="field-value">{{ hospitalisation.recommandations ?? '—' }}</span>
+            {# --- SUIVI CLINIQUE (Constantes) --- #}
+            <div class="section">
+                <div class="section-title">Dernières Constantes (Suivi Clinique)</div>
+                <div class="box" style="padding: 4px;">
+                    <table class="data-table">
+                        <tr>
+                            <th>Date / Heure</th>
+                            <th>Temp.</th>
+                            <th>TA</th>
+                            <th>Pouls</th>
+                            <th>SaO2</th>
+                            <th>Poids</th>
+                            <th>Notes</th>
+                        </tr>
+                        {% for constante in hospitalisation.examensCliniques|sort((a, b) => b.datePrise <=> a.datePrise)|slice(0, 5) %}
+                            <tr>
+                                <td><strong>{{ constante.datePrise|date('d/m/Y H:i') }}</strong></td>
+                                <td>{{ constante.temperature ? constante.temperature ~ '°C' : '-' }}</td>
+                                <td>{{ constante.tensionArterielle ?: '-' }}</td>
+                                <td>{{ constante.pouls ? constante.pouls ~ ' bpm' : '-' }}</td>
+                                <td>{{ constante.saturationOxygene ? constante.saturationOxygene ~ '%' : '-' }}</td>
+                                <td>{{ constante.poids ? constante.poids ~ ' kg' : '-' }}</td>
+                                <td style="text-align: left;">{{ constante.notes ?: '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7" style="padding: 10px;">Aucune constante enregistrée.</td></tr>
+                        {% endfor %}
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="footer-block">
-            <table class="footer-table">
+            {# --- PLAN DE TRAITEMENT --- #}
+            <div class="section">
+                <div class="section-title">Traitements prescrits</div>
+                <div class="box" style="padding: 4px;">
+                    <table class="data-table">
+                        <tr>
+                            <th style="text-align: left;">Description du traitement / Soin</th>
+                            <th style="width: 25%;">Période</th>
+                        </tr>
+                        {% for traitement in hospitalisation.traitements %}
+                            <tr>
+                                <td style="text-align: left; font-weight: bold;">{{ traitement.description }}</td>
+                                <td>
+                                    {% if traitement.dateDebut %}Du {{ traitement.dateDebut|date('d/m/Y') }}{% endif %}
+                                    {% if traitement.dateFin %} au {{ traitement.dateFin|date('d/m/Y') }}{% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="2" style="padding: 10px;">Aucun traitement prescrit.</td></tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+
+            {# --- SIGNATURES --- #}
+            <table class="signature-table">
                 <tr>
-                    <td style="width:60%;" class="footer-left">
-                        <div><strong>Document :</strong> Fiche d’hospitalisation générée automatiquement par le système de gestion de la clinique.</div>
-                        <div><strong>Référence :</strong> {{ numeroHosp }}</div>
-                        <div><strong>Vérification :</strong> Scanner le QR code ci-contre.</div>
+                    <td class="signature-block col-33">
+                        <div class="signature-title">Médecin Référent</div>
+                        <div class="line">Signature / Cachet</div>
                     </td>
-
-                    <td style="width:40%; text-align:right;">
-                        <div class="qr-box" style="float:right;">
-                            {% if _qr %}
-                                <img src="{{ _qr }}" alt="QR Code">
-                            {% endif %}
-                            <div class="qr-label">Vérifier l’hospitalisation</div>
-                            {% if code_qr is defined and code_qr %}
-                                <div class="qr-label">Code : {{ code_qr }}</div>
-                            {% endif %}
-                        </div>
+                    <td class="signature-block col-33">
+                        <div class="signature-title">Infirmier(ère) Responsable</div>
+                        <div class="line">Visa et Date</div>
+                    </td>
+                    <td class="signature-block col-33">
+                        <div class="signature-title">Direction Médicale</div>
+                        <div class="line">Visa et Cachet</div>
                     </td>
                 </tr>
             </table>
-        </div>
 
-        <table class="signature-table">
-            <tr>
-                <td class="signature-block" style="width:33.33%;">
-                    <div class="signature-title">Médecin / Cachet</div>
-                    <div class="line">Signature / Cachet</div>
-                </td>
-                <td class="signature-block" style="width:33.33%;">
-                    <div class="signature-title">Infirmier(ère)</div>
-                    <div class="line">Visa infirmier</div>
-                </td>
-                <td class="signature-block" style="width:33.33%;">
-                    <div class="signature-title">Administration</div>
-                    <div class="line">Visa / Accueil</div>
-                </td>
-            </tr>
-        </table>
+            <div class="footer-note">
+                Document médical confidentiel - Merci de conserver cette fiche dans le dossier du patient.
+            </div>
 
-        <div class="footer-note">
-            Merci de conserver cette fiche dans le dossier du patient
         </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

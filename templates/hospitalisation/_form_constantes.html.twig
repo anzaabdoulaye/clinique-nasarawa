@@ -1,0 +1,42 @@
+{# templates/hospitalisation/_form_constantes.html.twig #}
+
+{{ form_start(form) }}
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">{{ form_row(form.temperature) }}</div>
+        <div class="col-md-4">{{ form_row(form.tensionArterielle) }}</div>
+        <div class="col-md-4">{{ form_row(form.pouls) }}</div>
+        
+        <div class="col-md-4">{{ form_row(form.saturationOxygene) }}</div>
+        <div class="col-md-4">{{ form_row(form.frequenceRespiratoire) }}</div>
+        <div class="col-md-4">{{ form_row(form.poids) }}</div>
+        
+        <div class="col-md-6">{{ form_row(form.taille) }}</div>
+        <div class="col-md-6">{{ form_row(form.imc) }}</div>
+    </div>
+
+    <div class="row g-3 mb-3 border-top pt-2">
+        <div class="col-md-6">
+            <div class="form-check form-switch mt-2">
+                {{ form_widget(form.deshydratation) }}
+                {{ form_label(form.deshydratation) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check form-switch mt-2">
+                {{ form_widget(form.oedeme) }}
+                {{ form_label(form.oedeme) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">{{ form_row(form.notes) }}</div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" class="btn btn-danger">
+            <i class="fa fa-save me-1"></i> Enregistrer
+        </button>
+    </div>
+{{ form_end(form) }}

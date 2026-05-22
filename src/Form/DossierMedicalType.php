@@ -17,75 +17,63 @@ class DossierMedicalType extends AbstractType
     {
         $builder
             ->add('groupeSanguin', ChoiceType::class, [
+                // ... (Garder vos options actuelles)
                 'label' => 'Groupe sanguin',
                 'required' => false,
                 'placeholder' => '— Sélectionner —',
                 'choices' => [
-                    'A+' => 'A+',
-                    'A-' => 'A-',
-                    'B+' => 'B+',
-                    'B-' => 'B-',
-                    'AB+' => 'AB+',
-                    'AB-' => 'AB-',
-                    'O+' => 'O+',
-                    'O-' => 'O-',
+                    'A+' => 'A+', 'A-' => 'A-', 'B+' => 'B+', 'B-' => 'B-',
+                    'AB+' => 'AB+', 'AB-' => 'AB-', 'O+' => 'O+', 'O-' => 'O-',
                 ],
-                'attr' => [
-                    'class' => 'form-select',
-                ],
+                'attr' => ['class' => 'form-select'],
             ])
             ->add('allergies', TextareaType::class, [
                 'label' => 'Allergies',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 3,
-                    'placeholder' => 'Décrire les allergies connues...',
-                ],
+                'attr' => ['class' => 'form-control', 'rows' => 3],
             ])
+            
+            // --- NOUVEAUX CHAMPS MAPPÉS SUR LE JSON ---
             ->add('antecedentsMedicaux', TextareaType::class, [
                 'label' => 'Antécédents médicaux',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 3,
-                    'placeholder' => 'Antécédents médicaux du patient...',
-                ],
+                'property_path' => 'antecedents[medicaux]',
+                'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Maladies antérieures...'],
             ])
             ->add('antecedentsChirurgicaux', TextareaType::class, [
                 'label' => 'Antécédents chirurgicaux',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 3,
-                    'placeholder' => 'Antécédents chirurgicaux du patient...',
-                ],
+                'property_path' => 'antecedents[chirurgicaux]',
+                'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Opérations subies...'],
             ])
+            ->add('antecedentsGyneco', TextareaType::class, [
+                'label' => 'Antécédents Gynéco-obstétricaux',
+                'required' => false,
+                'property_path' => 'antecedents[gyneco_obstetricaux]',
+                'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Parité, gestité...'],
+            ])
+            ->add('modeDeVie', TextareaType::class, [
+                'label' => 'Mode de vie',
+                'required' => false,
+                'property_path' => 'antecedents[mode_vie]',
+                'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Tabac, alcool, sédentarité...'],
+            ])
+            // ------------------------------------------
+
             ->add('maladiesChroniques', TextareaType::class, [
                 'label' => 'Maladies chroniques',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 3,
-                    'placeholder' => 'Ex. diabète, HTA, asthme...',
-                ],
+                'attr' => ['class' => 'form-control', 'rows' => 3],
             ])
             ->add('traitementEnCours', TextareaType::class, [
                 'label' => 'Traitement en cours',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 3,
-                    'placeholder' => 'Traitement habituel ou en cours...',
-                ],
+                'attr' => ['class' => 'form-control', 'rows' => 3],
             ])
             ->add('handicap', TextType::class, [
                 'label' => 'Handicap',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'placeholder' => 'Préciser si nécessaire...',
-                ],
+                'attr' => ['class' => 'form-control'],
             ])
             ->add('grossesse', CheckboxType::class, [
                 'label' => 'Grossesse en cours',
@@ -94,11 +82,7 @@ class DossierMedicalType extends AbstractType
             ->add('observations', TextareaType::class, [
                 'label' => 'Observations générales',
                 'required' => false,
-                'attr' => [
-                    'class' => 'form-control',
-                    'rows' => 4,
-                    'placeholder' => 'Observations générales du dossier médical...',
-                ],
+                'attr' => ['class' => 'form-control', 'rows' => 4],
             ])
         ;
     }

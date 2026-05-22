@@ -43,10 +43,11 @@ final class AdministrationTraitementController extends AbstractController
 
         $heure = (int) $heure;
 
-        if (!$traitement->isScheduledAtHour($heure)) {
+        // ✅ Utilisation de la nouvelle méthode qui vérifie la date ET l'heure
+        if (!$traitement->isScheduledAt($dateObj, $heure)) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Cette heure ne fait pas partie du traitement.'
+                'message' => 'Cette heure ne fait pas partie du plan de traitement pour cette date.'
             ], 400);
         }
 

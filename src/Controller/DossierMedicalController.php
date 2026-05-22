@@ -70,6 +70,13 @@ final class DossierMedicalController extends AbstractController
 
             $this->addFlash('success', 'Le dossier médical a été mis à jour avec succès.');
 
+            // ✅ NOUVEAU : Redirection dynamique si un paramètre "redirect_to" est présent
+            $redirectTo = $request->query->get('redirect_to');
+            if ($redirectTo) {
+                return $this->redirect($redirectTo);
+            }
+
+            // Fallback (comportement par défaut)
             return $this->redirectToRoute('app_dossier_medical_show', [
                 'id' => $dossierMedical->getId(),
             ]);

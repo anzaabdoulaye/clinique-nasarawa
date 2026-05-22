@@ -3,8 +3,6 @@
 namespace App\Form;
 
 use App\Entity\DossierMedical;
-use App\Entity\ExamenClinique;
-use App\Entity\ExamenNeurologique;
 use App\Entity\Hospitalisation;
 use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
@@ -25,26 +23,23 @@ class HospitalisationType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-           ->add('dossierMedical', EntityType::class, [
-    'label' => 'Dossier médical',
-    'class' => DossierMedical::class,
-    'placeholder' => '— Rechercher un dossier —',
-    'required' => true,
-    'choice_label' => function (DossierMedical $d) {
-        $numero = $d->getNumeroDossier() ?: 'Dossier #' . $d->getId();
-
-        if ($d->getPatient()) {
-            return $numero . ' - ' . $d->getPatient()->getNom() . ' ' . $d->getPatient()->getPrenom();
-        }
-
-        return $numero;
-    },
-    'attr' => [
-        'class' => 'form-select select2-enable',
-        'data-placeholder' => 'Rechercher dossier + patient...',
-    ],
-])
-
+            ->add('dossierMedical', EntityType::class, [
+                'label' => 'Dossier médical',
+                'class' => DossierMedical::class,
+                'placeholder' => '— Rechercher un dossier —',
+                'required' => true,
+                'choice_label' => function (DossierMedical $d) {
+                    $numero = $d->getNumeroDossier() ?: 'Dossier #' . $d->getId();
+                    if ($d->getPatient()) {
+                        return $numero . ' - ' . $d->getPatient()->getNom() . ' ' . $d->getPatient()->getPrenom();
+                    }
+                    return $numero;
+                },
+                'attr' => [
+            'class' => 'js-select2-dossier',
+            'data-placeholder' => 'Rechercher un dossier medical...',
+        ],
+            ])
             ->add('medecinReferent', EntityType::class, [
                 'label' => 'Médecin référent',
                 'class' => Utilisateur::class,
@@ -60,22 +55,22 @@ class HospitalisationType extends AbstractType
                     $full = trim($nom . ' ' . $prenom);
                     return $full !== '' ? $full : ('Utilisateur #' . $u->getId());
                 },
-                'attr' => ['class' => 'form-select'],
+                'attr' => [
+            'class' => 'js-select2-medecin',
+            'data-placeholder' => 'Rechercher un medecin...',
+        ],
             ])
-
             ->add('dateAdmission', DateTimeType::class, [
                 'label' => 'Date d’admission',
                 'widget' => 'single_text',
                 'required' => true,
                 'attr' => ['class' => 'form-control'],
             ])
-
             ->add('statut', null, [
                 'label' => 'Statut',
                 'required' => true,
                 'attr' => ['class' => 'form-select'],
             ])
-
             ->add('dateSortie', DateTimeType::class, [
                 'label' => 'Date de sortie',
                 'widget' => 'single_text',
@@ -83,48 +78,28 @@ class HospitalisationType extends AbstractType
                 'help' => 'Renseigner uniquement si le patient est sorti.',
                 'attr' => ['class' => 'form-control'],
             ])
-
             ->add('motifAdmission', TextareaType::class, [
                 'label' => 'Motif d’admission',
                 'required' => true,
-                'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Ex: Douleurs abdominales, fièvre…'],
+                'attr' => ['class' => 'form-control', 'rows' => 3],
             ])
-
             ->add('histoireMaladie', TextareaType::class, [
                 'label' => 'Histoire de la maladie',
                 'required' => false,
                 'attr' => ['class' => 'form-control', 'rows' => 4],
             ])
-
             ->add('evolution', TextareaType::class, [
                 'label' => 'Évolution',
                 'required' => false,
                 'attr' => ['class' => 'form-control', 'rows' => 4],
             ])
-
             ->add('conclusion', TextareaType::class, [
                 'label' => 'Conclusion',
                 'required' => false,
                 'attr' => ['class' => 'form-control', 'rows' => 3],
             ])
-
-            ->add('examenClinique', EntityType::class, [
-                'label' => 'Examen clinique',
-                'class' => ExamenClinique::class,
-                'placeholder' => '— (optionnel) —',
-                'required' => false,
-                'choice_label' => fn (ExamenClinique $e) => 'Examen clinique #' . $e->getId(),
-                'attr' => ['class' => 'form-select'],
-            ])
-
-            ->add('examenNeurologique', EntityType::class, [
-                'label' => 'Examen neurologique',
-                'class' => ExamenNeurologique::class,
-                'placeholder' => '— (optionnel) —',
-                'required' => false,
-                'choice_label' => fn (ExamenNeurologique $e) => 'Examen neuro #' . $e->getId(),
-                'attr' => ['class' => 'form-select'],
-            ])
+            // Suppression de l'ExamenClinique et ExamenNeurologique ici.
+            // Ils seront gérés via des formulaires/modales séparés dans le tableau de bord.
         ;
     }
 

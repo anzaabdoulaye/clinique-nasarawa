@@ -157,10 +157,10 @@ class TarifPrestationFixtures extends Fixture
             ['libelle' => 'Ringer lactate', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 2000, 'prixPriseEnCharge' => 2000],
             ['libelle' => 'Cipro 200 solution', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1000, 'prixPriseEnCharge' => 1000],
             ['libelle' => 'Metro solution 500MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 2000, 'prixPriseEnCharge' => 2000],
-            ['libelle' => 'Analgin 500MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 500],
-            ['libelle' => 'Metoclopramide', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 500],
-            ['libelle' => 'Butyl injectable', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 500],
-            ['libelle' => 'Dexametasone', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 500],
+            ['libelle' => 'Analgin 500MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 1000],
+            ['libelle' => 'Metoclopramide', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 1000],
+            ['libelle' => 'Butyl injectable', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 1000],
+            ['libelle' => 'Dexametasone', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 1000],
             ['libelle' => 'Pheno 100 MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 5000, 'prixPriseEnCharge' => 5000],
             ['libelle' => 'Pheno 200 MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 10000, 'prixPriseEnCharge' => 10000],
             ['libelle' => 'Solumedrol 120 MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 12000, 'prixPriseEnCharge' => 12000],
@@ -177,7 +177,7 @@ class TarifPrestationFixtures extends Fixture
             ['libelle' => 'Largactil 25', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 2500, 'prixPriseEnCharge' => 2500],
             ['libelle' => 'Omeprazole 40MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 3000, 'prixPriseEnCharge' => 3000],
             ['libelle' => 'Gants', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 300, 'prixPriseEnCharge' => 300],
-            ['libelle' => 'Arthemeter 80 MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 500],
+            ['libelle' => 'Arthemeter 80 MG', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 500, 'prixPriseEnCharge' => 1000],
             ['libelle' => 'Sonde urinaire', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1500, 'prixPriseEnCharge' => 1500],
             ['libelle' => 'Poche à urine', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1000, 'prixPriseEnCharge' => 1000],
             ['libelle' => 'Pansement avec matériel clinique', 'categorie' => CategorieTarif::ACTE, 'prix' => 2000, 'prixPriseEnCharge' => 2000],
@@ -200,6 +200,8 @@ class TarifPrestationFixtures extends Fixture
             ['libelle' => 'Atrovent', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1500, 'prixPriseEnCharge' => 1500],
             ['libelle' => 'Salbutamol', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1000, 'prixPriseEnCharge' => 1000],
 
+
+            // A METTRE LA CATEGORIE A JOUR 
             ['libelle' => 'Aspiration', 'categorie' => CategorieTarif::IMAGERIE, 'prix' => 10000, 'prixPriseEnCharge' => 10000],
             ['libelle' => 'Lavage d\'oreille par oreille', 'categorie' => CategorieTarif::IMAGERIE, 'prix' => 2500, 'prixPriseEnCharge' => 2500],
             ['libelle' => 'Meshage des fausses nasals pour epitaxies / narine', 'categorie' => CategorieTarif::IMAGERIE, 'prix' => 10000, 'prixPriseEnCharge' => 10000],

@@ -37,6 +37,9 @@ class DossierMedical
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $groupeSanguin = null;
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $antecedents = [];
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $allergies = null;
 
@@ -77,6 +80,24 @@ class DossierMedical
     public function setPatient(Patient $patient): self
     {
         $this->patient = $patient;
+
+        return $this;
+    }
+
+    public function getAntecedents(): ?array
+    {
+        // Retourne un tableau structuré par défaut pour éviter les erreurs dans les formulaires
+        return $this->antecedents ?? [
+            'medicaux' => null,
+            'chirurgicaux' => null,
+            'gyneco_obstetricaux' => null,
+            'mode_vie' => null
+        ];
+    }
+
+    public function setAntecedents(?array $antecedents): self
+    {
+        $this->antecedents = $antecedents;
 
         return $this;
     }
@@ -272,8 +293,18 @@ class DossierMedical
 
         $this->patient->setGroupeSanguin($this->groupeSanguin);
         $this->patient->setAllergies($this->allergies);
-        $this->patient->setAntecedentsMedicaux($this->antecedentsMedicaux);
-        $this->patient->setAntecedentsChirurgicaux($this->antecedentsChirurgicaux);
+        
+        // --- MISE À JOUR ICI ---
+        $antecedents = $this->getAntecedents();
+        // Si l'entité Patient a toujours les anciens champs textes, on les nourrit depuis le JSON :
+        if (method_exists($this->patient, 'setAntecedentsMedicaux')) {
+            $this->patient->setAntecedentsMedicaux($antecedents['medicaux'] ?? null);
+        }
+        if (method_exists($this->patient, 'setAntecedentsChirurgicaux')) {
+            $this->patient->setAntecedentsChirurgicaux($antecedents['chirurgicaux'] ?? null);
+        }
+        // -----------------------
+
         $this->patient->setMaladiesChroniques($this->maladiesChroniques);
         $this->patient->setTraitementEnCours($this->traitementEnCours);
         $this->patient->setHandicap($this->handicap);

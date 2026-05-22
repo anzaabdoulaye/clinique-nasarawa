@@ -386,8 +386,6 @@
         loader.classList.add('d-none');
         body.classList.remove('d-none');
 
-        window.initHospitalisationSelect2?.(body);
-
         focusFirstField();
         bindSubmit();
       }
@@ -437,8 +435,6 @@
 
             // HTML → formulaire re-rendu avec erreurs
             body.innerHTML = await res.text();
-
-            window.initHospitalisationSelect2?.(body);
             focusFirstField();
             bindSubmit();
           } catch (err) {
@@ -471,59 +467,4 @@
       });
     })();
   </script>
-
-  <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Déclaration de la fonction d'initialisation globale pour les hospitalisations
-    window.initHospitalisationSelect2 = function(context) {
-        if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
-            return;
-        }
-
-        const $context = $(context || document);
-
-        $context.find('.js-select2-medecin, .js-select2-dossier').each(function () {
-            const $el = $(this);
-
-            if ($el.hasClass('select2-hidden-accessible')) {
-                return; // Ignore si déjà initialisé
-            }
-
-            const placeholder = $el.data('placeholder') || 'Rechercher...';
-            const $modal = $el.closest('.modal');
-
-            $el.select2({
-                width: '100%',
-                placeholder: placeholder,
-                allowClear: true,
-                // Assure que le menu déroulant reste au premier plan dans la modale
-                dropdownParent: $modal.length ? $modal : $(document.body),
-                minimumResultsForSearch: 0
-            });
-        });
-    };
-
-    // 1. Initialisation sur le document
-    window.initHospitalisationSelect2(document);
-
-    // 2. Initialisation ciblée quand la modale d'AJOUT est affichée
-    const addModal = document.getElementById('addHospitalisationModal');
-    if (addModal) {
-        addModal.addEventListener('shown.bs.modal', function (e) {
-            window.initHospitalisationSelect2(e.target);
-        });
-
-        // 3. Réinitialiser les champs Select2 quand on ferme la modale
-        addModal.addEventListener('hidden.bs.modal', function () {
-            const form = this.querySelector('form');
-            if (form) {
-                form.reset();
-                if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-                    $(form).find('.js-select2-medecin, .js-select2-dossier').val(null).trigger('change');
-                }
-            }
-        });
-    }
-});
-</script>
 {% endblock %}

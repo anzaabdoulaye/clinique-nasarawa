@@ -124,6 +124,8 @@
                             <tbody>
                                 {% if resultat and resultat.lignes|length > 0 %}
                                     {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                                    {# ON AJOUTE LA CONDITION ICI #}
+                                        {% if ligne.resultat is not empty and ligne.resultat|trim != '-' %}
                                         <tr>
                                             <td>{{ ligne.demande|nl2br }}</td>
                                             <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>

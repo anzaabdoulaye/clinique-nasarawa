@@ -133,17 +133,20 @@ class TraitementHospitalisation
         return $this;
     }
 
-    public function isScheduledAtHour(int $hour): bool
+   // 1. On remplace isScheduledAtHour par isScheduledAt (qui prend en compte la date)
+    public function isScheduledAt(\DateTimeInterface $date, int $hour): bool
     {
-        return in_array($hour, $this->heuresAdministration, true);
+        $heuresPourDate = $this->getHeuresPourDate($date);
+        return in_array($hour, $heuresPourDate, true);
     }
 
+    // 2. On met à jour isWithinPeriodAt pour qu'elle utilise isScheduledAt
     public function isWithinPeriodAt(
         \DateTimeInterface $date,
         int $hour,
         ?\DateTimeInterface $reference = null
     ): bool {
-        if (!$this->isScheduledAtHour($hour)) {
+        if (!$this->isScheduledAt($date, $hour)) {
             return false;
         }
 
@@ -161,6 +164,22 @@ class TraitementHospitalisation
         $scheduledAt = new \DateTimeImmutable(sprintf('%s %02d:00:00', $targetDate, $hour));
 
         return $scheduledAt <= $reference;
+    }
+
+    // 3. On met à jour isLateSlotAt pour qu'elle utilise isScheduledAt
+    public function isLateSlotAt(
+        \DateTimeInterface $date,
+        int $hour,
+        ?\DateTimeInterface $reference = null
+    ): bool {
+        if (!$this->isScheduledAt($date, $hour)) {
+            return false;
+        }
+
+        $reference ??= new \DateTimeImmutable();
+        $deadlineAt = $this->getAdministrationDeadlineAt($date, $hour);
+
+        return $deadlineAt <= $reference;
     }
 
     public function getScheduledAt(\DateTimeInterface $date, int $hour): \DateTimeImmutable
@@ -201,20 +220,6 @@ class TraitementHospitalisation
         return null;
     }
 
-    public function isLateSlotAt(
-        \DateTimeInterface $date,
-        int $hour,
-        ?\DateTimeInterface $reference = null
-    ): bool {
-        if (!$this->isScheduledAtHour($hour)) {
-            return false;
-        }
-
-        $reference ??= new \DateTimeImmutable();
-        $deadlineAt = $this->getAdministrationDeadlineAt($date, $hour);
-
-        return $deadlineAt <= $reference;
-    }
 
     public function isLateAdministrationAt(\DateTimeInterface $date, int $hour): bool
     {

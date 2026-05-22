@@ -25,10 +25,7 @@ class ExamenCliniqueType extends AbstractType
             ->add('deshydratation')
             ->add('oedeme')
             ->add('notes')
-            ->add('hospitalisation', EntityType::class, [
-                'class' => Hospitalisation::class,
-                'choice_label' => 'id',
-            ])
+        
         ;
     }
 

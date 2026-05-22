@@ -6,6 +6,7 @@ use App\Repository\ExamenCliniqueRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ExamenCliniqueRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class ExamenClinique
 {
     use TimestampableTrait;
@@ -15,9 +16,14 @@ class ExamenClinique
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\OneToOne(inversedBy: 'examenClinique')]
+    // ✅ NOUVEAU CODE :
+    #[ORM\ManyToOne(inversedBy: 'examensCliniques')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private Hospitalisation $hospitalisation;
+    private ?Hospitalisation $hospitalisation = null;
+
+    // ✅ NOUVEAU CHAMP : Date et heure exacte de la prise des constantes
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $datePrise = null;
 
     #[ORM\Column(nullable: true)]
     private ?string $tensionArterielle = null;
@@ -52,26 +58,36 @@ class ExamenClinique
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes = null;
 
+    public function __construct()
+    {
+        $this->datePrise = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
-
-    public function getHospitalisation(): Hospitalisation
-    {
-        return $this->hospitalisation;
-    }
-
-    public function setHospitalisation(Hospitalisation $hospitalisation): self
+public function setHospitalisation(?Hospitalisation $hospitalisation): self
     {
         $this->hospitalisation = $hospitalisation;
-
-        if ($hospitalisation->getExamenClinique() !== $this) {
-            $hospitalisation->setExamenClinique($this);
-        }
-
         return $this;
+    }
+
+    // ✅ NOUVEAU SETTER/GETTER pour la date de prise
+    public function getDatePrise(): ?\DateTimeImmutable
+    {
+        return $this->datePrise;
+    }
+
+    public function setDatePrise(\DateTimeImmutable $datePrise): self
+    {
+        $this->datePrise = $datePrise;
+        return $this;
+    }
+
+    public function getHospitalisation(): ?Hospitalisation
+    {
+        return $this->hospitalisation;
     }
 
     public function getTensionArterielle(): ?string
