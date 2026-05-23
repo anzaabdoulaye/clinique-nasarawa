@@ -35,25 +35,26 @@
         
         <table class="header-table">
             <tr>
-            <td style="width:15%;">
-                        <img src="{{ absolute_url(asset('assets/images/logo.jpeg')) }}" alt="Logo Clinique" class="clinic-logo">
-                    </td>
-                <td style="width: 75%;">
-                    <div class="clinic-title">CLINIQUE NEUROLOGIQUE NASSARAWA</div>
+                <td style="width: 15%; vertical-align: middle;">
+                    <img src="{{ absolute_url(asset('assets/images/logo.jpeg')) }}" alt="Logo Clinique" style="width: 100px; height: auto;">
+                </td>
+                <td style="width: 60%; vertical-align: middle;">
+                    <div class="clinic-title">Clinique Neurologique Nassarawa</div>
                     <div class="clinic-meta">
-                        NIF : 120402/R · RCCM : NE-NIM-01-2024-B12-00145<br>
-                        Yantala Haut Avenue du Daoura YN 187<br>
-                        Tél : 20 75 51 02 / 82 09 61 12 · BP : 2120 Niamey<br>
-                        Email : nassarawaclinique@gmail.com
+                        <strong>NIF :</strong> 120402/R | <strong>RCCM :</strong> NE-NIM-01-2024-B12-00145<br>
+                        <strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey<br>
+                        <strong>Tél :</strong> 20 75 51 02 / 82 09 61 12<br>
+                        <strong>Email :</strong> nassrawaclinique@gmail.com
                     </div>
                 </td>
-                <td style="width: 25%; text-align: right;">
-                    {% if qrCodeBase64 is defined and qrCodeBase64 %}
-                        <div class="qr-box">
-                            <img src="{{ qrCodeBase64 }}" alt="QR Verification" style="width: 55px; height: 55px;"><br>
-                            <span style="font-size: 7px; color: #6b7280;">Code : LAB-{{ resultat.id }}</span>
-                        </div>
-                    {% endif %}
+                <td style="width: 25%; text-align: right; vertical-align: middle;">
+                    <div class="qr-box">
+                        {% if qrCodeBase64 is defined and qrCodeBase64 %}
+                            <img src="{{ qrCodeBase64 }}" alt="QR Verification" style="width: 55px; height: 55px; margin-bottom: 2px;"><br>
+                        {% endif %}
+                        <span style="font-size: 8px; font-weight: bold; color: #0f4c81;">DOSSIER GLOBAL</span><br>
+                        <span style="font-size: 7px; color: #6b7280;">Consultation #{{ consultation.id }}</span>
+                    </div>
                 </td>
             </tr>
         </table>

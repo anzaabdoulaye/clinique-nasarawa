@@ -169,7 +169,7 @@
 
                 </div>
 
-                <div class="d-flex gap-2">
+               <div class="d-flex gap-2">
                     {# Bouton Tout prendre en charge : Uniquement s'il y a des examens non commencés #}
                     {% if nombrePayes is defined and nombrePayes > 0 %}
                         <form method="post" action="{{ path('app_laboratoire_tout_prendre_en_charge', {id: consultation.id}) }}" onsubmit="return confirm('Voulez-vous vraiment prendre en charge tous les examens en attente ?');">
@@ -179,15 +179,15 @@
                         </form>
                     {% endif %}
 
-                    {# Détermination s'il reste des examens à clôturer dans cette consultation #}
+                    {# Analyse de l'état des prestations pour déterminer si le dossier est clos #}
                     {% set dossierEnCours = false %}
-                    {% for prestation in prestations %}
-                        {% if prestation.statut.value == 'paye' or prestation.statut.value == 'en_cours' %}
+                    {% for prescription in prestations %}
+                        {% if prescription.statut.value == 'paye' or prescription.statut.value == 'en_cours' %}
                             {% set dossierEnCours = true %}
                         {% endif %}
                     {% endfor %}
 
-                    {# Affichage conditionnel du bouton de clôture #}
+                    {# Affichage dynamique selon la clôture du dossier #}
                     {% if dossierEnCours %}
                         <form method="post" action="{{ path('app_laboratoire_terminer_consultation', {id: consultation.id}) }}" onsubmit="return confirm('Voulez-vous valider et marquer ce dossier comme terminé ?');">
                             <button type="submit" class="btn btn-success rounded-pill">
@@ -195,7 +195,13 @@
                             </button>
                         </form>
                     {% else %}
-                        {# Optionnel : Un joli badge discret pour confirmer que tout est validé #}
+                        {# Le dossier est clos : Le bouton d'impression générale prend la place #}
+                        <a href="{{ path('app_laboratoire_resultats_consultation_pdf', { id: consultation.id }) }}" 
+                           target="_blank" 
+                           class="btn btn-primary rounded-pill">
+                            <i class="ri-printer-line me-1"></i> Imprimer tous les résultats
+                        </a>
+                        
                         <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill d-flex align-items-center">
                             <i class="ri-checkbox-circle-fill me-1"></i> Dossier laboratoire clôturé
                         </span>

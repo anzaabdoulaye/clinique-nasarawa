@@ -33,99 +33,62 @@ final class LaboratoireController extends AbstractController
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
 ))]
     #[Route('', name: 'app_laboratoire_index', methods: ['GET'])]
-    public function index(
-    Request $request,
-    PrescriptionPrestationRepository $repository
-): Response {
+    public function index(PrescriptionPrestationRepository $repository): Response
+    {
+        // Récupération de toutes les prestations de laboratoire payées, en cours ou réalisées
+        $prestations = $repository->findAll(); // ou votre méthode de récupération habituelle
 
-    // Consultations labo à traiter
-    $aTraiter = $repository->findExamensLaboAPrendreEnCharge();
+        $aTraiter = [];
+        $enCours = [];
+        $realises = [];
 
-    // Consultations labo en cours
-    $enCours = $repository->findExamensLaboEnCours();
+        foreach ($prestations as $prestation) {
+            $consultation = $prestation->getConsultation();
+            if (!$consultation) {
+                continue;
+            }
 
-    // Consultations labo réalisées
-    $realises = $repository->findExamensLaboRealises();
+            $consultationId = $consultation->getId();
+            $statut = $prestation->getStatut();
 
-    /**
-     * Filtre période
-     */
-    $periodeFilter = $request->query->get('periode', 'recent');
+            // Structure de regroupement pour le template _table.html.twig
+            $itemData = [
+                'consultation' => $consultation,
+                'patient' => $this->resolvePatientFromConsultation($consultation),
+                'medecin' => $consultation->getMedecin(),
+                'prestations' => [$prestation],
+                'nombreExamens' => 1,
+            ];
 
-    /**
-     * Filtrage des consultations réalisées
-     */
-    if ($periodeFilter !== 'all') {
-
-        $dateReference = null;
-
-        switch ($periodeFilter) {
-
-            case 'recent':
-                $dateReference = new \DateTimeImmutable('-30 days');
-                break;
-
-            case 'month':
-                $now = new \DateTimeImmutable();
-
-                $dateReference = $now
-                    ->setDate(
-                        (int) $now->format('Y'),
-                        (int) $now->format('m'),
-                        1
-                    )
-                    ->setTime(0, 0, 0);
-
-                break;
-
-            case 'quarter':
-                $dateReference = new \DateTimeImmutable('-90 days');
-                break;
-
-            case 'year':
-                $dateReference = new \DateTimeImmutable('-365 days');
-                break;
-        }
-
-        if ($dateReference !== null) {
-
-            $realises = array_values(array_filter(
-                $realises,
-                function (array $item) use ($dateReference): bool {
-
-                    /**
-                     * dateCreation vient du groupByConsultation()
-                     */
-                    $createdAt = $item['dateCreation'] ?? null;
-
-                    return $createdAt instanceof \DateTimeInterface
-                        && $createdAt >= $dateReference;
+            // CLASSIFICATION TECHNIQUE PAR STATUT (Élimine le problème du trou noir)
+            if ($statut === StatutPrescriptionPrestation::PAYE) {
+                if (!isset($aTraiter[$consultationId])) {
+                    $aTraiter[$consultationId] = $itemData;
+                } else {
+                    $aTraiter[$consultationId]['prestations'][] = $prestation;
                 }
-            ));
+            } elseif ($statut === StatutPrescriptionPrestation::EN_COURS) {
+                if (!isset($enCours[$consultationId])) {
+                    $enCours[$consultationId] = $itemData;
+                } else {
+                    $enCours[$consultationId]['prestations'][] = $prestation;
+                }
+            } elseif ($statut === StatutPrescriptionPrestation::REALISE) {
+                // On se base uniquement sur le statut REALISE pour l'onglet Traités
+                if (!isset($realises[$consultationId])) {
+                    $realises[$consultationId] = $itemData;
+                } else {
+                    $realises[$consultationId]['prestations'][] = $prestation;
+                }
+            }
         }
+
+        return $this->render('laboratoire/index.html.twig', [
+            'aTraiter' => $aTraiter,
+            'enCours' => $enCours,
+            'realises' => $realises,
+        ]);
     }
-
-    /**
-     * Statistiques globales
-     */
-    $totalConsultations =
-        count($aTraiter)
-        + count($enCours)
-        + count($realises);
-
-    return $this->render('laboratoire/index.html.twig', [
-
-        'aTraiter' => $aTraiter,
-
-        'enCours' => $enCours,
-
-        'realises' => $realises,
-
-        'periodeFilter' => $periodeFilter,
-
-        'totalConsultations' => $totalConsultations,
-    ]);
-}
 
     #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
@@ -342,43 +305,40 @@ public function consultationShow(
     #[Route('/bon/consultation/{id}/print', name: 'app_laboratoire_bon_print', methods: ['GET'])]
     public function bonPrint(Consultation $consultation, PrescriptionPrestationRepository $repository): Response
     {
-        // 1. Utilisation du findBy natif de Doctrine
         $prestations = $repository->findBy(['consultation' => $consultation]);
-        
         $patient = $this->resolvePatientFromConsultation($consultation);
 
-        // 2. Restauration de l'ancienne logique fonctionnelle du QR Code (Instanciation avec new)
+        // Récupération sécurisée de l'âge
+        $patientAge = '-';
+        if ($patient && method_exists($patient, 'getDateNaissance') && $patient->getDateNaissance()) {
+            $patientAge = $patient->getDateNaissance()->diff(new \DateTime())->y;
+        }
+
         $url = $this->generateUrl('app_laboratoire_consultation_show', ['id' => $consultation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-        
         $qrCode = new QrCode($url);
         $writer = new PngWriter();
         $qrCodeBase64 = $writer->write($qrCode)->getDataUri();
 
-        $patient = $this->resolvePatientFromConsultation($consultation);
-    
-    // Calcul chirurgical de l'âge en cas de défaillance de la propriété directe
-    $patientAge = '-';
-    if ($patient) {
-        if (method_exists($patient, 'getAge') && $patient->getAge()) {
-            $patientAge = $patient->getAge();
-        } elseif (method_exists($patient, 'getDateNaissance') && $patient->getDateNaissance()) {
-            $patientAge = $patient->getDateNaissance()->diff(new \DateTime())->y;
-        } elseif (isset($patient->age) && $patient->age) {
-            $patientAge = $patient->age;
-        }
-    }
+        // 1. Définition du chemin physique local vers le dossier public
+        $publicPath = $this->getParameter('kernel.project_dir') . '/public';
 
         $html = $this->renderView('laboratoire/bon_print.html.twig', [
             'consultation' => $consultation,
             'prestations' => $prestations,
             'patient' => $patient,
+            'patientAge' => $patientAge,
             'medecinNom' => $consultation->getMedecin()?->getNomComplet() ?? 'Non renseigné',
             'datePrescription' => $consultation->getCreatedAt() ?? new \DateTimeImmutable(),
             'qrCodeBase64' => $qrCodeBase64,
+            'publicPath' => $publicPath, // On envoie le chemin au fichier Twig
         ]);
 
+        // 2. Configuration ultra-rapide de Dompdf sans requêtes HTTP virtuelles
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true); // Indispensable pour le QR Code en Base64
+        $options->set('chroot', $publicPath);   // Sécurise et autorise l'accès au disque local
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
@@ -390,44 +350,82 @@ public function consultationShow(
         ]);
     }
 
-    #[Route('/consultation/{id}/resultats/pdf', name: 'app_laboratoire_resultats_consultation_pdf', methods: ['GET'])]
-    public function resultatsConsultationPrint(Consultation $consultation, PrescriptionPrestationRepository $repository): Response
+    #[Route('/prestation/{id}/resultat/print', name: 'app_laboratoire_resultat_print', methods: ['GET'])]
+    public function resultatPrint(PrescriptionPrestation $prestation): Response
     {
-        // 1. Utilisation du findBy natif
-        $prestations = $repository->findBy(['consultation' => $consultation]);
-        
+        $resultat = $prestation->getResultatLaboratoire();
+        if (!$resultat) {
+            $this->addFlash('danger', "Aucun résultat saisi pour cet examen.");
+            return $this->redirectToRoute('app_laboratoire_consultation_show', ['id' => $prestation->getConsultation()?->getId()]);
+        }
+
+        $consultation = $prestation->getConsultation();
         $patient = $this->resolvePatientFromConsultation($consultation);
 
-        // 2. Restauration de l'ancienne logique fonctionnelle du QR Code (Instanciation avec new)
-        $url = $this->generateUrl('app_laboratoire_resultats_show', ['id' => $consultation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-        
+        $url = $this->generateUrl('app_laboratoire_consultation_show', ['id' => $consultation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         $qrCode = new QrCode($url);
         $writer = new PngWriter();
         $qrCodeBase64 = $writer->write($qrCode)->getDataUri();
 
-        $patient = $this->resolvePatientFromConsultation($consultation);
-    
-    // Calcul chirurgical de l'âge en cas de défaillance de la propriété directe
-    $patientAge = '-';
-    if ($patient) {
-        if (method_exists($patient, 'getAge') && $patient->getAge()) {
-            $patientAge = $patient->getAge();
-        } elseif (method_exists($patient, 'getDateNaissance') && $patient->getDateNaissance()) {
-            $patientAge = $patient->getDateNaissance()->diff(new \DateTime())->y;
-        } elseif (isset($patient->age) && $patient->age) {
-            $patientAge = $patient->age;
-        }
+        $publicPath = $this->getParameter('kernel.project_dir') . '/public';
+
+        $html = $this->renderView('laboratoire/resultat_print.html.twig', [
+            'prestation' => $prestation,
+            'resultat' => $resultat,
+            'consultation' => $consultation,
+            'patient' => $patient,
+            'qrCodeBase64' => $qrCodeBase64,
+            'publicPath' => $publicPath, // Injection du chemin
+        ]);
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('chroot', $publicPath); // Activation du chroot local
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="resultat_'.$prestation->getId().'.pdf"'
+        ]);
     }
+
+    #[Route('/consultation/{id}/resultats/pdf', name: 'app_laboratoire_resultats_consultation_pdf', methods: ['GET'])]
+    public function resultatsConsultationPrint(Consultation $consultation, PrescriptionPrestationRepository $repository): Response
+    {
+        $prestations = $repository->findBy(['consultation' => $consultation]);
+        $patient = $this->resolvePatientFromConsultation($consultation);
+
+        $patientAge = '-';
+        if ($patient && method_exists($patient, 'getDateNaissance') && $patient->getDateNaissance()) {
+            $patientAge = $patient->getDateNaissance()->diff(new \DateTime())->y;
+        }
+
+        $url = $this->generateUrl('app_laboratoire_consultation_show', ['id' => $consultation->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $qrCode = new QrCode($url);
+        $writer = new PngWriter();
+        $qrCodeBase64 = $writer->write($qrCode)->getDataUri();
+
+        $publicPath = $this->getParameter('kernel.project_dir') . '/public';
 
         $html = $this->renderView('laboratoire/resultats_consultation_print.html.twig', [
             'consultation' => $consultation,
             'prestations' => $prestations,
             'patient' => $patient,
+            'patientAge' => $patientAge,
             'qrCodeBase64' => $qrCodeBase64,
+            'publicPath' => $publicPath, // Injection du chemin
         ]);
 
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('chroot', $publicPath); // Activation du chroot local
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');

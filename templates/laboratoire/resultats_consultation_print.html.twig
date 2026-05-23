@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-{% set patient = patient|default(consultation.dossierMedical.patient|default(consultation.rendezVous.patient|default(null))) %}
+    {% set patient = patient|default(consultation.dossierMedical.patient|default(consultation.rendezVous.patient|default(null))) %}
     <meta charset="UTF-8">
     <title>Fiche Consolidée des Résultats - Consultation #{{ consultation.id }}</title>
     <style>
@@ -36,21 +35,18 @@
         
         <table class="header-table">
             <tr>
-                <td style="width: 15%; vertical-align: middle; text-align: left;">
-                    {# L'utilisation de DOCUMENT_ROOT permet à Dompdf de lire le fichier instantanément sans requête HTTP #}
-                    <img src="{{ absolute_url(asset('assets/images/logo2.jpeg')) }}" alt="Logo Clinique" style="width: 65px; height: auto; border-radius: 4px;">
+                <td style="width: 15%; vertical-align: middle;">
+                    <img src="{{ absolute_url(asset('assets/images/logo.jpeg')) }}" alt="Logo Clinique" style="width: 100px; height: auto;">
                 </td>
-                
                 <td style="width: 60%; vertical-align: middle;">
-                    <div class="clinic-title">CLINIQUE NEUROLOGIQUE NASSARAWA</div>
+                    <div class="clinic-title">Clinique Neurologique Nassarawa</div>
                     <div class="clinic-meta">
-                        NIF : 120402/R · RCCM : NE-NIM-01-2024-B12-00145<br>
-                        Yantala Haut Avenue du Daoura YN 187<br>
-                        Tél : 20 75 51 02 / 82 09 61 12 · BP : 2120 Niamey<br>
-                        Email : nassarawaclinique@gmail.com
+                        <strong>NIF :</strong> 120402/R | <strong>RCCM :</strong> NE-NIM-01-2024-B12-00145<br>
+                        <strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey<br>
+                        <strong>Tél :</strong> 20 75 51 02 / 82 09 61 12<br>
+                        <strong>Email :</strong> nassrawaclinique@gmail.com
                     </div>
                 </td>
-                
                 <td style="width: 25%; text-align: right; vertical-align: middle;">
                     <div class="qr-box">
                         {% if qrCodeBase64 is defined and qrCodeBase64 %}
@@ -83,7 +79,7 @@
                     <div class="examen-header">
                         Analyse : {{ prescription.tarifPrestation.libelle }}
                         <span style="float: right; font-size: 8px; color: #6b7280; font-weight: normal;">
-                            Validé le : {{ resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }} par {{ resultat.validePar }}
+                            Validé le : {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }} par {{ resultat and resultat.validePar ? resultat.validePar : '-' }}
                         </span>
                     </div>
 
@@ -98,7 +94,6 @@
                         <tbody>
                             {% if resultat and resultat.lignes|length > 0 %}
                                 {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
-                                    {# MÊME EXCLUSION DES PARAMÈTRES VIDES #}
                                     {% if ligne.resultat is not empty and ligne.resultat|trim != '-' and ligne.resultat|trim != '' %}
                                         <tr>
                                             <td>{{ ligne.demande }}</td>
@@ -112,7 +107,7 @@
                                     <td>{{ prescription.tarifPrestation.libelle }}</td>
                                     <td><strong>{{ (resultat and resultat.resultat) ? resultat.resultat : '-' }}</strong></td>
                                     <td>-</td>
-                                endfor
+                                </tr> {# Correction de la balise HTML et Twig ici #}
                             {% endif %}
                         </tbody>
                     </table>
@@ -124,7 +119,7 @@
                     {% endif %}
                 </div>
             {% else %}
-                <div style="text-center; padding: 20px;" class="text-muted">Aucun résultat validé disponible pour cette consultation.</div>
+                <div style="text-align: center; padding: 20px;" class="text-muted">Aucun résultat validé disponible pour cette consultation.</div>
             {% endfor %}
         </div>
 
