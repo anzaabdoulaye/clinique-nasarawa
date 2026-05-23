@@ -558,65 +558,103 @@ public function consultationShow(
         ]);
     }
 
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
-))]
+   #[IsGranted(new Expression(
+        "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"
+    ))]
     #[Route('/prestation/{id}/resultat', name: 'app_laboratoire_resultat_edit', methods: ['GET', 'POST'])]
-public function saisirResultat(
-    Request $request,
-    PrescriptionPrestation $prestation,
-    EntityManagerInterface $em
-): Response {
-    $this->verifierDestinationLaboratoire($prestation);
+    public function saisirResultat(
+        Request $request,
+        PrescriptionPrestation $prestation,
+        EntityManagerInterface $em
+    ): Response {
+        $this->verifierDestinationLaboratoire($prestation);
 
-    if (!$this->canEditResult($prestation)) {
-        $message = 'Vous devez d\'abord prendre en charge cet examen avant de saisir le resultat.';
+        if (!$this->canEditResult($prestation)) {
+            $message = 'Vous devez d\'abord prendre en charge cet examen avant de saisir le resultat.';
+
+            if ($request->isXmlHttpRequest()) {
+                return new Response(sprintf(
+                    '<div class="modal-body"><div class="alert alert-warning mb-0">%s</div></div>',
+                    htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+                ), Response::HTTP_FORBIDDEN);
+            }
+
+            $this->addFlash('warning', $message);
+
+            return $this->redirectToRoute('app_laboratoire_show', [
+                'id' => $prestation->getId(),
+            ]);
+        }
+
+        $resultat = $prestation->getResultatLaboratoire();
+        if (!$resultat) {
+            $resultat = new ResultatLaboratoire();
+            $resultat->setPrescriptionPrestation($prestation);
+            $prestation->setResultatLaboratoire($resultat);
+
+            // --- DEBUT DE L'AJOUT CHIRURGICAL DYNAMIQUE ---
+            $consultation = $prestation->getConsultation();
+            $patient = $consultation ? $this->resolvePatientFromConsultation($consultation) : null;
+
+            // Extraction sécurisée du sexe (conversion en majuscules pour standardiser l'interprétation)
+            $sexe = 'H'; 
+            if ($patient && method_exists($patient, 'getSexe') && $patient->getSexe()) {
+                $sexe = strtoupper(trim((string) $patient->getSexe()));
+            }
+
+            // Calcul de l'âge à la date du jour
+            $age = null;
+            if ($patient && method_exists($patient, 'getDateNaissance') && $patient->getDateNaissance()) {
+                $age = $patient->getDateNaissance()->diff(new \DateTime())->y;
+            }
+
+            $libelleExamen = $prestation->getTarifPrestation()?->getLibelle() ?? 'Examen';
+            
+            // Appel de la nouvelle signature
+            $modeles = $this->getModelesExamen($libelleExamen, $sexe, $age);
+            
+            $ordre = 1;
+            foreach ($modeles as $modele) {
+                $ligne = new ResultatLaboratoireLigne();
+                $ligne->setDemande($modele['demande']);
+                $ligne->setValeurNormale($modele['norme']);
+                $ligne->setOrdre($ordre++);
+                $resultat->addLigne($ligne);
+            }
+            // --- FIN DE L'AJOUT CHIRURGICAL DYNAMIQUE ---
+        }
+
+        $form = $this->createForm(ResultatLaboratoireType::class, $resultat, [
+            'action' => $this->generateUrl('app_laboratoire_resultat_edit', [
+                'id' => $prestation->getId(),
+            ]),
+            'method' => 'POST',
+        ]);
+
+        $form->handleRequest($request);
 
         if ($request->isXmlHttpRequest()) {
-            return new Response(sprintf(
-                '<div class="modal-body"><div class="alert alert-warning mb-0">%s</div></div>',
-                htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
-            ), Response::HTTP_FORBIDDEN);
+            if ($form->isSubmitted() && $form->isValid()) {
+                $resultat->setDateValidation(new \DateTimeImmutable());
+                $resultat->setValidePar($this->buildLaborantinLabel($this->getUser()));
+
+                $em->persist($resultat);
+                $em->flush();
+                $this->addFlash('success', 'Résultat laboratoire enregistré avec succès.');
+
+                return $this->json([
+                    'success' => true,
+                    'message' => 'Résultat laboratoire enregistré avec succès.',
+                ]);
+            }
+
+            return $this->render('laboratoire/_resultat_form.html.twig', [
+                'form' => $form->createView(),
+                'prestation' => $prestation,
+                'resultat' => $resultat,
+            ]);
         }
 
-        $this->addFlash('warning', $message);
-
-        return $this->redirectToRoute('app_laboratoire_show', [
-            'id' => $prestation->getId(),
-        ]);
-    }
-
-    $resultat = $prestation->getResultatLaboratoire();
-    if (!$resultat) {
-        $resultat = new ResultatLaboratoire();
-        $resultat->setPrescriptionPrestation($prestation);
-        $prestation->setResultatLaboratoire($resultat);
-
-        // --- DEBUT DE L'AJOUT CHIRURGICAL ---
-        $libelleExamen = $prestation->getTarifPrestation()?->getLibelle() ?? 'Examen';
-        $modeles = $this->getModelesExamen($libelleExamen);
-        
-        $ordre = 1;
-        foreach ($modeles as $modele) {
-            $ligne = new ResultatLaboratoireLigne();
-            $ligne->setDemande($modele['demande']);
-            $ligne->setValeurNormale($modele['norme']);
-            $ligne->setOrdre($ordre++);
-            $resultat->addLigne($ligne);
-        }
-        // --- FIN DE L'AJOUT ---
-    }
-
-    $form = $this->createForm(ResultatLaboratoireType::class, $resultat, [
-        'action' => $this->generateUrl('app_laboratoire_resultat_edit', [
-            'id' => $prestation->getId(),
-        ]),
-        'method' => 'POST',
-    ]);
-
-    $form->handleRequest($request);
-
-    if ($request->isXmlHttpRequest()) {
         if ($form->isSubmitted() && $form->isValid()) {
             $resultat->setDateValidation(new \DateTimeImmutable());
             $resultat->setValidePar($this->buildLaborantinLabel($this->getUser()));
@@ -625,38 +663,17 @@ public function saisirResultat(
             $em->flush();
             $this->addFlash('success', 'Résultat laboratoire enregistré avec succès.');
 
-            return $this->json([
-                'success' => true,
-                'message' => 'Résultat laboratoire enregistré avec succès.',
+            return $this->redirectToRoute('app_laboratoire_show', [
+                'id' => $prestation->getId(),
             ]);
         }
 
-        return $this->render('laboratoire/_resultat_form.html.twig', [
-            'form' => $form->createView(),
+        return $this->render('laboratoire/resultat_form.html.twig', [
             'prestation' => $prestation,
+            'form' => $form->createView(),
             'resultat' => $resultat,
         ]);
     }
-
-    if ($form->isSubmitted() && $form->isValid()) {
-        $resultat->setDateValidation(new \DateTimeImmutable());
-        $resultat->setValidePar($this->buildLaborantinLabel($this->getUser()));
-
-        $em->persist($resultat);
-        $em->flush();
-        $this->addFlash('success', 'Résultat laboratoire enregistré avec succès.');
-
-        return $this->redirectToRoute('app_laboratoire_show', [
-            'id' => $prestation->getId(),
-        ]);
-    }
-
-    return $this->render('laboratoire/resultat_form.html.twig', [
-        'prestation' => $prestation,
-        'form' => $form->createView(),
-        'resultat' => $resultat,
-    ]);
-}
 
 #[IsGranted(new Expression(
     "is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO') or is_granted('ROLE_MEDECIN')"
@@ -939,142 +956,423 @@ public function saisirResultat(
         return $validateurs;
     }
 /**
-     * Retourne les paramètres et valeurs normales pré-définis selon l'examen.
+     * Retourne les paramètres et valeurs normales pré-définis selon l'examen et le profil clinique du patient.
+     *
+     * @param string $libelleExamen Le nom de l'examen prescrit
+     * @param string $sexe 'H' pour Homme, 'F' pour Femme
+     * @param int|null $age Âge en années (0 pour les moins d'un an)
      */
-    private function getModelesExamen(string $libelleExamen): array
+    private function getModelesExamen(string $libelleExamen, string $sexe, ?int $age): array
     {
-        // On passe en minuscule pour faciliter la recherche par mots-clés
-        $libelle = mb_strtolower(trim($libelleExamen));
+        $libelleInitial = mb_strtolower(trim($libelleExamen));
 
-        // 1. Numération Formule Sanguine (NFS)
-        if (str_contains($libelle, 'nfs') || str_contains($libelle, 'numération') || str_contains($libelle, 'formule sanguine')) {
+        // 1. Dictionnaire des alias (Mapping exhaustif Facturation -> Laboratoire)
+        $aliasList = [
+            'calcémie' => 'calcium',
+            'glycémie capillaire' => 'glucose',
+            'glycémie veineuse' => 'glucose',
+            'glycémie' => 'glucose',
+            'glycemie' => 'glucose',
+            'œstradiol' => 'estradiol',
+            'oestradiol' => 'estradiol',
+            'ferritinémie' => 'ferritine',
+            'protéinurie de 24h' => 'protéine urinaire',
+            'tgo' => 'asat',
+            'tgp' => 'alat',
+            'transaminase' => 'transaminases',
+            'cholestérolémie' => 'cholestérol total',
+            'bilirubine conjuguée directe' => 'bilirubine directe',
+            'bilirubine conjuguée' => 'bilirubine directe',
+            'crp quantitative' => 'crp',
+            'goutte épaisse + densité parasitaire' => 'goutte epaisse',
+            'goutte epaisse' => 'goutte epaisse',
+            'vitesse de sédimentation (vs)' => 'vs',
+            'hémoglobine gluquée' => 'hemoglobine glyquee',
+            'hemoglobine glyquee' => 'hemoglobine glyquee',
+            'taux de prothrombine' => 'tp',
+            'tca' => 'tck',
+            'bw (sérologie syphilitique)' => 'bw',
+            'hiv' => 'vih',
+            'micro albuminémie' => 'micro albuminurie',
+            'magnésémie' => 'magnésium',
+            't4 libre' => 't4',
+        ];
+
+        $libelle = $aliasList[$libelleInitial] ?? $libelleInitial;
+
+        // 2. Détermination du profil du patient
+        $profil = 'ADULTE';
+        if ($age !== null) {
+            if ($age === 0) {
+                $profil = 'NOUVEAU_NE';
+            } elseif ($age < 15) {
+                $profil = 'ENFANT';
+            } else {
+                $profil = ($sexe === 'F') ? 'FEMME' : 'HOMME';
+            }
+        } else {
+            $profil = ($sexe === 'F') ? 'FEMME' : 'HOMME';
+        }
+
+        $isFemme = ($sexe === 'F');
+
+        // =====================================================================
+        // 3. BLOCS HORMONAUX & MARQUEURS SPÉCIFIQUES
+        // =====================================================================
+        
+        if (str_contains($libelle, 'estradiol')) {
+            $norme = $isFemme 
+                ? "Fol: 20-150 Pg/ml | Ov: 150-500 Pg/ml | Lut: 50-250 Pg/ml | Men: < 30 Pg/ml" 
+                : "10 - 50 Pg/ml";
+            return [['demande' => 'Estradiol', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'fsh')) {
+            $norme = $isFemme 
+                ? "Fol: 2-13 mUI/ml | Ov: 6-25 mUI/ml | Lut: 1-12 mUI/ml | Men: 25-145 mUI/ml" 
+                : "1 - 10 mUI/ml";
+            return [['demande' => 'FSH', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'lh')) {
+            $norme = $isFemme 
+                ? "Fol: 2-11 mUI/ml | Ov: 16-65 mUI/ml | Lut: 1-12 mUI/ml | Men: 18-65 mUI/ml" 
+                : "1 - 8.5 mUI/ml";
+            return [['demande' => 'LH', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'progestérone') || str_contains($libelle, 'progesterone')) {
+            $norme = $isFemme 
+                ? "Fol: 0.2-2.1 ng/ml | Ov: 0.7-4.2 ng/ml | Lut: 6.6-28.7 ng/ml | Men: 0.2-0.56 ng/ml" 
+                : "< 3 ng/ml";
+            return [['demande' => 'Progestérone', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'testostérone') || str_contains($libelle, 'testosterone')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '< 5 ng/ml',
+                'ENFANT' => '0.07 - 0.5 ng/ml',
+                'FEMME' => '0.2 - 0.6 ng/ml',
+                default => '4 - 8 ng/ml',
+            };
+            return [['demande' => 'Testostérone', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'beta hcg') || str_contains($libelle, 'béta hcg')) {
+            $norme = $isFemme ? '< 5 mUI/ml' : '< 2 mUI/ml';
+            return [['demande' => 'Beta HCG', 'norme' => $norme]];
+        }
+
+        // =====================================================================
+        // 4. EXAMENS BIOCHIMIQUES ET ENZYMATIQUES (Avec variations d'âge)
+        // =====================================================================
+
+        if (str_contains($libelle, 'acide urique')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '20 - 60 mg/l',
+                'ENFANT' => '25 - 60 mg/l',
+                'FEMME' => '20 - 50 mg/l',
+                default => '35 - 70 mg/l',
+            };
+            return [['demande' => 'Acide urique', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'urée') || str_contains($libelle, 'uree')) {
+            $norme = ($profil === 'NOUVEAU_NE' || $profil === 'FEMME') ? '0.10 - 0.40 g/l' : '0.15 - 0.45 g/l';
+            return [['demande' => 'Urée', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'créatinine') || str_contains($libelle, 'creatinine')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '3 - 11 mg/l',
+                'ENFANT' => '03 - 06 mg/l',
+                'FEMME' => '06 - 11 mg/l',
+                default => '07 - 14 mg/l',
+            };
+            return [['demande' => 'Créatinine', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'calcium')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '80 - 110 mg/l',
+                'ENFANT' => '90 - 110 mg/l',
+                default => '88 - 104 mg/l',
+            };
+            return [['demande' => 'Calcium', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'magnésium')) {
+            $norme = ($profil === 'NOUVEAU_NE') ? '17 - 25 mg/l' : '18 - 26 mg/l';
+            return [['demande' => 'Magnésium', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'glucose')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '0.50 - 1.40 g/l',
+                'ENFANT' => '0.60 - 1.00 g/l',
+                default => '0.60 - 1.10 g/l',
+            };
+            return [['demande' => 'Glucose', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'protides totaux')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '45 - 65 g/l',
+                'ENFANT' => '67 - 88 g/l',
+                'FEMME' => '60 - 84 g/l',
+                default => '67 - 93 g/l',
+            };
+            return [['demande' => 'Protides totaux', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'ferritine')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '25 - 200 ng/ml',
+                'ENFANT' => '7 - 140 ng/ml',
+                'FEMME' => '20 - 150 ng/ml',
+                default => '30 - 300 ng/ml',
+            };
+            return [['demande' => 'Ferritine', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'fer sérique')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '9 - 30 µmol/l',
+                'ENFANT' => '11 - 23 µmol/l',
+                'FEMME' => '09 - 28 µmol/l',
+                default => '10 - 30 µmol/l',
+            };
+            return [['demande' => 'Fer sérique', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'gamma gt')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '20 - 180 UI/l',
+                'ENFANT' => '< 37 UI/l',
+                'FEMME' => '< 35 UI/l',
+                default => '< 45 UI/l',
+            };
+            return [['demande' => 'Gamma GT', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'cpk')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '70 - 380 ng/ml',
+                'ENFANT' => '< 75 ng/ml',
+                default => '< 90 ng/ml',
+            };
+            return [['demande' => 'CPK', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'cortisolémie de 8h')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '150 - 700 nmol/l',
+                'FEMME' => '125 - 250 nmol/l',
+                default => '250 - 550 nmol/l',
+            };
+            return [['demande' => 'Cortisolémie de 8h', 'norme' => $norme]];
+        }
+
+        // =====================================================================
+        // 5. BLOCS BILIRUBINE & THYROÏDE
+        // =====================================================================
+
+        if (str_contains($libelle, 'bilirubine totale')) {
+            $norme = ($profil === 'NOUVEAU_NE') ? '< 60 µmol/l' : '< 21 µmol/l';
+            return [['demande' => 'Bilirubine totale', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'bilirubine directe') || str_contains($libelle, 'conjuguée')) {
+            $norme = ($profil === 'NOUVEAU_NE') ? '< 20 µmol/l' : '< 4 µmol/l';
+            return [['demande' => 'Bilirubine conjuguée directe', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'bilirubine indirecte')) {
+            return [['demande' => 'Bilirubine indirecte', 'norme' => '< 17 µmol/l']];
+        }
+
+        if (str_contains($libelle, 'tsh')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '1 - 20 mUI/l',
+                'FEMME' => '0.7 - 8.4 mUI/l',
+                default => '0.4 - 4 mUI/l',
+            };
+            return [['demande' => 'TSH', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 't3')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '1.2 - 2.8 nmol/l',
+                'ENFANT' => '1.5 - 4 nmol/l',
+                default => '1.3 - 3.10 nmol/l',
+            };
+            return [['demande' => 'T3', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 't4')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '100 - 220 nmol/l',
+                'ENFANT' => '70 - 150 nmol/l',
+                default => '66 - 181 nmol/l',
+            };
+            return [['demande' => 'T4 Libre', 'norme' => $norme]];
+        }
+
+        // =====================================================================
+        // 6. EXAMENS REGROUPÉS (Bilan, Hémostase, Urines)
+        // =====================================================================
+
+        if (str_contains($libelle, 'transaminases')) {
             return [
-                ['demande' => 'Globules Blancs (GB)', 'norme' => '4000 - 10000 /mm3'],
-                ['demande' => 'Polynucléaires Neutrophiles', 'norme' => '2000 - 7500 /mm3 (50-70%)'],
-                ['demande' => 'Lymphocytes', 'norme' => '1500 - 4000 /mm3 (20-40%)'],
-                ['demande' => 'Monocytes', 'norme' => '200 - 1000 /mm3 (2-10%)'],
-                ['demande' => 'Polynucléaires Eosinophiles', 'norme' => '40 - 400 /mm3 (1-4%)'],
-                ['demande' => 'Polynucléaires Basophiles', 'norme' => '10 - 100 /mm3 (<1%)'],
-                ['demande' => 'Globules Rouges (GR)', 'norme' => 'H: 4.5-5.2 | F: 4.0-5.2 Millions/mm3'],
-                ['demande' => 'Hémoglobine (Hb)', 'norme' => 'H: 13-17 | F: 12-16 g/dl'],
-                ['demande' => 'Hématocrite', 'norme' => 'H: 40-52% | F: 36-47%'],
-                ['demande' => 'VGM', 'norme' => '80 - 98 fl'],
-                ['demande' => 'TCMH', 'norme' => '27 - 32 pg'],
-                ['demande' => 'CCMH', 'norme' => '32 - 36 g/dl'],
-                ['demande' => 'Plaquettes', 'norme' => '150 000 - 450 000 /mm3'],
+                ['demande' => 'ASAT (TGO)', 'norme' => ($profil === 'NOUVEAU_NE') ? '< 70 UI/l' : '< 35 UI/l'],
+                ['demande' => 'ALAT (TGP)', 'norme' => '< 40 UI/l'],
             ];
         }
 
-        // 2. Ionogramme Sanguin
         if (str_contains($libelle, 'ionogramme')) {
+            $normeNa = ($profil === 'NOUVEAU_NE') ? '130 - 145 mmol/l' : '135 - 145 mmol/l';
+            $normeCl = ($profil === 'NOUVEAU_NE') ? '95 - 110 mmol/l' : '98 - 107 mmol/l';
+            $normeHCO3 = ($profil === 'NOUVEAU_NE') ? '16 - 24 mmol/l' : '20 - 28 mmol/l';
+            $normeK = match($profil) {
+                'NOUVEAU_NE' => '4 - 6 mmol/l',
+                'ENFANT' => '3 - 5.5 mmol/l',
+                default => '3.5 - 5.0 mmol/l',
+            };
+
             return [
-                ['demande' => 'Sodium (Na+)', 'norme' => '135 - 145 mmol/l'],
-                ['demande' => 'Potassium (K+)', 'norme' => '3.5 - 5.0 mmol/l'],
-                ['demande' => 'Chlore (Cl-)', 'norme' => '98 - 107 mmol/l'],
-                ['demande' => 'Bicarbonates (HCO3-)', 'norme' => '22 - 28 mmol/l'],
-                ['demande' => 'Calcium', 'norme' => '88 - 104 mg/l'],
-                ['demande' => 'Magnésium', 'norme' => '18 - 26 mg/l'],
+                ['demande' => 'Sodium (Na+)', 'norme' => $normeNa],
+                ['demande' => 'Potassium (K+)', 'norme' => $normeK],
+                ['demande' => 'Chlore (Cl-)', 'norme' => $normeCl],
+                ['demande' => 'Bicarbonates (HCO3-)', 'norme' => $normeHCO3],
             ];
         }
 
-        // 3. Bilan Lipidique
-        if (str_contains($libelle, 'lipidique') || str_contains($libelle, 'cholestérol total')) {
+        if (str_contains($libelle, 'lipidique')) {
+            $normeHDL = $isFemme ? '> 0.50 g/l' : '> 0.40 g/l';
             return [
                 ['demande' => 'Cholestérol total', 'norme' => '1.20 - 2.39 g/l'],
-                ['demande' => 'HDL Cholestérol', 'norme' => '> 0.40 g/l (H) | > 0.50 g/l (F)'],
+                ['demande' => 'HDL Cholestérol', 'norme' => $normeHDL],
                 ['demande' => 'LDL Cholestérol', 'norme' => '0.5 - 1.59 g/l'],
                 ['demande' => 'Triglycérides', 'norme' => '0.60 - 1.60 g/l'],
             ];
         }
 
-        // 4. Bilan Hépatique
-        if (str_contains($libelle, 'hépatique') || str_contains($libelle, 'transaminase')) {
-            return [
-                ['demande' => 'ASAT (TGO)', 'norme' => '< 35 UI/l'],
-                ['demande' => 'ALAT (TGP)', 'norme' => '< 40 UI/l'],
-                ['demande' => 'Gamma GT', 'norme' => '< 45 UI/l'],
-                ['demande' => 'Phosphatase alcaline', 'norme' => '30 - 150 UI/l'],
-                ['demande' => 'Bilirubine totale', 'norme' => '< 21 µmol/l'],
-                ['demande' => 'Bilirubine conjuguée directe', 'norme' => '< 4 µmol/l'],
-            ];
-        }
-
-        // 5. Hémostase / Coagulation (TP, TCK, INR)
-        if (str_contains($libelle, 'hémostase') || str_contains($libelle, 'prothrombine') || str_contains($libelle, 'tca') || str_contains($libelle, 'tck')) {
-            return [
-                ['demande' => 'Taux de Prothrombine (TP)', 'norme' => '70 - 100 %'],
-                ['demande' => 'Temps de Céphaline Activée (TCK/TCA)', 'norme' => '25 - 43 Secondes'],
-                ['demande' => 'INR', 'norme' => '0.70 - 1.3'],
-            ];
-        }
-
-        // 6. ECBU (Examen Cytobactériologique des Urines)
-        if (str_contains($libelle, 'ecbu') || str_contains($libelle, 'cytobactériologique des urines')) {
-            return [
-                ['demande' => 'Aspect (Macroscopie)', 'norme' => 'Clair / Jaune'],
-                ['demande' => 'Leucocytes', 'norme' => '< 10 000 /ml'],
-                ['demande' => 'Hématies', 'norme' => '< 10 000 /ml'],
-                ['demande' => 'Cellules épithéliales', 'norme' => 'Rares ou absentes'],
-                ['demande' => 'Cristaux / Cylindres', 'norme' => 'Absents'],
-                ['demande' => 'Levures / Parasites', 'norme' => 'Absents'],
-                ['demande' => 'Flore bactérienne', 'norme' => 'Absente'],
-                ['demande' => 'Numération des germes (Compte de Kass)', 'norme' => '< 10^3 UFC/ml'],
-                ['demande' => 'Espèce identifiée', 'norme' => ''],
-            ];
-        }
-
-        // 7. Bandelette Urinaire
         if (str_contains($libelle, 'bandelette')) {
             return [
                 ['demande' => 'Protéine', 'norme' => 'Négatif'],
                 ['demande' => 'Glucose', 'norme' => 'Négatif'],
                 ['demande' => 'Corps cétoniques', 'norme' => 'Négatif'],
-                ['demande' => 'Sang / Hématies', 'norme' => 'Négatif'],
-                ['demande' => 'Leucocytes', 'norme' => 'Négatif'],
-                ['demande' => 'Nitrites', 'norme' => 'Négatif'],
                 ['demande' => 'PH', 'norme' => '5 - 6.5'],
                 ['demande' => 'Densité urinaire', 'norme' => '1.003'],
             ];
         }
 
-        // 8. Coproculture / Selles
-        if (str_contains($libelle, 'copro') || str_contains($libelle, 'selles')) {
+        if (str_contains($libelle, 'nfs') || str_contains($libelle, 'numération')) {
+            $normeGB = match($profil) {
+                'NOUVEAU_NE' => '9000 - 30000 /mm3',
+                'ENFANT' => '6000 - 14000 /mm3',
+                default => '4000 - 10000 /mm3',
+            };
+            $normeGR = $isFemme ? '4 - 5.2 Millions/mm3' : '4.5 - 5.2 Millions/mm3';
+            $normeHb = $isFemme ? '12 - 16 g/dl' : '13 - 17 g/dl';
+            $normeHte = $isFemme ? '36 - 47 %' : '40 - 52 %';
+
             return [
-                ['demande' => 'Aspect / Consistance', 'norme' => 'Moulée'],
-                ['demande' => 'Leucocytes', 'norme' => 'Absents'],
-                ['demande' => 'Hématies', 'norme' => 'Absentes'],
-                ['demande' => 'Levures / Kystes', 'norme' => 'Absents'],
-                ['demande' => 'Œufs / Formes végétatives', 'norme' => 'Absents'],
-                ['demande' => 'Isolement et identification', 'norme' => 'Flore normale'],
+                ['demande' => 'Globules Blancs (GB)', 'norme' => $normeGB],
+                ['demande' => 'Polynucléaires Neutrophiles', 'norme' => '50 - 70 %'],
+                ['demande' => 'Lymphocytes', 'norme' => '20 - 40 %'],
+                ['demande' => 'Monocytes', 'norme' => '2 - 10 %'],
+                ['demande' => 'Polynucléaires Eosinophiles', 'norme' => '1 - 4 %'],
+                ['demande' => 'Polynucléaires Basophiles', 'norme' => '< 1 %'],
+                ['demande' => 'Globules Rouges (GR)', 'norme' => $normeGR],
+                ['demande' => 'Hémoglobine (Hb)', 'norme' => $normeHb],
+                ['demande' => 'Hématocrite', 'norme' => $normeHte],
+                ['demande' => 'Plaquettes', 'norme' => '150 000 - 450 000 /mm3'],
             ];
         }
 
-        // 9. Liquide Céphalo-Rachidien (LCR)
-        if (str_contains($libelle, 'lcr') || str_contains($libelle, 'rachidien')) {
+        // =====================================================================
+        // 7. EXAMENS STANDARDS (Pas de variation complexe)
+        // =====================================================================
+        
+        if (str_contains($libelle, 'crp')) {
+            return [['demande' => 'CRP', 'norme' => '< 6 mg/l']];
+        }
+
+        if (str_contains($libelle, 'goutte epaisse')) {
             return [
-                ['demande' => 'Aspect', 'norme' => 'Eau de roche'],
-                ['demande' => 'Leucocytes', 'norme' => '< 5 /mm3'],
-                ['demande' => 'Hématies', 'norme' => 'Absentes'],
-                ['demande' => 'Glucorachie', 'norme' => '2.5 - 4.4 mmol/l'],
-                ['demande' => 'Protéinorachie', 'norme' => '0.15 - 0.45 g/l'],
-                ['demande' => 'Chlorure du LCR', 'norme' => '120 - 130 mmol/l'],
+                ['demande' => 'Goutte épaisse (Recherche de Plasmodium)', 'norme' => 'Négatif / Absence'],
+                ['demande' => 'Densité parasitaire', 'norme' => '0']
             ];
         }
 
-        // 10. Spermogramme
-        if (str_contains($libelle, 'spermo')) {
-            return [
-                ['demande' => 'Volume', 'norme' => '≥ 1.5 ml'],
-                ['demande' => 'PH', 'norme' => '≥ 7.2'],
-                ['demande' => 'Numération', 'norme' => '20 - 200 millions/ml'],
-                ['demande' => 'Mobilité progressive (RP + LP)', 'norme' => '> 32% (ou total > 40%)'],
-                ['demande' => 'Vitalité (1ère heure)', 'norme' => '≥ 58%'],
-                ['demande' => 'Formes normales', 'norme' => '≥ 4%'],
-                ['demande' => 'Leucocytes / Cellules rondes', 'norme' => '< 1 million/ml'],
-            ];
+        if (str_contains($libelle, 'hemoglobine glyquee')) {
+            $norme = ($profil === 'ENFANT') ? '< 5.7 %' : '< 6 %';
+            return [['demande' => 'Hémoglobine glyquée (HbA1c)', 'norme' => $norme]];
         }
 
-        // 11. Widal / Sérologie Typhoïde
+        if (str_contains($libelle, 'vs')) {
+            $norme = match ($profil) {
+                'FEMME' => '0 - 20 mm/h',
+                'HOMME' => '0 - 15 mm/h',
+                default => '0 - 10 mm/h', // NOUVEAU_NE et ENFANT
+            };
+            return [['demande' => 'Vitesse de sédimentation (VS)', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'aslo')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '< 25 UI/ml',
+                'ENFANT' => '< 333 UI/ml',
+                default => '< 200 UI/ml',
+            };
+            return [['demande' => 'ASLO', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'ige')) {
+            $norme = match ($profil) {
+                'NOUVEAU_NE' => '< 15 UI/ml',
+                'ENFANT' => '10 - 100 UI/ml',
+                'FEMME' => '< 150 UI/ml',
+                default => '<= 150 UI/ml',
+            };
+            return [['demande' => 'IgE totale', 'norme' => $norme]];
+        }
+        
+        if (str_contains($libelle, 'troponine')) {
+            $norme = ($profil === 'NOUVEAU_NE') ? '< 0.1 ng/ml' : '< 0.2 ng/ml';
+            return [['demande' => 'Troponine', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'd dimères') || str_contains($libelle, 'dimeres')) {
+            return [['demande' => 'D-Dimère', 'norme' => '< 0.5 mg/l']];
+        }
+
+        if (str_contains($libelle, 'psa')) {
+            $norme = ($profil === 'NOUVEAU_NE') ? '< 0.1 ng/ml' : '< 4 ng/ml';
+            return [['demande' => 'PSA', 'norme' => $norme]];
+        }
+
+        if (str_contains($libelle, 'protéine urinaire') || str_contains($libelle, 'proteinurie')) {
+            return [['demande' => 'Protéinurie de 24h', 'norme' => '< 0.15 g/24h']];
+        }
+
+        if (str_contains($libelle, 'micro albuminurie') || str_contains($libelle, 'micro albuminémie')) {
+            return [['demande' => 'Micro-albuminurie', 'norme' => '< 20 mg/l']];
+        }
+
+        if (str_contains($libelle, 'tp') && !str_contains($libelle, 'tgp')) {
+            return [['demande' => 'Taux de Prothrombine (TP)', 'norme' => '70 - 100 %']];
+        }
+
+        if (str_contains($libelle, 'tck') || str_contains($libelle, 'tca')) {
+            return [['demande' => 'TCK / TCA', 'norme' => '25 - 43 Secondes']];
+        }
+
+        if (str_contains($libelle, 'vitamine b12') || str_contains($libelle, 'vit b12')) {
+            return [['demande' => 'Vitamine B12', 'norme' => '200 - 900 Pmol/l']];
+        }
+
         if (str_contains($libelle, 'widal') || str_contains($libelle, 'salmonella')) {
             return [
                 ['demande' => 'Antigène O (Typhi)', 'norme' => 'Négatif'],
@@ -1084,63 +1382,11 @@ public function saisirResultat(
             ];
         }
 
-        // 12. Groupage Sanguin
-        if (str_contains($libelle, 'groupage')) {
-            return [
-                ['demande' => 'Groupe sanguin (ABO)', 'norme' => ''],
-                ['demande' => 'Rhésus (D)', 'norme' => ''],
-            ];
-        }
-
-        // --- NOUVEAUX BLOCS À AJOUTER/MODIFIER ---
-
-        // Beta HCG
-        if (str_contains($libelle, 'beta hcg') || str_contains($libelle, 'béta hcg') || str_contains($libelle, 'β hcg')) {
-            return [['demande' => 'Beta HCG', 'norme' => '< 5 mUI/ml']];
-        }
-
-        // Antigène HBs / Hépatite B
-        if (str_contains($libelle, 'antigène hbs') || str_contains($libelle, 'ag hbs')) {
-            return [['demande' => 'Antigène HBs', 'norme' => 'Négatif']];
-        }
-
-        // Bilirubine détaillée (Si c'est prescrit individuellement)
-        if (str_contains($libelle, 'bilirubine indirecte')) {
-            return [['demande' => 'Bilirubine indirecte', 'norme' => '< 17 µmol/l']];
-        }
-        if (str_contains($libelle, 'bilirubine directe') || str_contains($libelle, 'conjuguée')) {
-            return [['demande' => 'Bilirubine conjuguée directe', 'norme' => '< 4 µmol/l']];
-        }
-        if (str_contains($libelle, 'bilirubine totale')) {
-            return [['demande' => 'Bilirubine totale', 'norme' => '< 21 µmol/l']];
-        }
-
-        // ================= TESTS UNIQUES FREQUENTS =================
-        if (str_contains($libelle, 'glycémie')) {
-            return [['demande' => 'Glucose', 'norme' => '0.60 - 1.10 g/l']];
-        }
-        if (str_contains($libelle, 'urée')) {
-            return [['demande' => 'Urée', 'norme' => '0.15 - 0.45 g/l']];
-        }
-        if (str_contains($libelle, 'créatinine')) {
-            return [['demande' => 'Créatinine', 'norme' => 'H: 7-14 mg/l | F: 6-11 mg/l']];
-        }
-        if (str_contains($libelle, 'acide urique')) {
-            return [['demande' => 'Acide urique', 'norme' => 'H: 35-70 mg/l | F: 20-50 mg/l']];
-        }
-        if (str_contains($libelle, 'crp')) {
-            return [['demande' => 'Protéine C-Réactive (CRP)', 'norme' => '< 6 mg/l']];
-        }
-        if (str_contains($libelle, 'ferritinémie') || str_contains($libelle, 'ferritine')) {
-            return [['demande' => 'Ferritine', 'norme' => 'H: 30-300 ng/ml | F: 20-150 ng/ml']];
-        }
-        if (str_contains($libelle, 'psa')) {
-            return [['demande' => 'PSA', 'norme' => '< 4 ng/ml']];
-        }
-
-        // PAR DÉFAUT : Si l'examen n'est pas dans la liste, on crée 1 seule ligne avec le nom de l'examen
+        // =====================================================================
+        // PAR DÉFAUT (Fallback si non trouvé dans les règles ci-dessus)
+        // =====================================================================
         return [
-            ['demande' => $libelleExamen, 'norme' => '']
+            ['demande' => ucfirst($libelleInitial), 'norme' => '']
         ];
     }
 }

@@ -162,7 +162,7 @@
 {# Initialisation des variables #}
 {% set statut = hospitalisation.statut.value ?? hospitalisation.statut %}
 {% set patient = hospitalisation.dossierMedical.patient ?? null %}
-{% set today = "now"|date("Y-m-d") %}
+{% set today = "now"|date("Y-m-d", "Africa/Niamey") %}
 {% set nowTs = "now"|date("U") %}
 {% set missedCount = 0 %}
 {% set endingTodayCount = 0 %}

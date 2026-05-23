@@ -1,6 +1,12 @@
 {% if traitement.planification is empty %}
     <tr data-traitement-id="{{ traitement.id }}">
-        <td colspan="26" class="text-center text-muted py-3">
+        {# 1. On affiche la colonne avec le nom du traitement #}
+        <td class="text-start fw-bold small medic-text">
+            <div>{{ traitement.description|default('Traitement') }}</div>
+            <div class="small text-muted mt-1">ID: {{ traitement.id }}</div>
+        </td>
+        {# 2. Le message d'erreur prend les 25 colonnes restantes au lieu de 26 #}
+        <td colspan="25" class="text-center text-muted py-3 bg-light">
             Aucune planification définie pour ce traitement.
         </td>
     </tr>
