@@ -6,6 +6,7 @@ use App\Entity\Consultation;
 use App\Entity\PrescriptionPrestation;
 use App\Entity\ResultatLaboratoire;
 use App\Entity\ResultatLaboratoireLigne;
+use App\Entity\Utilisateur;
 use App\Enum\StatutPrescriptionPrestation;
 use App\Form\ResultatLaboratoireType;
 use App\Repository\PrescriptionPrestationRepository;
@@ -24,6 +25,8 @@ use Dompdf\Options;
 use setasign\Fpdi\Fpdi;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Repository\ResultatLaboratoireRepository;
+use App\Repository\UtilisateurRepository;
 
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 #[Route('/laboratoire')]
@@ -1387,6 +1390,166 @@ public function consultationShow(
         // =====================================================================
         return [
             ['demande' => ucfirst($libelleInitial), 'norme' => '']
+        ];
+    }
+
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"))]
+    #[Route('/rapport-agents', name: 'app_laboratoire_rapport_agents', methods: ['GET'])]
+    public function rapportAgents(
+        Request $request,
+        ResultatLaboratoireRepository $resultatRepo,
+        UtilisateurRepository $utilisateurRepo
+    ): Response {
+        return $this->render('laboratoire/rapport_agents.html.twig', $this->buildLaboReportData(
+            $request,
+            $resultatRepo,
+            $utilisateurRepo
+        ));
+    }
+
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_LABO')"))]
+    #[Route('/rapport-agents/pdf', name: 'app_laboratoire_rapport_agents_pdf', methods: ['GET'])]
+    public function rapportAgentsPdf(
+        Request $request,
+        ResultatLaboratoireRepository $resultatRepo,
+        UtilisateurRepository $utilisateurRepo
+    ): Response {
+        $data = $this->buildLaboReportData($request, $resultatRepo, $utilisateurRepo);
+
+        $html = $this->renderView('laboratoire/rapport_agents_pdf.html.twig', array_merge($data, [
+            'generatedAt' => new \DateTimeImmutable(),
+            'logo_path' => $this->getEmbeddedLogo(),
+        ]));
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('chroot', $this->getParameter('kernel.project_dir') . '/public');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="rapport-laboratoire.pdf"',
+        ]);
+    }
+
+    private function parseDateFilter(string $value, bool $endOfDay): ?\DateTimeImmutable
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        if (!$date instanceof \DateTimeImmutable) {
+            return null;
+        }
+
+        return $endOfDay ? $date->setTime(23, 59, 59) : $date->setTime(0, 0, 0);
+    }
+
+    private function buildLaboReportData(
+        Request $request,
+        ResultatLaboratoireRepository $resultatRepo,
+        UtilisateurRepository $utilisateurRepo
+    ): array {
+        $search = trim((string) $request->query->get('search', ''));
+        $agentId = max(0, (int) $request->query->get('agent', 0));
+        $dateDebutInput = trim((string) $request->query->get('dateDebut', ''));
+        $dateFinInput = trim((string) $request->query->get('dateFin', ''));
+        
+        $dateDebut = $this->parseDateFilter($dateDebutInput, false);
+        $dateFin = $this->parseDateFilter($dateFinInput, true);
+        
+        $currentUser = $this->getUser();
+        $connectedUser = $currentUser instanceof Utilisateur ? $currentUser : null;
+        $agentFilterLocked = !$this->isGranted('ROLE_ADMIN') && $connectedUser instanceof Utilisateur;
+
+        if ($agentFilterLocked) {
+            $agentId = $connectedUser->getId() ?? 0;
+        }
+
+        $qb = $resultatRepo->createQueryBuilder('rl')
+            ->leftJoin('rl.prescriptionPrestation', 'pp')->addSelect('pp')
+            ->leftJoin('pp.consultation', 'c')->addSelect('c')
+            ->leftJoin('c.rendezVous', 'r')->addSelect('r')
+            ->leftJoin('c.dossierMedical', 'cdm')->addSelect('cdm')
+            ->leftJoin('r.patient', 'p')->addSelect('p')
+            ->leftJoin('cdm.patient', 'dmp')->addSelect('dmp')
+            ->leftJoin('p.dossierMedical', 'pdm')->addSelect('pdm')
+            ->where('rl.dateValidation IS NOT NULL');
+
+        if ($search !== '') {
+            $qb->andWhere(
+                'LOWER(COALESCE(p.code, dmp.code, \'\')) LIKE :search
+                OR LOWER(COALESCE(p.telephone, dmp.telephone, \'\')) LIKE :search
+                OR LOWER(COALESCE(pdm.numeroDossier, cdm.numeroDossier, \'\')) LIKE :search
+                OR LOWER(CONCAT(COALESCE(p.nom, dmp.nom, \'\'), \' \', COALESCE(p.prenom, dmp.prenom, \'\'))) LIKE :search'
+            )
+            ->setParameter('search', '%' . mb_strtolower($search) . '%');
+        }
+
+        if ($agentId > 0) {
+            $selectedAgent = $utilisateurRepo->find($agentId);
+            if ($selectedAgent) {
+                // On reconstitue la chaîne exacte sauvegardée en BDD pour filtrer
+                $agentLabel = $this->buildLaborantinLabel($selectedAgent);
+                $qb->andWhere('rl.validePar = :agentLabel')
+                   ->setParameter('agentLabel', $agentLabel);
+            }
+        }
+
+        if ($dateDebut instanceof \DateTimeImmutable) {
+            $qb->andWhere('rl.dateValidation >= :dateDebut')
+                ->setParameter('dateDebut', $dateDebut);
+        }
+
+        if ($dateFin instanceof \DateTimeImmutable) {
+            $qb->andWhere('rl.dateValidation <= :dateFin')
+                ->setParameter('dateFin', $dateFin);
+        }
+
+        /** @var list<ResultatLaboratoire> $resultats */
+        $resultats = $qb->orderBy('rl.dateValidation', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $rapportAgents = [];
+
+        foreach ($resultats as $resultat) {
+            $agentLabel = $resultat->getValidePar() ?: 'Compte non renseigné';
+
+            if (!isset($rapportAgents[$agentLabel])) {
+                $rapportAgents[$agentLabel] = [
+                    'libelle' => $agentLabel,
+                    'nombreAnalyses' => 0,
+                ];
+            }
+            $rapportAgents[$agentLabel]['nombreAnalyses']++;
+        }
+
+        $rapportAgents = array_values($rapportAgents);
+        usort(
+            $rapportAgents,
+            static fn (array $a, array $b) => $b['nombreAnalyses'] <=> $a['nombreAnalyses']
+        );
+
+        return [
+            'resultats' => $resultats,
+            'agents' => $agentFilterLocked && $connectedUser instanceof Utilisateur
+                ? [$connectedUser]
+                : $utilisateurRepo->findUsersByRoles(['ROLE_LABO']), // Assurez-vous que c'est le bon rôle
+            'rapportAgents' => $rapportAgents,
+            'agentFilterLocked' => $agentFilterLocked,
+            'selectedAgentId' => $agentId,
+            'dateDebut' => $dateDebutInput,
+            'dateFin' => $dateFinInput,
+            'nbAnalyses' => count($resultats),
+            'nbAgentsActifs' => count($rapportAgents),
+            'search' => $search,
         ];
     }
 }

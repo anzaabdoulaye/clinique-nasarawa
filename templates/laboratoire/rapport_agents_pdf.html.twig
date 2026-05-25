@@ -1,0 +1,149 @@
+{# laboratoire/rapport_agents_pdf.html.twig #}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport Laboratoire</title>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 10px; color: #1f2937; margin: 0; }
+        .header { width: 100%; border-bottom: 2px solid #0f4c81; margin-bottom: 12px; padding-bottom: 8px; }
+        .header-table, .summary-table, .data-table { width: 100%; border-collapse: collapse; }
+        .logo-cell { width: 70px; vertical-align: top; }
+        .logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db; }
+        .title-cell { vertical-align: top; }
+        .title { font-size: 20px; font-weight: bold; color: #0f4c81; margin-bottom: 4px; }
+        .subtitle, .meta { color: #6b7280; font-size: 9px; line-height: 1.4; }
+        .section-title { margin: 14px 0 6px; font-size: 12px; font-weight: bold; color: #0f4c81; }
+        .summary-table td { width: 50%; border: 1px solid #d1d5db; background: #f8fafc; padding: 8px; vertical-align: top; }
+        .summary-label { color: #6b7280; font-size: 9px; margin-bottom: 4px; }
+        .summary-value { font-size: 16px; font-weight: bold; color: #111827; }
+        .filters { border: 1px solid #d1d5db; padding: 8px; background: #fcfcfd; line-height: 1.6; }
+        .data-table th, .data-table td { border: 1px solid #d1d5db; padding: 6px; vertical-align: top; }
+        .data-table th { background: #0f4c81; color: #ffffff; text-align: left; font-weight: bold; }
+        .right { text-align: right; }
+        .muted { color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    {% if logo_path %}
+                        <img src="{{ logo_path }}" alt="Logo" class="logo">
+                    {% endif %}
+                </td>
+                <td class="title-cell">
+                    <div class="title">Rapport d'activité Laboratoire</div>
+                    <div class="subtitle">
+                        {% if is_granted('ROLE_ADMIN') %}
+                            Synthèse globale des examens validés par agent.
+                        {% else %}
+                            Synthèse de vos examens réalisés.
+                        {% endif %}
+                    </div>
+                    <div class="meta">Généré le {{ generatedAt|date('Y-m-d H:i') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section-title">Synthèse</div>
+    <table class="summary-table">
+        <tr>
+            <td>
+                <div class="summary-label">Analyses validées filtrées</div>
+                <div class="summary-value">{{ nbAnalyses }}</div>
+            </td>
+            <td>
+                <div class="summary-label">Agents actifs</div>
+                <div class="summary-value">{{ nbAgentsActifs }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Filtres appliqués</div>
+    <div class="filters">
+        <div><strong>Recherche :</strong> {{ search is not empty ? search : 'Aucun filtre' }}</div>
+        <div><strong>Agent :</strong>
+            {% if selectedAgentId > 0 %}
+                {% set selectedAgent = null %}
+                {% for agent in agents %}
+                    {% if agent.id == selectedAgentId %}
+                        {% set selectedAgent = agent %}
+                    {% endif %}
+                {% endfor %}
+                {{ selectedAgent ? selectedAgent.nomComplet ~ (selectedAgent.username ? ' | ' ~ selectedAgent.username : '') : 'Compte filtré' }}
+            {% else %}
+                Tous les agents
+            {% endif %}
+        </div>
+        <div><strong>Période :</strong> {{ dateDebut is not empty ? dateDebut : 'Début non défini' }} au {{ dateFin is not empty ? dateFin : 'Aujourd\'hui' }}</div>
+    </div>
+
+    <div class="section-title">Analyses par agent</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Agent (Compte Laborantin)</th>
+                <th class="right">Nombre d'analyses validées</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in rapportAgents %}
+                <tr>
+                    <td>{{ ligne.libelle }}</td>
+                    <td class="right">{{ ligne.nombreAnalyses }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="2" class="muted text-center">Aucune analyse trouvée pour ces filtres.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Journal détaillé des examens</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date validation</th>
+                <th>Examen</th>
+                <th>Patient</th>
+                <th>Agent ayant validé</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for res in resultats %}
+                {% set consultation = res.prescriptionPrestation.consultation|default(null) %}
+                {% set patient = null %}
+                {% if consultation %}
+                    {% if consultation.rendezVous and consultation.rendezVous.patient %}
+                        {% set patient = consultation.rendezVous.patient %}
+                    {% elseif consultation.dossierMedical and consultation.dossierMedical.patient %}
+                        {% set patient = consultation.dossierMedical.patient %}
+                    {% endif %}
+                {% endif %}
+                <tr>
+                    <td>{{ res.dateValidation|date('Y-m-d H:i') }}</td>
+                    <td>{{ res.prescriptionPrestation.tarifPrestation.libelle|default('Examen') }}</td>
+                    <td>
+                        {% if patient %}
+                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ res.validePar|default('Non renseigné') }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="muted text-center">Aucun examen validé trouvé.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
