@@ -54,6 +54,22 @@ class MouvementStock
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $motif = null;
+
+   #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $stockApresMouvement = null;
+
+    public function getStockApresMouvement(): ?int
+    {
+        return $this->stockApresMouvement;
+    }
+
+    public function setStockApresMouvement(?int $stockApresMouvement): self
+    {
+        $this->stockApresMouvement = $stockApresMouvement;
+
+        return $this;
+    }
+    
     public function getId(): ?int
     {
         return $this->id;

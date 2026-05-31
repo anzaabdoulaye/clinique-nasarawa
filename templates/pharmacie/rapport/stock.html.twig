@@ -116,12 +116,12 @@
                     <table class="table table-hover align-middle mb-0 datatable">
                         <thead class="table-light">
                             <tr>
-                                <th class="fw-semibold">Consomable</th>
+                                <th class="fw-semibold">Consommable</th>
                                 <th class="fw-semibold">SKU</th>
                                 <th class="fw-semibold text-center">Lots</th>
-                                <th class="fw-semibold text-center">Stock actuel</th>
                                 <th class="fw-semibold text-center text-success">Entrées</th>
                                 <th class="fw-semibold text-center text-danger">Sorties</th>
+                                <th class="fw-semibold text-center">Stock final</th>
                                 <th class="fw-semibold text-end">Prix unit.</th>
                                 <th class="fw-semibold text-end">Valeur stock</th>
                                 <th class="fw-semibold">Péremption</th>
@@ -133,6 +133,14 @@
                                     <td class="fw-semibold">{{ r.medicament_nom }}</td>
                                     <td><span class="text-muted">{{ r.sku ?? '—' }}</span></td>
                                     <td class="text-center">{{ r.nb_lots }}</td>
+                                    
+                                    <td class="text-center text-success fw-semibold">
+                                        {% if r.entrees_periode > 0 %}+{{ r.entrees_periode }}{% else %}—{% endif %}
+                                    </td>
+                                    <td class="text-center text-danger fw-semibold">
+                                        {% if r.sorties_periode > 0 %}-{{ r.sorties_periode }}{% else %}—{% endif %}
+                                    </td>
+
                                     <td class="text-center">
                                         {% if r.stock_actuel <= 5 %}
                                             <span class="badge bg-danger-subtle text-danger border px-3 py-2">{{ r.stock_actuel }}</span>
@@ -142,12 +150,7 @@
                                             <span class="badge bg-success-subtle text-success border px-3 py-2">{{ r.stock_actuel }}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-center text-success fw-semibold">
-                                        {% if r.entrees_periode > 0 %}+{{ r.entrees_periode }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="text-center text-danger fw-semibold">
-                                        {% if r.sorties_periode > 0 %}-{{ r.sorties_periode }}{% else %}—{% endif %}
-                                    </td>
+                                    
                                     <td class="text-end">{{ r.prix_unitaire|number_format(0, ',', ' ') }} F</td>
                                     <td class="text-end fw-bold">{{ (r.stock_actuel * r.prix_unitaire)|number_format(0, ',', ' ') }} F</td>
                                     <td>
@@ -171,9 +174,9 @@
                         <tfoot class="table-light">
                             <tr class="fw-bold">
                                 <td colspan="3">TOTAL</td>
-                                <td class="text-center">{{ totalStock }}</td>
                                 <td class="text-center text-success">{{ totalEntrees }}</td>
                                 <td class="text-center text-danger">{{ totalSorties }}</td>
+                                <td class="text-center">{{ totalStock }}</td>
                                 <td></td>
                                 <td class="text-end text-primary">{{ totalValeur|number_format(0, ',', ' ') }} F</td>
                                 <td></td>

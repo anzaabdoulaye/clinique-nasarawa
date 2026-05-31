@@ -43,7 +43,8 @@ class PharmacyManager
             $quantiteAPrendre = min($stockDisponibleDansCeLot, $quantiteRestanteADeduire);
 
             // 1. Mise à jour du lot
-            $lot->setQuantite($stockDisponibleDansCeLot - $quantiteAPrendre);
+            $nouveauStock = $stockDisponibleDansCeLot - $quantiteAPrendre; // ⚠️ On calcule
+            $lot->setQuantite($nouveauStock);
 
             // 2. Traçabilité (Mouvement)
             $mvt = new MouvementStock();
@@ -51,6 +52,8 @@ class PharmacyManager
             $mvt->setLot($lot);
             $mvt->setType(TypeMouvementStock::SORTIE_PATIENT);
             $mvt->setQuantite(-$quantiteAPrendre); // Quantité négative
+            // ⚠️ NOUVEAU : On fige le stock final !
+            $mvt->setStockApresMouvement($nouveauStock);
             $mvt->setValeurAchatUnitaire($lot->getPrixAchat());
             $mvt->setReferenceDocument($referenceFacture); // Ex: 'FACTURE-1045'
             $mvt->setOperateur($operateur);

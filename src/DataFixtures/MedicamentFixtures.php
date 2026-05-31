@@ -12,8 +12,7 @@ class MedicamentFixtures extends Fixture
     {
         // Liste enrichie pour correspondre parfaitement au catalogue des tarifs
         $medicaments = [
-            'Paracétamol', 'Arbun 120', 'Artisun 60', 'Ceftri 1g', 'Glucose 500',
-            'Glucose 250', 'Meto', 'Anagin', 'Butyl inj', 'HPV', 'DEXA', 'GENTA 80',
+            'Paracétamol', 'Artesun 120', 'Artesun 60', 'Ceftri 1g', 'Meto', 'Anagin', 'Butyl inj', 'HPV', 'DEXA', 'GENTA 80',
             'Trabar 100', 'Acupan', 'Amp 1g', 'Oméprazole', 'Aspégic', 'Solumédrol 120',
             'Solumédrol 1g', 'Citicoline', 'PHENO 100', 'Tanganil', 'Laroxyl 50',
             'Largactil 25', 'Diazépam', 'Atemther 80', 'Cipro 200', 'Metro 500',

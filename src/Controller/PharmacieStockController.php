@@ -52,6 +52,7 @@ class PharmacieStockController extends AbstractController
             }
 
             // 2. Mettre à jour le Lot (Quantité globale + Dernier prix d'achat)
+            $nouveauStock = $lot->getQuantite() + $quantite;
             $lot->setQuantite($lot->getQuantite() + $quantite);
             $lot->setPrixAchat($prixAchat);
 
@@ -61,6 +62,7 @@ class PharmacieStockController extends AbstractController
             $mouvement->setLot($lot);
             $mouvement->setType(TypeMouvementStock::ENTREE_ACHAT);
             $mouvement->setQuantite($quantite); // Quantité positive = Entrée
+            $mouvement->setStockApresMouvement($nouveauStock);
             $mouvement->setValeurAchatUnitaire($prixAchat);
             
             // Récupération de l'utilisateur connecté
@@ -105,6 +107,7 @@ class PharmacieStockController extends AbstractController
             }
 
             // 1. Déduction du stock
+            $nouveauStock = $lot->getQuantite() - $quantiteSortie;
             $lot->setQuantite($lot->getQuantite() - $quantiteSortie);
 
             // 2. Traçabilité (Mouvement)
@@ -113,6 +116,7 @@ class PharmacieStockController extends AbstractController
             $mouvement->setLot($lot);
             $mouvement->setType($data['type']); // SORTIE_PERTE, SORTIE_SERVICE, etc.
             $mouvement->setQuantite(-$quantiteSortie); // ⚠️ Attention : Quantité NÉGATIVE
+            $mouvement->setStockApresMouvement($nouveauStock);
             $mouvement->setValeurAchatUnitaire($lot->getPrixAchat());
             $mouvement->setMotif($data['motif']);
             

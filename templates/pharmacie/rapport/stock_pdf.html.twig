@@ -1,5 +1,4 @@
 {# templates/pharmacie/rapport/stock_pdf.html.twig #}
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -11,20 +10,23 @@
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0d6efd; padding-bottom: 15px; }
         .header h1 { font-size: 18px; color: #0d6efd; margin-bottom: 4px; }
         .header p { font-size: 11px; color: #666; }
-        .kpi-row { display: table; width: 100%; margin-bottom: 15px; }
-        .kpi { display: table-cell; text-align: center; padding: 8px; border: 1px solid #dee2e6; }
-        .kpi .label { font-size: 9px; color: #888; text-transform: uppercase; }
-        .kpi .value { font-size: 16px; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8f9fa; font-size: 9px; text-transform: uppercase; color: #555; padding: 6px 4px; border: 1px solid #dee2e6; text-align: left; }
-        td { padding: 5px 4px; border: 1px solid #dee2e6; font-size: 10px; }
+        
+        /* Remplacement des blocs KPI par une vraie table pour éviter le bug Dompdf */
+        .kpi-table { width: 100%; margin-bottom: 15px; border-collapse: collapse; }
+        .kpi-table td { text-align: center; padding: 8px; border: 1px solid #dee2e6; width: 33.33%; }
+        .kpi-table .label { font-size: 9px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .kpi-table .value { font-size: 16px; font-weight: bold; }
+
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .data-table th { background: #f8f9fa; font-size: 9px; text-transform: uppercase; color: #555; padding: 6px 4px; border: 1px solid #dee2e6; text-align: left; }
+        .data-table td { padding: 5px 4px; border: 1px solid #dee2e6; font-size: 10px; }
         .text-center { text-align: center; }
         .text-end { text-align: right; }
         .text-success { color: #198754; }
         .text-danger { color: #dc3545; }
         .text-primary { color: #0d6efd; }
         .fw-bold { font-weight: bold; }
-        tfoot td { background: #f8f9fa; font-weight: bold; }
+        .data-table tfoot td { background: #f8f9fa; font-weight: bold; }
         .footer { margin-top: 20px; text-align: center; font-size: 9px; color: #999; border-top: 1px solid #dee2e6; padding-top: 10px; }
         .badge-danger { background: #dc3545; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; }
         .badge-warning { background: #ffc107; color: #333; padding: 1px 5px; border-radius: 3px; font-size: 9px; }
@@ -49,36 +51,30 @@
     {% set totalValeur = totalValeur + (r.stock_actuel * r.prix_unitaire) %}
 {% endfor %}
 
-<div class="kpi-row">
-    <div class="kpi">
-        <div class="label">Consommable</div>
-        <div class="value">{{ resultats|length }}</div>
-    </div>
-    <div class="kpi">
-        <div class="label">Entrées</div>
-        <div class="value text-success">{{ totalEntrees }}</div>
-    </div>
-    <div class="kpi">
-        <div class="label">Sorties</div>
-        <div class="value text-danger">{{ totalSorties }}</div>
-    </div>
-   {#  <div class="kpi">
-        <div class="label">Valeur stock</div>
-        <div class="value text-primary">{{ totalValeur|number_format(0, ',', ' ') }} F</div>
-    </div> #}
-</div>
+<table class="kpi-table">
+    <tr>
+        <td>
+            <div class="label">Consommable</div>
+            <div class="value">{{ resultats|length }}</div>
+        </td>
+        <td>
+            <div class="label">Entrées</div>
+            <div class="value text-success">{{ totalEntrees }}</div>
+        </td>
+        <td>
+            <div class="label">Sorties</div>
+            <div class="value text-danger">{{ totalSorties }}</div>
+        </td>
+    </tr>
+</table>
 
-<table>
+<table class="data-table">
     <thead>
         <tr>
             <th>Médicament</th>
-            <th>SKU</th>
-       
-            <th class="text-center">Stock</th>
             <th class="text-center">Entrées</th>
             <th class="text-center">Sorties</th>
-            <th class="text-end">Prix unit.</th>
-            <th class="text-end">Valeur</th>
+            <th class="text-center">Stock final</th>
             <th>Péremption</th>
         </tr>
     </thead>
@@ -86,13 +82,10 @@
         {% for r in resultats %}
             <tr>
                 <td class="fw-bold">{{ r.medicament_nom }}</td>
-                <td>{{ r.sku ?? '—' }}</td>
 
-                <td class="text-center fw-bold">{{ r.stock_actuel }}</td>
                 <td class="text-center text-success">{% if r.entrees_periode > 0 %}+{{ r.entrees_periode }}{% else %}—{% endif %}</td>
                 <td class="text-center text-danger">{% if r.sorties_periode > 0 %}-{{ r.sorties_periode }}{% else %}—{% endif %}</td>
-                <td class="text-end">{{ r.prix_unitaire|number_format(0, ',', ' ') }} F</td>
-                <td class="text-end fw-bold">{{ (r.stock_actuel * r.prix_unitaire)|number_format(0, ',', ' ') }} F</td>
+                <td class="text-center fw-bold">{{ r.stock_actuel }}</td>
                 <td>
                     {% if r.prochaine_peremption %}
                         {% set peremption = r.prochaine_peremption|date('U') %}
@@ -113,10 +106,10 @@
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="3" class="fw-bold">TOTAL</td>
-            <td class="text-center">{{ totalStock }}</td>
+            <td colspan="2" class="fw-bold">TOTAL</td>
             <td class="text-center text-success">{{ totalEntrees }}</td>
             <td class="text-center text-danger">{{ totalSorties }}</td>
+            <td class="text-center">{{ totalStock }}</td>
             <td></td>
             <td class="text-end text-primary">{{ totalValeur|number_format(0, ',', ' ') }} F</td>
             <td></td>
