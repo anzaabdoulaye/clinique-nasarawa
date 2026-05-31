@@ -3,12 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\DossierMedical;
+use App\Entity\ObservationMedicale;
+use App\Form\ObservationMedicaleType;
 use App\Form\DossierMedicalType;
 use App\Repository\ConsultationRepository;
 use App\Repository\DossierMedicalRepository;
 use App\Repository\HospitalisationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -26,8 +29,10 @@ final class DossierMedicalController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_dossier_medical_show', methods: ['GET'])]
+   #[Route('/{id}', name: 'app_dossier_medical_show', methods: ['GET', 'POST'])] // ⚠️ Ajout de POST
     public function show(
+        Request $request, // ⚠️ Ajout de la Request
+        EntityManagerInterface $entityManager, // ⚠️ Ajout de l'EntityManager
         DossierMedical $dossierMedical,
         ConsultationRepository $consultationRepository,
         HospitalisationRepository $hospitalisationRepository
@@ -42,6 +47,26 @@ final class DossierMedicalController extends AbstractController
             ['createdAt' => 'DESC']
         );
 
+        // --- DÉBUT : LOGIQUE D'AJOUT D'OBSERVATION ---
+        $observation = new \App\Entity\ObservationMedicale();
+        $formObservation = $this->createForm(\App\Form\ObservationMedicaleType::class, $observation);
+        $formObservation->handleRequest($request);
+
+        if ($formObservation->isSubmitted() && $formObservation->isValid()) {
+            // Injections sécurisées automatiques
+            $observation->setDossier($dossierMedical);
+            $observation->setMedecinAuteur($this->getUser());
+
+            $entityManager->persist($observation);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'L\'observation a été ajoutée au dossier avec succès.');
+
+            // Redirection pour éviter la double soumission du formulaire (F5)
+            return $this->redirectToRoute('app_dossier_medical_show', ['id' => $dossierMedical->getId()]);
+        }
+        // --- FIN : LOGIQUE D'AJOUT D'OBSERVATION ---
+
         $derniereConsultation = $consultations[0] ?? null;
         $derniereHospitalisation = $hospitalisations[0] ?? null;
 
@@ -52,6 +77,7 @@ final class DossierMedicalController extends AbstractController
             'hospitalisations' => $hospitalisations,
             'derniereConsultation' => $derniereConsultation,
             'derniereHospitalisation' => $derniereHospitalisation,
+            'formObservation' => $formObservation->createView(), // ⚠️ Envoi du formulaire à la vue
         ]);
     }
 

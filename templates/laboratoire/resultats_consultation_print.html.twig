@@ -93,10 +93,23 @@
                         </thead>
                         <tbody>
                             {% if resultat and resultat.lignes|length > 0 %}
+                                {% set currentGroupe = null %}
                                 {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
                                     {% if ligne.resultat is not empty and ligne.resultat|trim != '-' and ligne.resultat|trim != '' %}
+                                        
+                                        {# GESTION DE L'AFFICHAGE DU GROUPE #}
+                                        {% set displayGroupe = ligne.groupe|default('Analyses Générales') %}
+                                        {% if currentGroupe != displayGroupe %}
+                                            <tr>
+                                                <td colspan="3" style="background-color: #f3f4f6; color: #0f4c81; font-weight: bold; padding: 4px 6px; text-transform: uppercase; font-size: 9px; border: 1px solid #d1d5db;">
+                                                    {{ displayGroupe }}
+                                                </td>
+                                            </tr>
+                                            {% set currentGroupe = displayGroupe %}
+                                        {% endif %}
+
                                         <tr>
-                                            <td>{{ ligne.demande }}</td>
+                                            <td style="padding-left: 12px;">{{ ligne.demande }}</td>
                                             <td><strong>{{ ligne.resultat }}</strong></td>
                                             <td style="color: #4b5563;">{{ ligne.valeurNormale ?: '-' }}</td>
                                         </tr>
@@ -107,14 +120,71 @@
                                     <td>{{ prescription.tarifPrestation.libelle }}</td>
                                     <td><strong>{{ (resultat and resultat.resultat) ? resultat.resultat : '-' }}</strong></td>
                                     <td>-</td>
-                                </tr> {# Correction de la balise HTML et Twig ici #}
+                                </tr>
                             {% endif %}
                         </tbody>
                     </table>
 
+                    {% if resultat and resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
+                        {% for antibiogramme in resultat.antibiogrammes %}
+                            <div style="margin-top: 10px; border: 1px solid #d1d5db;">
+                                <div style="background-color: #e5e7eb; padding: 4px 6px; font-weight: bold; font-size: 9.5px; color: #0f4c81;">
+                                    <span style="text-transform: uppercase;">Antibiogramme</span> - Germe isolé : <span style="color: #b91c1c;">{{ antibiogramme.germe.nom }}</span>
+                                </div>
+
+                                {% if antibiogramme.numeration or antibiogramme.commentaire %}
+                                    <div style="padding: 4px 6px; font-size: 8.5px; border-bottom: 1px solid #d1d5db; background-color: #f9fafb;">
+                                        {% if antibiogramme.numeration %}<span style="margin-right: 15px;"><strong>Numération :</strong> {{ antibiogramme.numeration }}</span>{% endif %}
+                                        {% if antibiogramme.commentaire %}<span><strong>Observation :</strong> {{ antibiogramme.commentaire }}</span>{% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <table class="data-table" style="border: none; margin-bottom: 0;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50%; border-left: none;">Antibiotique testé</th>
+                                            <th style="width: 25%;">Famille</th>
+                                            <th style="width: 25%; border-right: none;">Sensibilité</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set hasSaisi = false %}
+                                        {% for ligneATB in antibiogramme.lignes %}
+                                            {% if ligneATB.sensibilite is not empty %}
+                                                {% set hasSaisi = true %}
+                                                <tr>
+                                                    <td style="border-left: none; padding-left: 12px;">{{ ligneATB.antibiotique.nom }}</td>
+                                                    <td>{{ ligneATB.antibiotique.famille|default('-') }}</td>
+                                                    <td style="border-right: none;">
+                                                        <strong style="
+                                                            color: {% if ligneATB.sensibilite == 'S' %}#15803d{% elseif ligneATB.sensibilite == 'R' %}#b91c1c{% else %}#b45309{% endif %};
+                                                        ">
+                                                            {{ ligneATB.sensibilite }} 
+                                                            {% if ligneATB.sensibilite == 'S' %}(Sensible)
+                                                            {% elseif ligneATB.sensibilite == 'R' %}(Résistant)
+                                                            {% elseif ligneATB.sensibilite == 'I' %}(Intermédiaire)
+                                                            {% endif %}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if not hasSaisi %}
+                                            <tr>
+                                                <td colspan="3" style="text-align: center; color: #6b7280; font-style: italic; border-left: none; border-right: none;">
+                                                    Aucune sensibilité n'a été saisie pour ce germe.
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                     {% if resultat and resultat.conclusion %}
-                        <div style="margin-top: 6px; padding: 4px 6px; background: #f9fafb; border-left: 2px solid #0f4c81; font-size: 8.5px;">
-                            <strong>Note clinique :</strong> {{ resultat.conclusion }}
+                        <div style="margin-top: 10px; padding: 4px 6px; background: #f9fafb; border-left: 2px solid #0f4c81; font-size: 8.5px;">
+                            <strong>Note clinique :</strong> {{ resultat.conclusion|nl2br }}
                         </div>
                     {% endif %}
                 </div>

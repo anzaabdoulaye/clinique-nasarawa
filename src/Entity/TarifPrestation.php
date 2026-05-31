@@ -39,6 +39,22 @@ class TarifPrestation
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $serviceExecution = null;
 
+    #[ORM\ManyToOne(targetEntity: \App\Entity\Medicament::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?\App\Entity\Medicament $medicament = null;
+
+    // ... (ajoutez les getters et setters correspondants)
+    public function getMedicament(): ?\App\Entity\Medicament
+    {
+        return $this->medicament;
+    }
+
+    public function setMedicament(?\App\Entity\Medicament $medicament): static
+    {
+        $this->medicament = $medicament;
+        return $this;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

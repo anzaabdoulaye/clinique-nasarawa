@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sortie de Stock (Manuelle){% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="ri-upload-cloud-2-line me-2 text-danger"></i> Sortie Manuelle
+            </h2>
+            <p class="text-muted mb-0">Déduire du stock pour péremption, casse ou dotation de service.</p>
+        </div>
+        <a href="{{ path('app_pharmacie_index') }}" class="btn btn-outline-secondary">Retour pharmacie</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    {{ form_start(form) }}
+                    <div class="row g-4">
+                        <div class="col-12">
+                            {{ form_label(form.lot, null, {'label_attr': {'class': 'fw-semibold'}}) }}
+                            {{ form_widget(form.lot) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_label(form.quantite, null, {'label_attr': {'class': 'fw-semibold'}}) }}
+                            {{ form_widget(form.quantite) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_label(form.type, null, {'label_attr': {'class': 'fw-semibold'}}) }}
+                            {{ form_widget(form.type) }}
+                        </div>
+                        <div class="col-12">
+                            {{ form_label(form.motif, null, {'label_attr': {'class': 'fw-semibold'}}) }}
+                            {{ form_widget(form.motif) }}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="ri-check-line me-1"></i> Valider la sortie
+                        </button>
+                    </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

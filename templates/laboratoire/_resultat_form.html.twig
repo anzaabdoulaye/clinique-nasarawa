@@ -7,8 +7,7 @@
 
 {{ form_start(form, {'attr': {'id': 'resultatLaboratoireForm'}}) }}
 
-<div class="modal-body pt-3"
-     style="max-height: 70vh; overflow-y: auto;">
+<div class="modal-body pt-3" style="max-height: 70vh; overflow-y: auto;">
     <div class="alert alert-light border mb-3">
         <div><strong>Examen principal :</strong> {{ prestation.tarifPrestation.libelle }}</div>
         <div><strong>Quantité :</strong> {{ prestation.quantite }}</div>
@@ -16,7 +15,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0">Lignes de résultat</h6>
+        <h6 class="mb-0">Paramètres de l'examen</h6>
     </div>
 
     <div id="resultat-lignes"
@@ -26,11 +25,10 @@
                 <div class='card-body'>
                     <div class='d-flex justify-content-between align-items-center mb-2'>
                         <small class='text-muted'>Nouvelle ligne</small>
-                        <button type='button' class='btn btn-sm btn-outline-danger js-remove-result-line'>
-                            <i class='ri-delete-bin-line'></i>
-                        </button>
+                        <button type='button' class='btn btn-sm btn-outline-danger js-remove-result-line'><i class='ri-delete-bin-line'></i></button>
                     </div>
                     <div class='row g-3'>
+                        <div class='d-none'>{{ form_row(form.lignes.vars.prototype.groupe)|e('html_attr') }}</div>
                         <div class='col-12 col-lg-4'>{{ form_row(form.lignes.vars.prototype.demande)|e('html_attr') }}</div>
                         <div class='col-12 col-lg-4'>{{ form_row(form.lignes.vars.prototype.resultat)|e('html_attr') }}</div>
                         <div class='col-12 col-lg-3'>{{ form_row(form.lignes.vars.prototype.valeurNormale)|e('html_attr') }}</div>
@@ -39,7 +37,118 @@
                 </div>
             </div>
          ">
+         
+         {# Affichage des lignes existantes générées par getModelesExamen() #}
+         {% for ligneForm in form.lignes|sort((a, b) => a.vars.value.ordre <=> b.vars.value.ordre) %}
+             <div class="card border mb-2 js-result-line-item shadow-sm">
+                 <div class="card-body py-2">
+                     {% if ligneForm.vars.value.groupe %}
+                         <span class="badge bg-secondary mb-2">{{ ligneForm.vars.value.groupe }}</span>
+                     {% endif %}
+                     <div class="row g-2 align-items-center">
+                         <div class="d-none">{{ form_row(ligneForm.groupe) }}</div>
+                         <div class="col-12 col-lg-4">{{ form_row(ligneForm.demande) }}</div>
+                         <div class="col-12 col-lg-4">{{ form_row(ligneForm.resultat) }}</div>
+                         <div class="col-12 col-lg-3">{{ form_row(ligneForm.valeurNormale) }}</div>
+                         <div class="col-12 col-lg-1">{{ form_row(ligneForm.ordre) }}</div>
+                     </div>
+                 </div>
+             </div>
+         {% endfor %}
+    </div>
 
+
+    {% if form.antibiogrammes is defined %}
+        <hr class="my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 text-primary"><i class="ri-microscope-line"></i> Bactériologie & Antibiogrammes</h6>
+            
+            {# Bouton pour ajouter manuellement un nouveau germe si plusieurs ont poussé #}
+            <button type="button" class="btn btn-sm btn-outline-primary js-add-antibiogramme">
+                <i class="ri-add-line"></i> Ajouter un germe identifié
+            </button>
+        </div>
+
+        <div id="antibiogrammes-wrapper"
+             data-index="{{ form.antibiogrammes|length }}"
+             data-prototype="
+                <div class='antibiogramme-item card border border-primary mb-4 shadow-sm'>
+                    <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
+                        <span class='fw-bold text-primary'>Nouvel Antibiogramme</span>
+                        <button type='button' class='btn btn-sm btn-danger js-remove-antibiogramme'><i class='ri-close-line'></i></button>
+                    </div>
+                    <div class='card-body'>
+                        <div class='row g-3 mb-3'>
+                            <div class='col-md-12'>
+                                {{ form_row(form.antibiogrammes.vars.prototype.germe, {'attr': {'class': 'form-select js-germe-select'}})|e('html_attr') }}
+                            </div>
+                            <div class='col-md-6'>
+                                {{ form_row(form.antibiogrammes.vars.prototype.numeration)|e('html_attr') }}
+                            </div>
+                            <div class='col-md-6'>
+                                {{ form_row(form.antibiogrammes.vars.prototype.commentaire)|e('html_attr') }}
+                            </div>
+                        </div>
+                        
+                        <h6 class='border-bottom pb-2 mt-4'>Grille de sensibilité (S/I/R)</h6>
+                        <div class='p-3 bg-light border rounded js-lignes-wrapper' 
+                             data-index='0' 
+                             data-prototype='{{ form_widget(form.antibiogrammes.vars.prototype.lignes.vars.prototype)|e('html_attr') }}'>
+                             <div class='text-muted small fst-italic text-center js-empty-msg'>
+                                Sélectionnez un germe pour générer automatiquement la liste des antibiotiques.
+                             </div>
+                        </div>
+                    </div>
+                </div>
+             ">
+             
+             {# Affichage des antibiogrammes déjà saisis (utile pour la modification) #}
+             {% for antibiogrammeForm in form.antibiogrammes %}
+                <div class="antibiogramme-item card border border-primary mb-4 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-primary">Antibiogramme</span>
+                        <button type="button" class="btn btn-sm btn-danger js-remove-antibiogramme"><i class="ri-close-line"></i></button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-12">
+                                {{ form_row(antibiogrammeForm.germe, {'attr': {'class': 'form-select js-germe-select'}}) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(antibiogrammeForm.numeration) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(antibiogrammeForm.commentaire) }}
+                            </div>
+                        </div>
+                        
+                        <h6 class="border-bottom pb-2 mt-4">Grille de sensibilité (S/I/R)</h6>
+                        <div class="p-3 bg-light border rounded js-lignes-wrapper" 
+                             data-index="{{ antibiogrammeForm.lignes|length }}"
+                             data-prototype="{{ form_widget(antibiogrammeForm.lignes.vars.prototype)|e('html_attr') }}">
+                             
+                            {# Lignes S/I/R existantes #}
+                            {% for ligneForm in antibiogrammeForm.lignes %}
+                                <div class="row g-2 align-items-center mb-2 bg-white p-2 rounded border js-result-line-item">
+                                    <div class="col-md-6 fw-bold">
+                                        {{ form_row(ligneForm.antibiotique) }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form_row(ligneForm.sensibilite) }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            
+                        </div>
+                    </div>
+                </div>
+             {% endfor %}
+             
+        </div>
+    {% endif %}
+
+
+    <hr class="my-4">
     <div class="mt-3">
         {{ form_row(form.conclusion) }}
     </div>

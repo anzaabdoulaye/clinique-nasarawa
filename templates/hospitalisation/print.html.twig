@@ -316,7 +316,43 @@
                     </table>
                 </div>
             </div>
-
+            {# --- FIL D'ACTUALITÉ / ÉVOLUTION CLINIQUE --- #}
+            <div class="section">
+                <div class="section-title">Évolution clinique (Fil d'actualité du séjour)</div>
+                <div class="box" style="padding: 0;">
+                    {# Filtre spécifique à l'hospitalisation, et tri CHRONOLOGIQUE (a <=> b) pour la lecture papier #}
+                    {% set current_observations = dossier.observations|filter(o => o.hospitalisation and o.hospitalisation.id == hospitalisation.id)|sort((a, b) => a.createdAt <=> b.createdAt) %}
+                    
+                    {% if current_observations is empty %}
+                        <div style="padding: 10px; text-align: center; font-size: 9px; color: #6b7280;">
+                            Aucune note d'évolution clinique pour ce séjour.
+                        </div>
+                    {% else %}
+                        <table style="width: 100%; border-collapse: collapse;">
+                            {% for observation in current_observations %}
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #d7dee7; text-align: left; vertical-align: top;">
+                                        <div style="font-size: 8px; margin-bottom: 4px;">
+                                            <span style="background: #eff6ff; color: #0f4c81; padding: 2px 4px; border: 1px solid #0f4c81; font-weight: bold; text-transform: uppercase;">
+                                                {{ observation.typeObservation }}
+                                            </span>
+                                            <span style="color: #6b7280; font-weight: bold; margin-left: 6px;">
+                                                Le {{ observation.createdAt|date('d/m/Y à H:i') }}
+                                            </span>
+                                            <span style="color: #374151; margin-left: 6px;">
+                                                par <strong>Dr. {{ observation.medecinAuteur.nom }} {{ observation.medecinAuteur.prenom }}</strong>
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 9.5px; color: #111827; line-height: 1.4;">
+                                            {{ observation.contenu|nl2br }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
             {# --- SUIVI CLINIQUE (Constantes) --- #}
             <div class="section">
                 <div class="section-title">Dernières Constantes (Suivi Clinique)</div>

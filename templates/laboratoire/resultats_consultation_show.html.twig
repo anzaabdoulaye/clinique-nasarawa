@@ -123,14 +123,27 @@
                             </thead>
                             <tbody>
                                 {% if resultat and resultat.lignes|length > 0 %}
+                                    {% set currentGroupe = null %}
                                     {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
-                                    {# ON AJOUTE LA CONDITION ICI #}
                                         {% if ligne.resultat is not empty and ligne.resultat|trim != '-' %}
-                                        <tr>
-                                            <td>{{ ligne.demande|nl2br }}</td>
-                                            <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
-                                            <td>{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
-                                        </tr>
+                                            
+                                            {# GESTION DE L'AFFICHAGE DU GROUPE #}
+                                            {% set displayGroupe = ligne.groupe|default('Analyses Générales') %}
+                                            {% if currentGroupe != displayGroupe %}
+                                                <tr class="table-secondary">
+                                                    <td colspan="3" class="fw-bold text-uppercase text-primary" style="font-size: 0.85rem;">
+                                                        {{ displayGroupe }}
+                                                    </td>
+                                                </tr>
+                                                {% set currentGroupe = displayGroupe %}
+                                            {% endif %}
+
+                                            <tr>
+                                                <td class="ps-4">{{ ligne.demande|nl2br }}</td>
+                                                <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
+                                                <td class="text-muted">{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                            </tr>
+                                        {% endif %}
                                     {% endfor %}
                                 {% else %}
                                     <tr>
@@ -143,16 +156,90 @@
                         </table>
                     </div>
 
+                    {% if resultat and resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
+                        <div class="mt-4">
+                            <h6 class="text-primary mb-3 border-bottom pb-2">
+                                <i class="ri-microscope-line me-1"></i> Bactériologie & Antibiogrammes
+                            </h6>
+                            
+                            <div class="row g-3">
+                                {% for antibiogramme in resultat.antibiogrammes %}
+                                    <div class="col-12">
+                                        <div class="card border-primary-subtle shadow-sm">
+                                            <div class="card-header bg-primary-subtle text-primary-emphasis fw-bold py-2 d-flex flex-wrap justify-content-between align-items-center">
+                                                <span>Antibiogramme</span>
+                                                <span>Germe isolé : <strong class="text-danger fs-6">{{ antibiogramme.germe.nom }}</strong></span>
+                                            </div>
+                                            
+                                            {% if antibiogramme.numeration or antibiogramme.commentaire %}
+                                                <div class="card-body bg-light py-2 border-bottom">
+                                                    <div class="row small">
+                                                        {% if antibiogramme.numeration %}
+                                                            <div class="col-md-6"><strong>Numération :</strong> {{ antibiogramme.numeration }}</div>
+                                                        {% endif %}
+                                                        {% if antibiogramme.commentaire %}
+                                                            <div class="col-md-6"><strong>Observation :</strong> {{ antibiogramme.commentaire }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless table-striped align-middle mb-0">
+                                                    <thead class="table-light border-bottom">
+                                                        <tr>
+                                                            <th class="ps-3" style="width: 40%;">Antibiotique testé</th>
+                                                            <th style="width: 30%;">Famille</th>
+                                                            <th style="width: 30%;">Sensibilité</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% set hasSaisi = false %}
+                                                        {% for ligneATB in antibiogramme.lignes %}
+                                                            {% if ligneATB.sensibilite is not empty %}
+                                                                {% set hasSaisi = true %}
+                                                                <tr>
+                                                                    <td class="ps-3 fw-medium">{{ ligneATB.antibiotique.nom }}</td>
+                                                                    <td class="text-muted small">{{ ligneATB.antibiotique.famille|default('-') }}</td>
+                                                                    <td>
+                                                                        <span class="badge rounded-pill {% if ligneATB.sensibilite == 'S' %}bg-success{% elseif ligneATB.sensibilite == 'R' %}bg-danger{% else %}bg-warning text-dark{% endif %} px-3 py-2">
+                                                                            {{ ligneATB.sensibilite }}
+                                                                            {% if ligneATB.sensibilite == 'S' %} (Sensible)
+                                                                            {% elseif ligneATB.sensibilite == 'R' %} (Résistant)
+                                                                            {% elseif ligneATB.sensibilite == 'I' %} (Intermédiaire)
+                                                                            {% endif %}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        
+                                                        {% if not hasSaisi %}
+                                                            <tr>
+                                                                <td colspan="3" class="text-center text-muted fst-italic py-3">
+                                                                    Aucune sensibilité n'a été saisie pour ce germe.
+                                                                </td>
+                                                            </tr>
+                                                        {% endif %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                     {% if resultat and resultat.conclusion %}
-                        <div class="mt-3">
-                            <div class="fw-semibold mb-2">Conclusion / Observation</div>
-                            <div class="border rounded-3 p-3 bg-light-subtle">{{ resultat.conclusion|nl2br }}</div>
+                        <div class="mt-4">
+                            <div class="fw-semibold mb-2 text-dark">Conclusion / Observation</div>
+                            <div class="border rounded-3 p-3 bg-light-subtle text-dark">{{ resultat.conclusion|nl2br }}</div>
                         </div>
                     {% endif %}
 
-                    <div class="mt-3 small text-muted d-flex flex-wrap gap-3">
-                        <span><strong>Validation :</strong> {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}</span>
-                        <span><strong>Laborantin :</strong> {{ resultat and resultat.validePar ? resultat.validePar : '-' }}</span>
+                    <div class="mt-3 pt-3 border-top small text-muted d-flex flex-wrap gap-3">
+                        <span><strong>Validation :</strong> <i class="ri-calendar-line ms-1"></i> {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}</span>
+                        <span><strong>Laborantin :</strong> <i class="ri-user-line ms-1"></i> {{ resultat and resultat.validePar ? resultat.validePar : '-' }}</span>
                     </div>
                 </div>
             </div>

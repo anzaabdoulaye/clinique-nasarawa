@@ -30,6 +30,13 @@ class ResultatLaboratoireType extends AbstractType
                     'placeholder' => 'Conclusion biologique ou remarque générale...',
                 ],
             ])
+            ->add('antibiogrammes', CollectionType::class, [
+                'entry_type' => ResultatAntibiogrammeType::class,
+                'allow_add' => true,
+                'allow_delete' => true,
+                'by_reference' => false,
+                'label' => false
+            ])
         ;
     }
 

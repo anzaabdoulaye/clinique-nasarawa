@@ -21,7 +21,9 @@
             <tr>
                 <td>{{ dossier_medical.id }}</td>
                 <td>{{ dossier_medical.numeroDossier }}</td>
-                <td>{{ dossier_medical.observations }}</td>
+               <td>
+    <span class="badge bg-info">{{ dossier_medical.observations|length }} note(s)</span>
+</td>
                 <td>{{ dossier_medical.createdAt ? dossier_medical.createdAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ dossier_medical.modifiedAt ? dossier_medical.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>

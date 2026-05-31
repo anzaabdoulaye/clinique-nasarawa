@@ -29,6 +29,12 @@ class ResultatLaboratoireLigne
     #[ORM\Column(type: 'integer')]
     private int $ordre = 1;
 
+    /**
+     * Nouveau champ pour catégoriser les éléments (ex: Macroscopie, Examen microscopique)
+     */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $groupe = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -86,6 +92,17 @@ class ResultatLaboratoireLigne
     public function setOrdre(int $ordre): static
     {
         $this->ordre = $ordre;
+        return $this;
+    }
+
+    public function getGroupe(): ?string
+    {
+        return $this->groupe;
+    }
+
+    public function setGroupe(?string $groupe): static
+    {
+        $this->groupe = $groupe;
         return $this;
     }
 }

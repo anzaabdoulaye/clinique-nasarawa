@@ -38,3 +38,7 @@ Résumé des filtres appliqués :
 ✅ Factures (30 derniers jours par défaut)
 ✅ Consultations (30 derniers jours par défaut)
 ✅ Comptabilité matière - Bons (30 derniers jours par défaut)
+
+
+
+composer require stof/doctrine-extensions-bundle

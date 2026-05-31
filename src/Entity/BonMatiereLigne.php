@@ -36,10 +36,10 @@ class BonMatiereLigne
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $observation = null;
-
+/* 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?VenteLigne $venteLigne = null;
+    private ?VenteLigne $venteLigne = null; */
 
     public function getId(): ?int
     {
@@ -117,7 +117,7 @@ class BonMatiereLigne
 
         return $this;
     }
-
+/* 
     public function getVenteLigne(): ?VenteLigne
     {
         return $this->venteLigne;
@@ -128,7 +128,7 @@ class BonMatiereLigne
         $this->venteLigne = $venteLigne;
 
         return $this;
-    }
+    } */
 
     public function getMontantLigne(): float
     {

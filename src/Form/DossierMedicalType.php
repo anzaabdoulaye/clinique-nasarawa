@@ -79,11 +79,11 @@ class DossierMedicalType extends AbstractType
                 'label' => 'Grossesse en cours',
                 'required' => false,
             ])
-            ->add('observations', TextareaType::class, [
+           /*  ->add('observations', TextareaType::class, [
                 'label' => 'Observations générales',
                 'required' => false,
                 'attr' => ['class' => 'form-control', 'rows' => 4],
-            ])
+            ]) */
         ;
     }
 

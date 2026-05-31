@@ -54,9 +54,9 @@ class BonMatiere
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Utilisateur $creePar = null;
 
-    #[ORM\ManyToOne]
+   /*  #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Vente $vente = null;
+    private ?Vente $vente = null; */
 
     #[ORM\OneToMany(mappedBy: 'bon', targetEntity: BonMatiereLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $lignes;
@@ -197,7 +197,7 @@ class BonMatiere
 
         return $this;
     }
-
+/* 
     public function getVente(): ?Vente
     {
         return $this->vente;
@@ -209,7 +209,7 @@ class BonMatiere
 
         return $this;
     }
-
+ */
     /**
      * @return Collection<int, BonMatiereLigne>
      */

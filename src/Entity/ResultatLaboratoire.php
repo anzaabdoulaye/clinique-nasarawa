@@ -37,9 +37,16 @@ class ResultatLaboratoire
     #[ORM\OneToMany(mappedBy: 'resultatLaboratoire', targetEntity: ResultatLaboratoireLigne::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $lignes;
 
+    // À insérer dans les propriétés de la classe ResultatLaboratoire
+    #[ORM\OneToMany(mappedBy: 'resultatLaboratoire', targetEntity: ResultatAntibiogramme::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $antibiogrammes;
+
+
+
     public function __construct()
     {
         $this->lignes = new ArrayCollection();
+        $this->antibiogrammes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -124,6 +131,34 @@ class ResultatLaboratoire
             }
         }
 
+        return $this;
+    }
+    
+    // À ajouter en bas du fichier (Getters / Setters)
+    /**
+     * @return Collection<int, ResultatAntibiogramme>
+     */
+    public function getAntibiogrammes(): Collection
+    {
+        return $this->antibiogrammes;
+    }
+
+    public function addAntibiogramme(ResultatAntibiogramme $antibiogramme): static
+    {
+        if (!$this->antibiogrammes->contains($antibiogramme)) {
+            $this->antibiogrammes->add($antibiogramme);
+            $antibiogramme->setResultatLaboratoire($this);
+        }
+        return $this;
+    }
+
+    public function removeAntibiogramme(ResultatAntibiogramme $antibiogramme): static
+    {
+        if ($this->antibiogrammes->removeElement($antibiogramme)) {
+            if ($antibiogramme->getResultatLaboratoire() === $this) {
+                $antibiogramme->setResultatLaboratoire(null);
+            }
+        }
         return $this;
     }
 }

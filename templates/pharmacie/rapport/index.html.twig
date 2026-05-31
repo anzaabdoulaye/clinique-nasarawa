@@ -1,3 +1,4 @@
+{# templates/pharmacie/rapport/index.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Rapports Pharmacie{% endblock %}
@@ -49,30 +50,27 @@
             </div>
         </div>
 
-        {# Rapport Ventes #}
+        {# Rapport de Consommation (Remplaçant les Ventes) #}
         <div class="col-12 col-md-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
-                             style="width: 56px; height: 56px;">
-                            <i class="ri-shopping-cart-2-line fs-3"></i>
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center" style="width: 48px; height: 48px;">
+                            <i class="ri-medicine-bottle-line fs-4"></i>
                         </div>
-                        <div>
-                            <h5 class="fw-bold mb-1">Rapport de Ventes</h5>
-                            <p class="text-muted small mb-0">
-                                Détail des ventes par médicament avec chiffre d'affaires sur la période.
-                            </p>
-                        </div>
+                        <h4 class="fw-bold mb-0 text-dark">Rapport de Consommation</h4>
                     </div>
-                    <ul class="list-unstyled text-muted small mb-4">
-                        <li><i class="ri-check-line text-primary me-1"></i> Ventes par Consomable</li>
-                        <li><i class="ri-check-line text-primary me-1"></i> Quantités vendues</li>
-                        <li><i class="ri-check-line text-primary me-1"></i> Chiffre d'affaires</li>
-                        <li><i class="ri-check-line text-primary me-1"></i> Export PDF</li>
+                    <p class="text-muted small mb-4">
+                        Détail des sorties (patients, services, pertes) avec la valorisation sur la base du prix d'achat.
+                    </p>
+                    <ul class="list-unstyled small text-muted mb-4">
+                        <li class="mb-2"><i class="ri-check-line text-success me-2"></i> Sorties par Consommable</li>
+                        <li class="mb-2"><i class="ri-check-line text-success me-2"></i> Quantités consommées</li>
+                        <li class="mb-2"><i class="ri-check-line text-success me-2"></i> Valeur d'achat (Coût pour la clinique)</li>
+                        <li><i class="ri-check-line text-success me-2"></i> Export PDF</li>
                     </ul>
-                    <a href="{{ path('app_rapport_pharmacie_ventes') }}" class="btn btn-primary w-100">
-                        <i class="ri-line-chart-line me-1"></i> Générer le rapport
+                    <a href="{{ path('app_rapport_pharmacie_consommations') }}" class="btn btn-primary w-100 rounded-3">
+                        <i class="ri-bar-chart-2-line me-1"></i> Générer le rapport
                     </a>
                 </div>
             </div>
@@ -138,10 +136,10 @@
                                                    title="Rapport stock — {{ moisNoms[m - 1] }}">
                                                     <i class="ri-archive-drawer-line me-1"></i> Stock
                                                 </a>
-                                                <a href="{{ path('app_rapport_pharmacie_ventes_pdf', {date_debut: debut, date_fin: dernierJour}) }}"
+                                                <a href="{{ path('app_rapport_pharmacie_consommations_pdf', {date_debut: debut, date_fin: dernierJour}) }}"
                                                    class="btn btn-sm btn-outline-primary" target="_blank"
-                                                   title="Rapport ventes — {{ moisNoms[m - 1] }}">
-                                                    <i class="ri-shopping-cart-2-line me-1"></i> Ventes
+                                                   title="Rapport consommations — {{ moisNoms[m - 1] }}">
+                                                    <i class="ri-shopping-cart-2-line me-1"></i> Consommations
                                                 </a>
                                             {% else %}
                                                 <span class="text-muted small fst-italic">À venir</span>

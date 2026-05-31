@@ -66,7 +66,7 @@ security:
         # laboratoire
         - { path: ^/laboratoire, roles: [ROLE_ADMIN, ROLE_LABO, ROLE_MEDECIN] }
 
-            # pharmacie
+        # pharmacie
         - { path: ^/pharmacie, roles: [ROLE_ADMIN, ROLE_PHARMACIE] }
         - { path: ^/medicament, roles: [ROLE_ADMIN, ROLE_PHARMACIE] }
         - { path: ^/lot, roles: [ROLE_ADMIN, ROLE_PHARMACIE] }

@@ -1,3 +1,5 @@
+{# templates/pharmacie/rapport/stock_pdf.html.twig #}
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -60,10 +62,10 @@
         <div class="label">Sorties</div>
         <div class="value text-danger">{{ totalSorties }}</div>
     </div>
-    <div class="kpi">
+   {#  <div class="kpi">
         <div class="label">Valeur stock</div>
         <div class="value text-primary">{{ totalValeur|number_format(0, ',', ' ') }} F</div>
-    </div>
+    </div> #}
 </div>
 
 <table>
@@ -71,7 +73,7 @@
         <tr>
             <th>Médicament</th>
             <th>SKU</th>
-            <th class="text-center">Lots</th>
+       
             <th class="text-center">Stock</th>
             <th class="text-center">Entrées</th>
             <th class="text-center">Sorties</th>
@@ -85,7 +87,7 @@
             <tr>
                 <td class="fw-bold">{{ r.medicament_nom }}</td>
                 <td>{{ r.sku ?? '—' }}</td>
-                <td class="text-center">{{ r.nb_lots }}</td>
+
                 <td class="text-center fw-bold">{{ r.stock_actuel }}</td>
                 <td class="text-center text-success">{% if r.entrees_periode > 0 %}+{{ r.entrees_periode }}{% else %}—{% endif %}</td>
                 <td class="text-center text-danger">{% if r.sorties_periode > 0 %}-{{ r.sorties_periode }}{% else %}—{% endif %}</td>

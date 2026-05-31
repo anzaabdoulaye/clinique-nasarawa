@@ -30,20 +30,20 @@
                         Adresse : {{ patient.adresse ?? '-' }}
                     </div>
                 </div>
-                {% if not is_granted('ROLE_LABO') %}
                 <div class="d-flex gap-2 flex-wrap">
+                {% if is_granted('ROLE_ADMIN') %}
                     <a href="{{ path('app_dossier_medical_edit', {'id': dossier.id}) }}"
                        class="btn btn-outline-primary">
                         Modifier le dossier
                     </a>
-
+                    {% endif %}
                     {% if dossier.patient and dossier.patient.dossierMedical %}
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newConsultationModal" data-dossier-id="{{ dossier.id }}">
                             Nouvelle consultation
                         </button>
                     {% endif %}
                 </div>
-                {% endif %}
+                
             </div>
         </div>
     </div>
@@ -144,14 +144,98 @@
                             {% endif %}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <div>
-                        <div class="fw-semibold">Observations générales</div>
-                        <div class="text-muted">{{ dossier.observations ?: '-' }}</div>
+        <div class="col-lg-8">
+        
+            {# --- DÉBUT : CARTE TIMELINE DES OBSERVATIONS --- #}
+            <div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-4 border-primary">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-stream me-2"></i> Fil d'actualité médical
+                    </h5>
+                    {% if is_granted('ROLE_MEDECIN') or is_granted('ROLE_ADMIN') %}
+                        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseObservationForm" aria-expanded="false" aria-controls="collapseObservationForm">
+                            <i class="fas fa-plus me-1"></i> Ajouter une note
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    {# Formulaire d'ajout (Caché par défaut via Collapse) #}
+                    <div class="collapse mb-4" id="collapseObservationForm">
+                        <div class="card card-body bg-light border-0 shadow-sm">
+                            <h6 class="fw-bold mb-3">Nouvelle observation</h6>
+                            {{ form_start(formObservation) }}
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        {{ form_row(formObservation.typeObservation) }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ form_row(formObservation.contenu) }}
+                                    </div>
+                                    <div class="col-12 text-end mt-3">
+                                        <button type="submit" class="btn btn-success fw-bold">
+                                            <i class="fas fa-save me-1"></i> Enregistrer
+                                        </button>
+                                    </div>
+                                </div>
+                            {{ form_end(formObservation) }}
+                        </div>
+                    </div>
+
+                    {# Affichage de la TimeLine #}
+                    <div class="timeline-container mt-2">
+                        {% if dossier.observations is empty %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-folder-open fs-2 mb-2 opacity-50"></i>
+                                <p class="mb-0">Aucune observation n'a encore été ajoutée à ce dossier.</p>
+                            </div>
+                        {% else %}
+                            <div class="position-relative ps-4 border-start border-2 border-primary border-opacity-25 ms-2">
+                                {% for observation in dossier.observations|sort((a, b) => b.createdAt <=> a.createdAt) %}
+                                    <div class="mb-4 position-relative">
+                                        {# Point sur la ligne du temps #}
+                                        <div class="position-absolute bg-primary rounded-circle" style="width: 14px; height: 14px; left: -32px; top: 5px; border: 3px solid white; box-shadow: 0 0 0 1px var(--bs-primary);"></div>
+                                        
+                                        <div class="card border-0 bg-light shadow-sm">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                                                    <div>
+                                                        <span class="badge bg-primary">{{ observation.typeObservation }}</span>
+                                                        {% if observation.hospitalisation %}
+                                                            <a href="{{ path('app_hospitalisation_show', {'id': observation.hospitalisation.id}) }}" class="badge bg-warning text-dark text-decoration-none ms-1">
+                                                                <i class="fas fa-bed"></i> En Hospitalisation #{{ observation.hospitalisation.id }}
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                    <small class="text-muted fw-semibold">
+                                                        <i class="fas fa-clock me-1"></i> {{ observation.createdAt|date('d/m/Y à H:i') }}
+                                                    </small>
+                                                </div>
+                                                
+                                                <p class="mb-2 text-dark" style="white-space: pre-line;">{{ observation.contenu }}</p>
+                                                
+                                                <div class="text-end border-top pt-2 mt-2">
+                                                    <small class="text-muted fw-bold">
+                                                        <i class="fas fa-user-md me-1"></i> Dr. {{ observation.medecinAuteur.nom }} {{ observation.medecinAuteur.prenom }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+            {# --- FIN : CARTE TIMELINE DES OBSERVATIONS --- #}
+
+            {# Ton ancienne carte "Historique des consultations" commence ici... #}
 
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -168,7 +252,7 @@
                                     <th>Médecin</th>
                                     <th>Motif</th>
                                     <th>Diagnostic</th>
-                                    <th>Statut</th>
+                                    
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -186,11 +270,7 @@
                                     </td>
                                     <td>{{ consultation.motifs ?: '-' }}</td>
                                     <td>{{ consultation.diagnostic ?: '-' }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">
-                                            {{ consultation.statut.value }}
-                                        </span>
-                                    </td>
+                                    
                                     <td class="text-end">
                                         <a href="{{ path('app_consultation_show', {'id': consultation.id}) }}"
                                            class="btn btn-sm btn-outline-primary">
@@ -217,7 +297,7 @@
                                     <th>#</th>
                                     <th>Date</th>
                                     <th>Motif</th>
-                                    <th>Statut</th>
+                                    {# <th>Statut</th> #}
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -227,11 +307,11 @@
                                     <td>#{{ hospitalisation.id }}</td>
                                     <td>{{ hospitalisation.createdAt ? hospitalisation.createdAt|date('d/m/Y H:i') : '-' }}</td>
                                     <td>{{ hospitalisation.motifAdmission ?: '-' }}</td>
-                                    <td>
+                                    {# <td>
                                         <span class="badge bg-info text-dark">
                                             {{ hospitalisation.statut.value ?? '-' }}
                                         </span>
-                                    </td>
+                                    </td> #}
                                     <td class="text-end">
                                         <a href="{{ path('app_hospitalisation_show', {'id': hospitalisation.id}) }}"
                                            class="btn btn-sm btn-outline-primary">
@@ -246,6 +326,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 

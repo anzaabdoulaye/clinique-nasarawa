@@ -25,9 +25,6 @@ class DossierMedical
     #[ORM\Column(length: 50, unique: true)]
     private string $numeroDossier;
 
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $observations = null;
-
     #[ORM\OneToMany(mappedBy: 'dossierMedical', targetEntity: Consultation::class)]
     private Collection $consultations;
 
@@ -60,6 +57,12 @@ class DossierMedical
 
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $grossesse = null;
+
+    // ✅ LA BONNE VERSION À GARDER
+#[ORM\OneToMany(mappedBy: 'dossier', targetEntity: ObservationMedicale::class, cascade: ['persist', 'remove'])]
+private Collection $observations;
+
+
 
     public function __construct()
     {
@@ -114,18 +117,13 @@ class DossierMedical
         return $this;
     }
 
-    public function getObservations(): ?string
-    {
-        return $this->observations;
-    }
-
-    public function setObservations(?string $observations): self
-    {
-        $this->observations = $observations;
-
-        return $this;
-    }
-
+    /**
+ * @return Collection<int, ObservationMedicale>
+ */
+public function getObservations(): Collection
+{
+    return $this->observations;
+}
     /**
      * @return Collection<int, Consultation>
      */

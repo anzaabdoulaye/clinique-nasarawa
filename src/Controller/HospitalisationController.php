@@ -42,11 +42,36 @@ final class HospitalisationController extends AbstractController
     }
 
     #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_HOSPITALISATION') or is_granted('ROLE_MEDECIN') or is_granted('ROLE_INFIRMIER')"))]
-    #[Route('/{id}', name: 'app_hospitalisation_show', methods: ['GET'])]
-    public function show(Hospitalisation $hospitalisation): Response
-    {
+    #[Route('/{id}', name: 'app_hospitalisation_show', methods: ['GET', 'POST'])] // ⚠️ Ajout de POST
+    public function show(
+        Request $request, // ⚠️ Ajout
+        Hospitalisation $hospitalisation,
+        EntityManagerInterface $entityManager // ⚠️ Ajout
+    ): Response {
+        
+        // --- DÉBUT : LOGIQUE D'AJOUT D'OBSERVATION (Contexte Hospitalisation) ---
+        $observation = new \App\Entity\ObservationMedicale();
+        $formObservation = $this->createForm(\App\Form\ObservationMedicaleType::class, $observation);
+        $formObservation->handleRequest($request);
+
+        if ($formObservation->isSubmitted() && $formObservation->isValid()) {
+            // Injections sécurisées
+            $observation->setDossier($hospitalisation->getDossierMedical()); // Lien au dossier parent
+            $observation->setHospitalisation($hospitalisation); // Lien explicite au séjour
+            $observation->setMedecinAuteur($this->getUser());
+
+            $entityManager->persist($observation);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'La note d\'évolution a bien été ajoutée au suivi de l\'hospitalisation.');
+
+            return $this->redirectToRoute('app_hospitalisation_show', ['id' => $hospitalisation->getId()]);
+        }
+        // --- FIN : LOGIQUE D'AJOUT D'OBSERVATION ---
+
         return $this->render('hospitalisation/show.html.twig', [
             'hospitalisation' => $hospitalisation,
+            'formObservation' => $formObservation->createView(), // ⚠️ Envoi du formulaire à la vue
         ]);
     }
 

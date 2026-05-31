@@ -621,6 +621,11 @@ public function consultationShow(
                 $ligne = new ResultatLaboratoireLigne();
                 $ligne->setDemande($modele['demande']);
                 $ligne->setValeurNormale($modele['norme']);
+
+                // Prise en charge du groupe s'il est défini dans le modèle
+                if (isset($modele['groupe'])) {
+                    $ligne->setGroupe($modele['groupe']);
+                }
                 $ligne->setOrdre($ordre++);
                 $resultat->addLigne($ligne);
             }
@@ -1382,6 +1387,93 @@ public function consultationShow(
                 ['demande' => 'Antigène H (Typhi)', 'norme' => 'Négatif'],
                 ['demande' => 'Paratyphi A', 'norme' => 'Négatif'],
                 ['demande' => 'Paratyphi B', 'norme' => 'Négatif'],
+            ];
+        }
+
+        // Mappage de l'ECBU (Examen Cytobactériologique des Urines)
+        if (str_contains($libelle, 'ecbu') || str_contains($libelle, 'cytobactériologique des urines') || str_contains($libelle, 'urines')) {
+            return [
+                // Section Macroscopie
+                ['demande' => 'Aspect', 'norme' => 'Limpide', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Couleur', 'norme' => 'Jaune citrin', 'groupe' => 'Macroscopie'],
+                
+                // Section Examen Microscopique
+                ['demande' => 'Leucocytes', 'norme' => '< 10 000 /ml (ou < 10/mm³)', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Hématies', 'norme' => '< 10 000 /ml (ou < 10/mm³)', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Cellules épithéliales', 'norme' => 'Rares ou Absentes', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Leucocytes en amas', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Levures', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Parasites', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Microcristaux', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Culot de centrifugation', 'norme' => '', 'groupe' => 'Examen microscopique'],
+                
+                // Section Quantification Bactérienne
+                ['demande' => 'Compte de Kass (Numération des germes)', 'norme' => '< 1 000 UFC/ml', 'groupe' => 'Bactériologie'],
+            ];
+        }
+
+
+        // =====================================================================
+        // 8. EXAMENS COMPLEXES (Spermogramme, Liquides d'épanchement)
+        // =====================================================================
+
+        // A. Examen des liquides d'épanchement ou de ponction
+        if (str_contains($libelle, 'liquide') || str_contains($libelle, 'épanchement') || str_contains($libelle, 'epanchement') || str_contains($libelle, 'ponction')) {
+            return [
+                // Macroscopie
+                ['demande' => 'Type de liquide (LCR, Ascite, Pleural...)', 'norme' => '', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Aspect du liquide', 'norme' => 'Limpide', 'groupe' => 'Macroscopie'],
+                
+                // Cytologie (Microscopie)
+                ['demande' => 'Leucocytes', 'norme' => '< 5 /mm³', 'groupe' => 'Cytologie (Examen microscopique)'],
+                ['demande' => 'Polynucléaires', 'norme' => '%', 'groupe' => 'Cytologie (Examen microscopique)'],
+                ['demande' => 'Lymphocytes', 'norme' => '%', 'groupe' => 'Cytologie (Examen microscopique)'],
+                ['demande' => 'Hématies', 'norme' => 'Absence', 'groupe' => 'Cytologie (Examen microscopique)'],
+                
+                // Bactériologie
+                ['demande' => 'Coloration de Gram', 'norme' => 'Absence de germes', 'groupe' => 'Bactériologie'],
+                ['demande' => 'Culture', 'norme' => 'Négative', 'groupe' => 'Bactériologie'],
+            ];
+        }
+
+        // B. Spermogramme / Spermocytogramme
+        if (str_contains($libelle, 'spermo')) {
+            return [
+                // Renseignements cliniques
+                ['demande' => 'Délai d\'abstinence', 'norme' => '3 à 5 jours', 'groupe' => 'Renseignements cliniques'],
+                ['demande' => 'Heure de prélèvement', 'norme' => '', 'groupe' => 'Renseignements cliniques'],
+                ['demande' => 'Heure de réception', 'norme' => '', 'groupe' => 'Renseignements cliniques'],
+                
+                // Macroscopie
+                ['demande' => 'Volume', 'norme' => '≥ 1.5 ml', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Aspect', 'norme' => 'Opalescent / Grisâtre', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Liquéfaction', 'norme' => '< 60 minutes', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Viscosité', 'norme' => 'Normale', 'groupe' => 'Macroscopie'],
+                ['demande' => 'pH', 'norme' => '≥ 7.2', 'groupe' => 'Macroscopie'],
+                
+                // Numération et Vitalité
+                ['demande' => 'Numération (Concentration)', 'norme' => '20 - 200 millions/ml', 'groupe' => 'Numération & Vitalité'],
+                ['demande' => 'Vitalité (1ère heure)', 'norme' => '≥ 58 %', 'groupe' => 'Numération & Vitalité'],
+                
+                // Mobilité (1ère heure)
+                ['demande' => 'Rapide et progressive (RP)', 'norme' => 'RP+LP > 40% ou RP > 32%', 'groupe' => 'Mobilité (1ère heure)'],
+                ['demande' => 'Lente et progressive (LP)', 'norme' => '%', 'groupe' => 'Mobilité (1ère heure)'],
+                ['demande' => 'Mobile sur place (MP)', 'norme' => '%', 'groupe' => 'Mobilité (1ère heure)'],
+                ['demande' => 'Immobile (IM)', 'norme' => '%', 'groupe' => 'Mobilité (1ère heure)'],
+                
+                // Examen microscopique (Autres cellules)
+                ['demande' => 'Agglutination / Agrégation', 'norme' => 'Absence', 'groupe' => 'Éléments cellulaires associés'],
+                ['demande' => 'Cellules rondes / Leucocytes', 'norme' => '< 1 million/ml', 'groupe' => 'Éléments cellulaires associés'],
+                ['demande' => 'Hématies', 'norme' => 'Absence', 'groupe' => 'Éléments cellulaires associés'],
+                ['demande' => 'Cellules épithéliales', 'norme' => 'Rares', 'groupe' => 'Éléments cellulaires associés'],
+                ['demande' => 'Cristaux', 'norme' => 'Absence', 'groupe' => 'Éléments cellulaires associés'],
+                
+                // Morphologie (Spermocytogramme)
+                ['demande' => 'Formes normales', 'norme' => '≥ 15 % (Kruger)', 'groupe' => 'Morphologie (Spermocytogramme)'],
+                ['demande' => 'Formes anormales (IAM)', 'norme' => '%', 'groupe' => 'Morphologie (Spermocytogramme)'],
+                ['demande' => 'Détail : Anomalies de la tête', 'norme' => 'Microcéphale, macrocéphale, allongée...', 'groupe' => 'Morphologie (Spermocytogramme)'],
+                ['demande' => 'Détail : Pièce intermédiaire', 'norme' => 'Grêle, angulée, reste cytoplasmique...', 'groupe' => 'Morphologie (Spermocytogramme)'],
+                ['demande' => 'Détail : Flagelle', 'norme' => 'Enroulé, court, absent, multiple...', 'groupe' => 'Morphologie (Spermocytogramme)'],
             ];
         }
 
