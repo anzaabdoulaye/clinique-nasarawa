@@ -263,7 +263,7 @@ final class PerceptionController extends AbstractController
                         $facturationService->mettreAJourStatutPrestations($facture); 
                     }
 
-                    // ---------------------------------------------------------------------------------
+                    /* // ---------------------------------------------------------------------------------
                     // 🚀 DÉDUCTION AUTOMATIQUE DU STOCK (RÈGLE FEFO)
                     // ---------------------------------------------------------------------------------
                     // Si la facture vient TOUT JUSTE de passer au statut "Payé" (complètement réglée)
@@ -295,7 +295,7 @@ final class PerceptionController extends AbstractController
                             }
                         }
                     }
-                    // ---------------------------------------------------------------------------------
+                    // --------------------------------------------------------------------------------- */
 
                 } catch (\InvalidArgumentException $exception) {
                     $form->get('montant')->addError(new FormError($exception->getMessage()));
