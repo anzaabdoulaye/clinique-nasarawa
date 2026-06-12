@@ -1,3 +1,4 @@
+{# templates/laboratoire/resultats_consultation_print.html.twig #}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -5,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Fiche Consolidée des Résultats - Consultation #{{ consultation.id }}</title>
     <style>
-        @page { size: A4 portrait; margin: 8mm; }
+        @page { size: A4 portrait; margin: 10mm; }
         body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 10px; color: #1f2937; margin: 0; padding: 0; }
         .document { width: 100%; border: 1px solid #cfd8e3; border-radius: 8px; padding: 12px; }
         .top-bar { height: 4px; background: #0f4c81; margin-bottom: 10px; border-radius: 4px; }
@@ -17,14 +18,25 @@
         .clinic-meta { font-size: 8px; color: #4b5563; line-height: 1.3; }
         .qr-box { border: 1px solid #cfd8e3; border-radius: 6px; padding: 4px; text-align: center; background: #f9fafb; }
         
-        .section-title { background: #0f4c81; color: white; padding: 4px 8px; font-weight: bold; font-size: 10px; margin-top: 12px; margin-bottom: 6px; border-radius: 4px; }
+        .section-title { background: #0f4c81; color: white; padding: 4px 8px; font-weight: bold; font-size: 10px; margin-top: 12px; margin-bottom: 6px; border-radius: 4px; text-transform: uppercase; }
         .info-table td { padding: 3px 0; }
         
-        .examen-block { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 14px; padding: 8px; background: #fff; }
-        .examen-header { font-weight: bold; color: #0f4c81; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 6px; font-size: 10px; }
+        /* Styles pour le tableau unique */
+        table.master-table { page-break-inside: auto; margin-top: 10px; border: 1px solid #d1d5db; }
+        table.master-table thead { display: table-header-group; }
+        table.master-table tr { page-break-inside: avoid; page-break-after: auto; }
         
-        .data-table th { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; padding: 4px 6px; text-align: left; font-weight: bold; font-size: 9px; }
-        .data-table td { border: 1px solid #e5e7eb; padding: 4px 6px; font-size: 9px; }
+        table.master-table th { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; font-weight: bold; font-size: 9px; text-transform: uppercase; }
+        table.master-table td { border: 1px solid #e5e7eb; padding: 5px 8px; font-size: 9.5px; vertical-align: middle; }
+        
+        /* Séparateur d'examen */
+        .row-examen td { background-color: #e5e7eb; color: #0f4c81; font-weight: bold; font-size: 11px; text-transform: uppercase; padding: 6px 8px; border-top: 2px solid #9ca3af; }
+        
+        /* Séparateur de groupe (Macroscopie, etc.) */
+        .row-groupe td { background-color: #f8fafc; color: #4b5563; font-style: italic; font-weight: bold; font-size: 9px; padding: 4px 8px; border-top: 1px dashed #d1d5db; }
+        
+        /* Conclusion */
+        .row-conclusion td { background-color: #f0fdf4; border-left: 3px solid #22c55e !important; color: #166534; font-size: 9.5px; padding: 6px 8px; }
         
         .footer-note { text-align: center; margin-top: 30px; font-size: 8px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 8px; }
     </style>
@@ -62,136 +74,124 @@
         <div class="section-title">COMPTE-RENDU CONSOLIDÉ DE LABORATOIRE</div>
         <table class="info-table">
             <tr>
-                <td style="width: 50%;"><strong>Patient :</strong> {{ patient.nomComplet|default(patient.nom ~ ' ' ~ patient.prenom) }}</td>
+                <td style="width: 50%;"><strong>Patient :</strong> {{ patient.nomComplet|default(patient.nom ~ ' ' ~ patient.prenom)|upper }}</td>
                 <td style="width: 50%;"><strong>Consultation :</strong> #{{ consultation.id }}</td>
             </tr>
             <tr>
-                <td><strong>Âge / Sexe :</strong> {{ patient.age }} ans / {{ patient.sexe|default('-') }}</td>
+                <td><strong>Âge / Sexe :</strong> {{ patient.age|default('-') }} ans / {{ patient.sexe|default('-') }}</td>
                 <td><strong>Date Impression :</strong> {{ "now"|date("d/m/Y H:i") }}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Médecin prescripteur :</strong> Dr. {{ consultation.medecin.nomComplet|default('-') }}</td>
             </tr>
         </table>
 
-        <div style="margin-top: 10px;">
-            {% for prescription in prestations %}
-                {% set resultat = prescription.resultatLaboratoire %}
-                
-                <div class="examen-block">
-                    <div class="examen-header">
-                        Analyse : {{ prescription.tarifPrestation.libelle }}
-                        <span style="float: right; font-size: 8px; color: #6b7280; font-weight: normal;">
-                            Validé le : {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }} par {{ resultat and resultat.validePar ? resultat.validePar : '-' }}
-                        </span>
-                    </div>
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">Paramètre biologique</th>
+                    <th style="width: 25%;">Résultat observé</th>
+                    <th style="width: 30%;">Valeurs de référence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prescription in prestations %}
+                    {% set resultat = prescription.resultatLaboratoire %}
+                    
+                    {% if resultat %}
+                        <tr class="row-examen">
+                            <td colspan="3">
+                                {{ prescription.tarifPrestation.libelle }}
+                                <span style="float: right; font-size: 8px; font-weight: normal; color: #4b5563;">
+                                    Validé le : {{ resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}
+                                </span>
+                            </td>
+                        </tr>
 
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50%;">Paramètre biologique</th>
-                                <th style="width: 25%;">Résultat observé</th>
-                                <th style="width: 25%;">Valeurs de référence</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if resultat and resultat.lignes|length > 0 %}
-                                {% set currentGroupe = null %}
-                                {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
-                                    {% if ligne.resultat is not empty and ligne.resultat|trim != '-' and ligne.resultat|trim != '' %}
-                                        
-                                        {# GESTION DE L'AFFICHAGE DU GROUPE #}
-                                        {% set displayGroupe = ligne.groupe|default('Analyses Générales') %}
-                                        {% if currentGroupe != displayGroupe %}
-                                            <tr>
-                                                <td colspan="3" style="background-color: #f3f4f6; color: #0f4c81; font-weight: bold; padding: 4px 6px; text-transform: uppercase; font-size: 9px; border: 1px solid #d1d5db;">
-                                                    {{ displayGroupe }}
-                                                </td>
-                                            </tr>
-                                            {% set currentGroupe = displayGroupe %}
-                                        {% endif %}
-
-                                        <tr>
-                                            <td style="padding-left: 12px;">{{ ligne.demande }}</td>
-                                            <td><strong>{{ ligne.resultat }}</strong></td>
-                                            <td style="color: #4b5563;">{{ ligne.valeurNormale ?: '-' }}</td>
+                        {% if resultat.lignes|length > 0 %}
+                            {% set currentGroupe = null %}
+                            {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
+                                {% if ligne.resultat is not empty and ligne.resultat|trim != '-' and ligne.resultat|trim != '' %}
+                                    
+                                    {# Gestion Intelligente des Groupes #}
+                                    {% set displayGroupe = ligne.groupe %}
+                                    {% if displayGroupe and displayGroupe|lower not in ['analyses générales', 'analyses generales', 'examen', 'général', ''] and currentGroupe != displayGroupe %}
+                                        <tr class="row-groupe">
+                                            <td colspan="3">{{ displayGroupe|upper }}</td>
                                         </tr>
+                                        {% set currentGroupe = displayGroupe %}
                                     {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td>{{ prescription.tarifPrestation.libelle }}</td>
-                                    <td><strong>{{ (resultat and resultat.resultat) ? resultat.resultat : '-' }}</strong></td>
-                                    <td>-</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
 
-                    {% if resultat and resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
-                        {% for antibiogramme in resultat.antibiogrammes %}
-                            <div style="margin-top: 10px; border: 1px solid #d1d5db;">
-                                <div style="background-color: #e5e7eb; padding: 4px 6px; font-weight: bold; font-size: 9.5px; color: #0f4c81;">
-                                    <span style="text-transform: uppercase;">Antibiogramme</span> - Germe isolé : <span style="color: #b91c1c;">{{ antibiogramme.germe.nom }}</span>
-                                </div>
-
-                                {% if antibiogramme.numeration or antibiogramme.commentaire %}
-                                    <div style="padding: 4px 6px; font-size: 8.5px; border-bottom: 1px solid #d1d5db; background-color: #f9fafb;">
-                                        {% if antibiogramme.numeration %}<span style="margin-right: 15px;"><strong>Numération :</strong> {{ antibiogramme.numeration }}</span>{% endif %}
-                                        {% if antibiogramme.commentaire %}<span><strong>Observation :</strong> {{ antibiogramme.commentaire }}</span>{% endif %}
-                                    </div>
+                                    <tr>
+                                        <td style="padding-left: 12px;">{{ ligne.demande }}</td>
+                                        <td><strong>{{ ligne.resultat }}</strong></td>
+                                        <td style="color: #4b5563;">{{ ligne.valeurNormale ?: '-' }}</td>
+                                    </tr>
                                 {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td style="padding-left: 12px;">{{ prescription.tarifPrestation.libelle }}</td>
+                                <td><strong>{{ resultat.resultat ?: '-' }}</strong></td>
+                                <td style="color: #4b5563;">-</td>
+                            </tr>
+                        {% endif %}
 
-                                <table class="data-table" style="border: none; margin-bottom: 0;">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 50%; border-left: none;">Antibiotique testé</th>
-                                            <th style="width: 25%;">Famille</th>
-                                            <th style="width: 25%; border-right: none;">Sensibilité</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% set hasSaisi = false %}
-                                        {% for ligneATB in antibiogramme.lignes %}
-                                            {% if ligneATB.sensibilite is not empty %}
-                                                {% set hasSaisi = true %}
-                                                <tr>
-                                                    <td style="border-left: none; padding-left: 12px;">{{ ligneATB.antibiotique.nom }}</td>
-                                                    <td>{{ ligneATB.antibiotique.famille|default('-') }}</td>
-                                                    <td style="border-right: none;">
-                                                        <strong style="
-                                                            color: {% if ligneATB.sensibilite == 'S' %}#15803d{% elseif ligneATB.sensibilite == 'R' %}#b91c1c{% else %}#b45309{% endif %};
-                                                        ">
-                                                            {{ ligneATB.sensibilite }} 
-                                                            {% if ligneATB.sensibilite == 'S' %}(Sensible)
-                                                            {% elseif ligneATB.sensibilite == 'R' %}(Résistant)
-                                                            {% elseif ligneATB.sensibilite == 'I' %}(Intermédiaire)
-                                                            {% endif %}
-                                                        </strong>
-                                                    </td>
-                                                </tr>
+                        {% if resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
+                            {% for antibiogramme in resultat.antibiogrammes %}
+                                <tr>
+                                    <td colspan="3" style="padding: 0;">
+                                        <div style="background-color: #fef2f2; border-top: 1px solid #fca5a5; padding: 6px 8px;">
+                                            <div style="color: #b91c1c; font-weight: bold; font-size: 10px; margin-bottom: 4px;">
+                                                ANTIBIOGRAMME - GERME ISOLÉ : {{ antibiogramme.germe.nom|upper }}
+                                            </div>
+                                            {% if antibiogramme.numeration or antibiogramme.commentaire %}
+                                                <div style="font-size: 8.5px; color: #4b5563; margin-bottom: 6px;">
+                                                    {% if antibiogramme.numeration %}<strong>Numération :</strong> {{ antibiogramme.numeration }} | {% endif %}
+                                                    {% if antibiogramme.commentaire %}<strong>Obs :</strong> {{ antibiogramme.commentaire }}{% endif %}
+                                                </div>
                                             {% endif %}
-                                        {% endfor %}
-                                        
-                                        {% if not hasSaisi %}
-                                            <tr>
-                                                <td colspan="3" style="text-align: center; color: #6b7280; font-style: italic; border-left: none; border-right: none;">
-                                                    Aucune sensibilité n'a été saisie pour ce germe.
-                                                </td>
-                                            </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% endfor %}
+                                            
+                                            <table style="width: 100%; font-size: 8.5px; border-collapse: collapse;">
+                                                {% for ligneATB in antibiogramme.lignes %}
+                                                    {% if ligneATB.sensibilite is not empty %}
+                                                        <tr>
+                                                            <td style="width: 45%; border-bottom: 1px solid #fecaca; padding: 3px 0;">{{ ligneATB.antibiotique.nom }}</td>
+                                                            <td style="width: 25%; border-bottom: 1px solid #fecaca; padding: 3px 0;">{{ ligneATB.antibiotique.famille|default('-') }}</td>
+                                                            <td style="width: 30%; border-bottom: 1px solid #fecaca; padding: 3px 0;">
+                                                                <strong style="color: {% if ligneATB.sensibilite == 'S' %}#15803d{% elseif ligneATB.sensibilite == 'R' %}#b91c1c{% else %}#b45309{% endif %};">
+                                                                    {{ ligneATB.sensibilite }} 
+                                                                    {% if ligneATB.sensibilite == 'S' %}(Sensible){% elseif ligneATB.sensibilite == 'R' %}(Résistant){% elseif ligneATB.sensibilite == 'I' %}(Intermédiaire){% endif %}
+                                                                </strong>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
                     {% endif %}
-                    {% if resultat and resultat.conclusion %}
-                        <div style="margin-top: 10px; padding: 4px 6px; background: #f9fafb; border-left: 2px solid #0f4c81; font-size: 8.5px;">
-                            <strong>Note clinique :</strong> {{ resultat.conclusion|nl2br }}
-                        </div>
-                    {% endif %}
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 20px;" class="text-muted">Aucun résultat validé disponible pour cette consultation.</div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </tbody>
+        </table>
+        <table style="width: 100%; margin-top: 40px; font-size: 9px;">
+            <tr>
+                <td style="width: 50%; text-align: center;">
+                    <div style="border-top: 1px dashed #cfd8e3; width: 70%; margin: 0 auto; padding-top: 8px;">
+                        <strong>Validation biologique</strong><br>
+                        <span style="color: #6b7280;">Laboratoire Nassarawa</span>
+                    </div>
+                </td>
+                <td style="width: 50%; text-align: center;">
+                    <div style="border-top: 1px dashed #cfd8e3; width: 70%; margin: 0 auto; padding-top: 8px;">
+                        <strong>Cachet & Signature</strong>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <div class="footer-note">
             Clinique Médicale Nassarawa — Fin du compte-rendu consolidé biologique.

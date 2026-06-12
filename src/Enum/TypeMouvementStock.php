@@ -11,4 +11,5 @@ enum TypeMouvementStock: string
     case SORTIE_SERVICE = 'sortie_service'; // Dotation à un service (ex: Urgences)
     case SORTIE_PERTE = 'sortie_perte'; // Péremption, casse, vol
     case SORTIE_AJUSTEMENT = 'sortie_ajustement'; // Correction suite à un inventaire
+    case AJUSTEMENT_INVENTAIRE = 'ajustement_inventaire';
 }

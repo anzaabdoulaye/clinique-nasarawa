@@ -1,3 +1,4 @@
+{# templates/laboratoire/resultats_consultation_show.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Résultats consultation #{{ consultation.id }}{% endblock %}
@@ -15,17 +16,9 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-
-            <a href="{{ path('app_laboratoire_index') }}" class="btn btn-outline-secondary">
-                Retour
-            </a>
-            <a href="{{ path('app_laboratoire_bon_show', {id: consultation.id}) }}" class="btn btn-outline-secondary">
-                 Bon d'examen
-            </a>
-            
-            <a href="{{ path('app_laboratoire_resultats_consultation_pdf', {id: consultation.id}) }}"
-               target="_blank"
-               class="btn btn-primary">
+            <a href="{{ path('app_laboratoire_index') }}" class="btn btn-outline-secondary">Retour</a>
+            <a href="{{ path('app_laboratoire_bon_show', {id: consultation.id}) }}" class="btn btn-outline-secondary">Bon d'examen</a>
+            <a href="{{ path('app_laboratoire_resultats_consultation_pdf', {id: consultation.id}) }}" target="_blank" class="btn btn-primary">
                 <i class="ri-printer-line me-1"></i> Imprimer la fiche
             </a>
         </div>
@@ -36,18 +29,12 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white fw-semibold">Patient</div>
                 <div class="card-body">
-                    <div><strong>Nom :</strong>
-                        {% if patient %}
-                            {{ patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) }}
-                        {% else %}
-                            -
-                        {% endif %}
+                    <div class="fs-5 fw-bold text-primary mb-2">
+                        {{ patient ? patient.nomComplet|default((patient.nom|default('') ~ ' ' ~ patient.prenom|default(''))|trim) : '-' }}
                     </div>
-                    <div><strong>Dossier :</strong> {{ consultation.dossierMedical ? consultation.dossierMedical.numeroDossier : '-' }}</div>
-                    <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
-                    <div><strong>Rendez-vous :</strong> {{ rdv ? ('#' ~ rdv.id) : '-' }}</div>
-                    <div><strong>Âge :</strong> {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}</div>
-                    <div><strong>Sexe :</strong> {{ patient and patient.sexe ? patient.sexe : '-' }}</div>
+                    <div class="mb-1"><i class="ri-folder-user-line me-2 text-muted"></i><strong>Dossier :</strong> {{ consultation.dossierMedical ? consultation.dossierMedical.numeroDossier : '-' }}</div>
+                    <div class="mb-1"><i class="ri-calendar-event-line me-2 text-muted"></i><strong>Âge :</strong> {{ patient and patient.dateNaissance ? patient.dateNaissance.diff(date()).y ~ ' ans' : '-' }}</div>
+                    <div><i class="ri-men-line me-2 text-muted"></i><strong>Sexe :</strong> {{ patient and patient.sexe ? patient.sexe : '-' }}</div>
                 </div>
             </div>
         </div>
@@ -56,24 +43,24 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white fw-semibold">Prescription</div>
                 <div class="card-body">
-                    <div><strong>Médecin :</strong>
-                        {{ consultation.medecin.nomComplet|default((consultation.medecin.nom|default('') ~ ' ' ~ consultation.medecin.prenom|default(''))|trim) }}
-                    </div>
-                    <div><strong>Date consultation :</strong> {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}</div>
+                    <div class="mb-2"><strong>Médecin :</strong> Dr. {{ consultation.medecin.nomComplet|default('-') }}</div>
+                    <div class="mb-2"><strong>Consultation :</strong> #{{ consultation.id }}</div>
+                    <div class="mb-2"><strong>Date :</strong> {{ consultation.createdAt ? consultation.createdAt|date('d/m/Y H:i') : '-' }}</div>
                     <div><strong>Service :</strong> Laboratoire</div>
-                    <div><strong>Dernière validation :</strong> {{ dateValidationReference ? dateValidationReference|date('d/m/Y H:i') : '-' }}</div>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white fw-semibold">Validation</div>
+                <div class="card-header bg-white fw-semibold">Validation & État</div>
                 <div class="card-body">
-                    <div><strong>Examens avec résultat :</strong> {{ prestations|length }}</div>
-                    <div><strong>État :</strong> Fiche consolidée prête à l'impression</div>
-                    <div class="mt-2"><strong>Validé par :</strong></div>
-                    <div class="small text-muted">
+                    <div class="mb-2">
+                        <span class="badge bg-success-subtle text-success fs-6"><i class="ri-check-double-line me-1"></i>Fiche prête à l'impression</span>
+                    </div>
+                    <div class="mb-1"><strong>Dernière validation :</strong> {{ dateValidationReference ? dateValidationReference|date('d/m/Y H:i') : '-' }}</div>
+                    <div class="mt-3"><strong>Biologiste / Technicien :</strong></div>
+                    <div class="text-muted fw-medium">
                         {% if validateurs is not empty %}
                             {{ validateurs|join(' · ') }}
                         {% else %}
@@ -85,53 +72,50 @@
         </div>
     </div>
 
-    <div class="d-flex flex-column gap-3">
-        {% for prestation in prestations %}
-            {% set resultat = prestation.resultatLaboratoire %}
-
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-white d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
-                    <div>
-                        <div class="fw-semibold">{{ prestation.tarifPrestation.libelle }}</div>
-                        <div class="text-muted small">
-                            Examen #{{ prestation.id }} · {{ prestation.tarifPrestation.categorie.value|replace({'_':' '})|title }}
-                        </div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <span class="badge rounded-pill text-bg-light border">Qté {{ prestation.quantite }}</span>
-                        <a href="{{ path('app_laboratoire_show', {id: prestation.id}) }}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                            Ouvrir l'examen
-                        </a>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    {% if prestation.instructions %}
-                        <div class="alert alert-light border mb-3">
-                            <strong>Instructions :</strong> {{ prestation.instructions }}
-                        </div>
-                    {% endif %}
-
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 28%;">Paramètre / Demande</th>
-                                    <th style="width: 36%;">Résultat</th>
-                                    <th style="width: 36%;">Valeurs normales</th>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">Détail des résultats d'analyses</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40%;" class="ps-4">Paramètre / Demande</th>
+                            <th style="width: 30%;">Résultat</th>
+                            <th style="width: 30%;">Valeurs de référence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestation in prestations %}
+                            {% set resultat = prestation.resultatLaboratoire %}
+                            {% if resultat %}
+                                
+                                <tr class="table-primary">
+                                    <td colspan="3" class="ps-4 py-3 border-top border-bottom border-primary-subtle">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="ri-test-tube-line me-2 fs-5 align-middle text-primary"></i>
+                                                <span class="fw-bold fs-5 text-primary text-uppercase align-middle">{{ prestation.tarifPrestation.libelle }}</span>
+                                                <span class="badge bg-white text-primary border border-primary-subtle ms-3">Qté {{ prestation.quantite }}</span>
+                                            </div>
+                                            <a href="{{ path('app_laboratoire_show', {id: prestation.id}) }}" class="btn btn-sm btn-light rounded-pill border">
+                                                Modifier l'examen
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% if resultat and resultat.lignes|length > 0 %}
+
+                                {% if resultat.lignes|length > 0 %}
                                     {% set currentGroupe = null %}
                                     {% for ligne in resultat.lignes|sort((a, b) => a.ordre <=> b.ordre) %}
                                         {% if ligne.resultat is not empty and ligne.resultat|trim != '-' %}
                                             
-                                            {# GESTION DE L'AFFICHAGE DU GROUPE #}
-                                            {% set displayGroupe = ligne.groupe|default('Analyses Générales') %}
-                                            {% if currentGroupe != displayGroupe %}
-                                                <tr class="table-secondary">
-                                                    <td colspan="3" class="fw-bold text-uppercase text-primary" style="font-size: 0.85rem;">
+                                            {# Filtre intelligent des groupes génériques #}
+                                            {% set displayGroupe = ligne.groupe %}
+                                            {% if displayGroupe and displayGroupe|lower not in ['analyses générales', 'analyses generales', 'examen', 'général', ''] and currentGroupe != displayGroupe %}
+                                                <tr class="table-light border-bottom border-top border-secondary-subtle">
+                                                    <td colspan="3" class="ps-4 py-2 text-muted fw-bold text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
                                                         {{ displayGroupe }}
                                                     </td>
                                                 </tr>
@@ -139,111 +123,71 @@
                                             {% endif %}
 
                                             <tr>
-                                                <td class="ps-4">{{ ligne.demande|nl2br }}</td>
-                                                <td>{{ ligne.resultat ? ligne.resultat|nl2br : '-' }}</td>
-                                                <td class="text-muted">{{ ligne.valeurNormale ? ligne.valeurNormale|nl2br : '-' }}</td>
+                                                <td class="ps-5 text-dark">{{ ligne.demande|nl2br }}</td>
+                                                <td><span class="fw-bold fs-6">{{ ligne.resultat|nl2br }}</span></td>
+                                                <td class="text-muted">{{ ligne.valeurNormale|nl2br }}</td>
                                             </tr>
                                         {% endif %}
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td>{{ prestation.tarifPrestation.libelle }}</td>
-                                        <td>{{ resultat and resultat.resultat ? resultat.resultat|nl2br : '-' }}</td>
-                                        <td>-</td>
+                                        <td class="ps-5">{{ prestation.tarifPrestation.libelle }}</td>
+                                        <td><span class="fw-bold">{{ resultat.resultat|nl2br ?: '-' }}</span></td>
+                                        <td class="text-muted">-</td>
                                     </tr>
                                 {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
 
-                    {% if resultat and resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
-                        <div class="mt-4">
-                            <h6 class="text-primary mb-3 border-bottom pb-2">
-                                <i class="ri-microscope-line me-1"></i> Bactériologie & Antibiogrammes
-                            </h6>
-                            
-                            <div class="row g-3">
-                                {% for antibiogramme in resultat.antibiogrammes %}
-                                    <div class="col-12">
-                                        <div class="card border-primary-subtle shadow-sm">
-                                            <div class="card-header bg-primary-subtle text-primary-emphasis fw-bold py-2 d-flex flex-wrap justify-content-between align-items-center">
-                                                <span>Antibiogramme</span>
-                                                <span>Germe isolé : <strong class="text-danger fs-6">{{ antibiogramme.germe.nom }}</strong></span>
-                                            </div>
-                                            
-                                            {% if antibiogramme.numeration or antibiogramme.commentaire %}
-                                                <div class="card-body bg-light py-2 border-bottom">
-                                                    <div class="row small">
-                                                        {% if antibiogramme.numeration %}
-                                                            <div class="col-md-6"><strong>Numération :</strong> {{ antibiogramme.numeration }}</div>
+                                {% if resultat.antibiogrammes is defined and resultat.antibiogrammes|length > 0 %}
+                                    <tr>
+                                        <td colspan="3" class="p-0 border-0">
+                                            {% for antibiogramme in resultat.antibiogrammes %}
+                                                <div class="bg-danger-subtle px-4 py-3 border-bottom border-danger-subtle">
+                                                    <h6 class="text-danger fw-bold mb-2 text-uppercase">
+                                                        <i class="ri-virus-line me-1"></i> Antibiogramme - Germe : {{ antibiogramme.germe.nom }}
+                                                    </h6>
+                                                    
+                                                    {% if antibiogramme.numeration or antibiogramme.commentaire %}
+                                                        <div class="mb-3 small text-dark">
+                                                            {% if antibiogramme.numeration %}<span class="me-4"><strong>Numération :</strong> {{ antibiogramme.numeration }}</span>{% endif %}
+                                                            {% if antibiogramme.commentaire %}<span><strong>Observation :</strong> {{ antibiogramme.commentaire }}</span>{% endif %}
+                                                        </div>
+                                                    {% endif %}
+
+                                                    <div class="row g-2">
+                                                    {% for ligneATB in antibiogramme.lignes %}
+                                                        {% if ligneATB.sensibilite is not empty %}
+                                                            <div class="col-12 col-md-4">
+                                                                <div class="bg-white p-2 rounded border border-white d-flex justify-content-between align-items-center shadow-sm">
+                                                                    <span class="small fw-medium">{{ ligneATB.antibiotique.nom }}</span>
+                                                                    <span class="badge rounded-pill {% if ligneATB.sensibilite == 'S' %}bg-success{% elseif ligneATB.sensibilite == 'R' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                                                        {{ ligneATB.sensibilite }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         {% endif %}
-                                                        {% if antibiogramme.commentaire %}
-                                                            <div class="col-md-6"><strong>Observation :</strong> {{ antibiogramme.commentaire }}</div>
-                                                        {% endif %}
+                                                    {% endfor %}
                                                     </div>
                                                 </div>
-                                            {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endif %}
 
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-borderless table-striped align-middle mb-0">
-                                                    <thead class="table-light border-bottom">
-                                                        <tr>
-                                                            <th class="ps-3" style="width: 40%;">Antibiotique testé</th>
-                                                            <th style="width: 30%;">Famille</th>
-                                                            <th style="width: 30%;">Sensibilité</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% set hasSaisi = false %}
-                                                        {% for ligneATB in antibiogramme.lignes %}
-                                                            {% if ligneATB.sensibilite is not empty %}
-                                                                {% set hasSaisi = true %}
-                                                                <tr>
-                                                                    <td class="ps-3 fw-medium">{{ ligneATB.antibiotique.nom }}</td>
-                                                                    <td class="text-muted small">{{ ligneATB.antibiotique.famille|default('-') }}</td>
-                                                                    <td>
-                                                                        <span class="badge rounded-pill {% if ligneATB.sensibilite == 'S' %}bg-success{% elseif ligneATB.sensibilite == 'R' %}bg-danger{% else %}bg-warning text-dark{% endif %} px-3 py-2">
-                                                                            {{ ligneATB.sensibilite }}
-                                                                            {% if ligneATB.sensibilite == 'S' %} (Sensible)
-                                                                            {% elseif ligneATB.sensibilite == 'R' %} (Résistant)
-                                                                            {% elseif ligneATB.sensibilite == 'I' %} (Intermédiaire)
-                                                                            {% endif %}
-                                                                        </span>
-                                                                    </td>
-                                                                </tr>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                        
-                                                        {% if not hasSaisi %}
-                                                            <tr>
-                                                                <td colspan="3" class="text-center text-muted fst-italic py-3">
-                                                                    Aucune sensibilité n'a été saisie pour ce germe.
-                                                                </td>
-                                                            </tr>
-                                                        {% endif %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if resultat and resultat.conclusion %}
-                        <div class="mt-4">
-                            <div class="fw-semibold mb-2 text-dark">Conclusion / Observation</div>
-                            <div class="border rounded-3 p-3 bg-light-subtle text-dark">{{ resultat.conclusion|nl2br }}</div>
-                        </div>
-                    {% endif %}
+                                {% if resultat.conclusion %}
+                                    <tr class="bg-success-subtle">
+                                        <td colspan="3" class="ps-4 py-3 border-bottom border-success-subtle">
+                                            <strong class="text-success"><i class="ri-chat-1-line me-1"></i> Conclusion / Observation :</strong> 
+                                            <span class="text-dark ms-2">{{ resultat.conclusion|nl2br }}</span>
+                                        </td>
+                                    </tr>
+                                {% endif %}
 
-                    <div class="mt-3 pt-3 border-top small text-muted d-flex flex-wrap gap-3">
-                        <span><strong>Validation :</strong> <i class="ri-calendar-line ms-1"></i> {{ resultat and resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}</span>
-                        <span><strong>Laborantin :</strong> <i class="ri-user-line ms-1"></i> {{ resultat and resultat.validePar ? resultat.validePar : '-' }}</span>
-                    </div>
-                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

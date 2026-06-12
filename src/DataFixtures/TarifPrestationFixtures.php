@@ -55,12 +55,11 @@ class TarifPrestationFixtures extends Fixture implements DependentFixtureInterfa
 
             // ================= BIOLOGIE / LABO =================
             ['libelle' => 'Acide urique', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3000, 'prixPriseEnCharge' => 4000],
-             ['libelle' => 'BNP et PRO BNP', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 15000],
-               ['libelle' => 'Triglycerides', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 5000, 'prixPriseEnCharge' => 5000],
-               ['libelle' => 'Troponine', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 12000],
-               ['libelle' => 'TSH', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 12000],
-
-
+            ['libelle' => 'BNP et PRO BNP', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 15000],
+            ['libelle' => 'Triglycerides', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 5000, 'prixPriseEnCharge' => 5000],
+            ['libelle' => 'Troponine', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 12000],
+            ['libelle' => 'TSH', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000, 'prixPriseEnCharge' => 12000],
+            ['libelle' => 'Créatinine', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3500, 'prixPriseEnCharge' => 4000],
             ['libelle' => 'Albumine + Sucre', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 2000, 'prixPriseEnCharge' => 2500],
             ['libelle' => 'Antigène HBs', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 4000, 'prixPriseEnCharge' => 5000],
             ['libelle' => 'ASLO', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3500, 'prixPriseEnCharge' => 4000],
@@ -116,8 +115,8 @@ class TarifPrestationFixtures extends Fixture implements DependentFixtureInterfa
             ['libelle' => 'Temps de saignement', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 1500,'prixPriseEnCharge' => 1500],
             ['libelle' => 'Testostérone', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000,'prixPriseEnCharge' => 12000],
             ['libelle' => 'Transaminase', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 6000,'prixPriseEnCharge' => 8000],
-            ['libelle' => 'Urée', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 2000,'prixPriseEnCharge' => 4000],
-            ['libelle' => 'Vitesse de sédimentation (VS)', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3000,'prixPriseEnCharge' => 3000],
+            ['libelle' => 'Urée', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3500,'prixPriseEnCharge' => 4000],
+            ['libelle' => 'Vitesse de sédimentation (VS)', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 2000,'prixPriseEnCharge' => 3000],
             ['libelle' => 'Widal', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3000,'prixPriseEnCharge' => 4000],
 
             // ================= EXAMENS FONCTIONNELS =================

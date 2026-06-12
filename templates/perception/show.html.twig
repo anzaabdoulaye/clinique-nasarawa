@@ -1,12 +1,15 @@
+{# templates/perception/show.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Facture #{{ facture.id }}{% endblock %}
 
 {% block body %}
 <div class="container-fluid">
+    {# On sécurise la récupération en passant obligatoirement par le dossier médical #}
     {% set consultation = facture.consultation %}
-    {% set rdv = consultation ? consultation.rendezVous|default(null) : null %}
-    {% set patient = rdv ? rdv.patient|default(null) : null %}
+    {% set patient = consultation.dossierMedical.patient|default(null) %}
+    {% set age = patient ? patient.age|default(null) : null %}
+
     {% set statut = facture.statut.value %}
 
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
@@ -41,8 +44,11 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white fw-semibold">Patient</div>
                 <div class="card-body">
-                    <div><strong>Nom :</strong>
-                        {% if patient %}{{ patient.nomComplet|default((patient.nom|default('')~' '~patient.prenom|default(''))|trim) }}{% else %}-{% endif %}
+                   <div><strong>Nom :</strong>
+                        {% if patient %}{{ (patient.nom ~ ' ' ~ patient.prenom)|trim }}{% else %}-{% endif %}
+                    </div>
+                    <div><strong>Age :</strong>
+                        {% if age is not null %}{{ age }} ans{% else %}-{% endif %}
                     </div>
                     <div><strong>Consultation :</strong> #{{ consultation.id }}</div>
                     <div><strong>Médecin :</strong>

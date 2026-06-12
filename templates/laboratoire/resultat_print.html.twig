@@ -1,3 +1,4 @@
+{# templates/laboratoire/resultat_print.html.twig #}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -43,7 +44,7 @@
                     <div class="clinic-meta">
                         <strong>NIF :</strong> 120402/R | <strong>RCCM :</strong> NE-NIM-01-2024-B12-00145<br>
                         <strong>Adresse :</strong> Yantala Haut, Avenue du Daoura YN 187, Niamey<br>
-                        <strong>Tél :</strong> 20 75 51 02 / 82 09 61 12<br>
+                        <strong>Tél :</strong> 20 75 51 02 / 82 0dfjhefhe9 61 12<br>
                         <strong>Email :</strong> nassrawaclinique@gmail.com
                     </div>
                 </td>
@@ -53,7 +54,7 @@
                             <img src="{{ qrCodeBase64 }}" alt="QR Verification" style="width: 55px; height: 55px; margin-bottom: 2px;"><br>
                         {% endif %}
                         <span style="font-size: 8px; font-weight: bold; color: #0f4c81;">DOSSIER GLOBAL</span><br>
-                        <span style="font-size: 7px; color: #6b7280;">Consultation #{{ consultation.id }}</span>
+                        
                     </div>
                 </td>
             </tr>
@@ -73,9 +74,9 @@
                 <td><strong>Âge / Sexe :</strong> {{ patient.age|default('-') }} ans / {{ patient.sexe|default('-') }}</td>
                 <td><strong>Date de validation :</strong> {{ resultat.dateValidation ? resultat.dateValidation|date('d/m/Y H:i') : '-' }}</td>
             </tr>
-            <tr>
+            {# <tr>
                 <td colspan="2"><strong>Consultation :</strong> #{{ consultation.id }}</td>
-            </tr>
+            </tr> #}
         </table>
 
         <div class="section-title">RÉSULTATS DU LABORATOIRE</div>

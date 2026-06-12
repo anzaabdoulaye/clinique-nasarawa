@@ -134,4 +134,61 @@ class PharmacieStockController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
+    #[Route('/ajustement', name: 'app_pharmacie_stock_ajustement', methods: ['GET', 'POST'])]
+    //#[IsGranted('ROLE_ADMIN')] 
+    public function ajustement(Request $request, EntityManagerInterface $em): Response
+    {
+        $form = $this->createForm(\App\Form\AjustementStockType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            
+            /** @var \App\Entity\Lot $lot */
+            $lot = $data['lot'];
+            $quantiteReelle = (int) $data['quantiteReelle'];
+            $motif = $data['motif'];
+            
+            $stockInformatiqueActuel = $lot->getQuantite();
+            
+            // 1. Calcul de la différence (L'écart d'inventaire)
+            $ecart = $quantiteReelle - $stockInformatiqueActuel;
+
+            if ($ecart === 0) {
+                $this->addFlash('warning', 'La quantité saisie est identique au stock actuel. Aucun ajustement n\'a été fait.');
+                return $this->redirectToRoute('app_pharmacie_stock_ajustement');
+            }
+
+            // 2. Mise à jour immédiate du Lot
+            $lot->setQuantite($quantiteReelle);
+
+            // 3. Traçabilité (Création du mouvement d'Ajustement)
+            $mouvement = new \App\Entity\MouvementStock();
+            $mouvement->setMedicament($lot->getMedicament());
+            $mouvement->setLot($lot);
+            $mouvement->setType(\App\Enum\TypeMouvementStock::AJUSTEMENT_INVENTAIRE);
+            
+            // L'écart peut être positif (oubli de saisie) ou négatif (perte/vol/casse)
+            $mouvement->setQuantite($ecart); 
+            $mouvement->setStockApresMouvement($quantiteReelle);
+            $mouvement->setValeurAchatUnitaire($lot->getPrixAchat());
+            $mouvement->setMotif('RÉGULARISATION : ' . $motif);
+            
+            $userLabel = method_exists($this->getUser(), 'getNomComplet') ? $this->getUser()->getNomComplet() : $this->getUser()?->getUserIdentifier();
+            $mouvement->setOperateur($userLabel);
+
+            $em->persist($mouvement);
+            $em->flush();
+
+            $signe = $ecart > 0 ? '+' : '';
+            $this->addFlash('success', sprintf('Ajustement validé ! Le stock informatique a été corrigé (Écart de %s%d unités).', $signe, $ecart));
+
+            return $this->redirectToRoute('app_pharmacie_stock_ajustement');
+        }
+
+        return $this->render('pharmacie/stock/ajustement.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
 }

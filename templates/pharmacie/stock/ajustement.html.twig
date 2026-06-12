@@ -1,0 +1,130 @@
+{# templates/pharmacie/stock/ajustement.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Régularisation d'Inventaire{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+
+    {# En-tête de la page #}
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 col-xl-8">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h3 class="mb-1 fw-bold text-dark">
+                        <i class="ri-scales-3-line me-2 text-primary"></i> Régularisation d'Inventaire
+                    </h3>
+                    <p class="text-muted mb-0">
+                        Corrigez le stock informatique pour qu'il corresponde à la réalité physique de l'étagère.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ path('app_pharmacie_index') }}" class="btn btn-outline-secondary">
+                        <i class="ri-arrow-left-line me-1"></i> Retour pharmacie
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Contenu principal #}
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 pt-4 px-4 px-md-5 pb-0">
+                    <h5 class="fw-semibold text-dark mb-0">Saisie de l'ajustement</h5>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    
+                    {# Affichage des messages Flash (Succès ou Avertissements) #}
+                    {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ label }} border-0 shadow-sm alert-dismissible fade show d-flex align-items-center" role="alert">
+                                {% if label == 'success' %}
+                                    <i class="ri-checkbox-circle-fill fs-4 me-2"></i>
+                                {% else %}
+                                    <i class="ri-alert-fill fs-4 me-2"></i>
+                                {% endif %}
+                                <div>{{ message }}</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
+                    {# Message d'instruction crucial #}
+                    <div class="alert border-0 bg-info-subtle text-info-emphasis d-flex align-items-start mb-4 rounded-3 p-3">
+                        <i class="ri-information-line fs-4 me-3 mt-1"></i>
+                        <div>
+                            <strong>Attention :</strong> Toute régularisation est tracée avec votre nom. 
+                            Saisissez simplement la quantité totale que vous avez <strong>physiquement comptée</strong>. 
+                            Le système s'occupera de calculer la différence (+ ou -) et d'ajuster l'historique.
+                        </div>
+                    </div>
+
+                    {{ form_start(form) }}
+                    
+                    <div class="row g-4">
+                        {# Sélection du Lot #}
+                        <div class="col-12">
+                            {{ form_label(form.lot, null, {'label_attr': {'class': 'form-label fw-bold text-dark'}}) }}
+                            {{ form_widget(form.lot) }}
+                            <div class="form-text mt-1 text-muted">Recherchez le médicament ou le numéro de lot concerné.</div>
+                            {{ form_errors(form.lot) }}
+                        </div>
+
+                        {# Quantité Réelle #}
+                        <div class="col-12 col-md-6">
+                            {{ form_label(form.quantiteReelle, null, {'label_attr': {'class': 'form-label fw-bold text-dark required'}}) }}
+                            <div class="input-group input-group-lg shadow-sm">
+                                {{ form_widget(form.quantiteReelle) }}
+                                <span class="input-group-text bg-white border-start-0 text-muted">Unités</span>
+                            </div>
+                            {{ form_errors(form.quantiteReelle) }}
+                        </div>
+
+                        {# Motif de l'ajustement #}
+                        <div class="col-12">
+                            {{ form_label(form.motif, null, {'label_attr': {'class': 'form-label fw-bold text-dark required'}}) }}
+                            {{ form_widget(form.motif, {'attr': {'class': 'form-control shadow-sm'}}) }}
+                            {{ form_errors(form.motif) }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end align-items-center mt-5 pt-4 border-top gap-3">
+                        <a href="{{ path('app_pharmacie_index') }}" class="btn btn-light px-4 border">Annuler</a>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg px-4 shadow fw-bold" onclick="return confirm('Confirmez-vous la régularisation définitive de ce stock ?');">
+                            <i class="ri-save-line me-1"></i> Valider l'ajustement
+                        </button>
+                    </div>
+
+                    {{ form_end(form) }}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialisation de Select2 pour la recherche rapide des lots
+            if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                $('.select2-lot').select2({
+                    width: '100%',
+                    placeholder: "Tapez pour rechercher un lot...",
+                    allowClear: true,
+                    language: {
+                        noResults: function () {
+                            return "Aucun lot trouvé";
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

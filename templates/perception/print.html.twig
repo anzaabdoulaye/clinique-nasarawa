@@ -1,3 +1,4 @@
+{# templates/perception/print.html.twig #}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -279,17 +280,11 @@
     </style>
 </head>
 <body>
-    {% set consultation = consultation ?? (facture.consultation ?? null) %}
-    {% set patient = null %}
-    {% if patient is not defined or patient is null %}
-        {% if consultation %}
-            {% if consultation.rendezVous and consultation.rendezVous.patient %}
-                {% set patient = consultation.rendezVous.patient %}
-            {% elseif consultation.dossierMedical and consultation.dossierMedical.patient %}
-                {% set patient = consultation.dossierMedical.patient %}
-            {% endif %}
-        {% endif %}
-    {% endif %}
+{# On aligne la même logique robuste que sur la vue web #}
+    {% set consultation = facture.consultation %}
+    {% set patient = consultation.dossierMedical.patient|default(null) %}
+    {% set age = patient ? patient.age|default(null) : null %}
+
     {% set montantBase = facture.baseTotal %}
     {% set timbre = facture.timbreAmount %}
 
@@ -363,17 +358,17 @@
 
         <div class="section">
             <div class="section-title">Patient</div>
-            <div class="box">
+           <div class="box">
                 <strong>Nom et prénom :</strong>
-                {{ patient ? ((patient.nom ?? '') ~ ' ' ~ (patient.prenom ?? ''))|trim : '-' }}
+                {{ patient ? (patient.nom ~ ' ' ~ patient.prenom)|upper : '-' }}
                 <br>
 
-                <strong>Code patient :</strong>
-                {{ patient and patient.code ? patient.code : '—' }}
+                <strong>Age :</strong>
+                {{ age is not null ? age ~ ' ans' : '-' }}
                 <br>
 
                 <strong>N° dossier médical :</strong>
-                {{ consultation and consultation.dossierMedical and consultation.dossierMedical.numeroDossier ? consultation.dossierMedical.numeroDossier : '-' }}
+                {{ consultation and consultation.dossierMedical ? consultation.dossierMedical.numeroDossier : '-' }}
                 <br>
 
                 <strong>Motif de consultation :</strong>
@@ -381,7 +376,7 @@
                 <br>
 
                 <strong>Téléphone :</strong>
-                {{ patient and patient.telephone ? patient.telephone : '-' }}
+                {{ patient ? patient.telephone : '-' }}
                 <br>
 
                 {% if consultation and consultation.rendezVous %}

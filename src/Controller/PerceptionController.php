@@ -184,9 +184,16 @@ final class PerceptionController extends AbstractController
     #[Route('/facture/{id}', name: 'app_perception_facture_show', methods: ['GET'])]
     public function show(Facture $facture): Response
     {
-        return $this->render('perception/show.html.twig', ['facture' => $facture]);
-    }
+        $consultation = $facture->getConsultation();
+        // Passage direct par le dossier médical, qui est obligatoire sur la consultation
+        $patient = $consultation?->getDossierMedical()?->getPatient();
 
+        return $this->render('perception/show.html.twig', [
+            'facture' => $facture,
+            'patient' => $patient,
+            'age' => $patient?->getAge(), // Injection directe de l'âge calculé
+        ]);
+    }
     // =================================================================================
     // LA MÉTHODE ENCAISSER AVEC L'INTÉGRATION DU PHARMACY MANAGER (PUI)
     // =================================================================================
@@ -335,12 +342,19 @@ final class PerceptionController extends AbstractController
         $dataUri = 'data:image/png;base64,' . base64_encode($png);
         $code = 'FAC-' . $facture->getId();
 
+        // Extraction et sécurisation des entités liées
+        $consultation = $facture->getConsultation();
+        // Passage direct par le dossier médical, qui est obligatoire sur la consultation
+        $patient = $consultation?->getDossierMedical()?->getPatient();
+
         return $this->render('perception/print.html.twig', [
             'facture' => $facture,
             'qr_data' => $dataUri,
             'code_qr' => $code,
             'verifyUrl' => $verifyUrl,
             'consultation' => $facture->getConsultation(),
+            'patient' => $patient,
+            'age' => $patient?->getAge(), // Injection ici aussi
         ]);
     }
 
@@ -357,9 +371,15 @@ final class PerceptionController extends AbstractController
         $logoPath = $this->getParameter('kernel.project_dir') . '/public/logo.jpeg';
         $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
 
+        // Extraction et sécurisation des entités liées
+        $consultation = $facture->getConsultation();
+        // Passage direct par le dossier médical, qui est obligatoire sur la consultation
+        $patient = $consultation?->getDossierMedical()?->getPatient();
+
         $html = $this->renderView('perception/print.html.twig', [
             'facture' => $facture, 'qr_data' => $dataUri, 'code_qr' => $code,
-            'verifyUrl' => $verifyUrl, 'consultation' => $facture->getConsultation(), 'logo_path' => $logoBase64,
+            'verifyUrl' => $verifyUrl, 'consultation' => $facture->getConsultation(), 'logo_path' => $logoBase64,'patient' => $patient,
+            'age' => $patient?->getAge(),
         ]);
 
         $options = new Options();
@@ -439,6 +459,7 @@ final class PerceptionController extends AbstractController
         $currentUser = $this->getUser();
         $connectedUser = $currentUser instanceof Utilisateur ? $currentUser : null;
         $agentFilterLocked = !$this->isGranted('ROLE_ADMIN') && $connectedUser instanceof Utilisateur;
+
 
         if ($agentFilterLocked) {
             $agentId = $connectedUser->getId() ?? 0;

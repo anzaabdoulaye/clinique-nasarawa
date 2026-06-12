@@ -988,7 +988,14 @@ public function consultationShow(
             'tgo' => 'asat',
             'tgp' => 'alat',
             'transaminase' => 'transaminases',
+           // --- NOUVEAUX ALIAS POUR LE CHOLESTEROL ---
             'cholestérolémie' => 'cholestérol total',
+            'cholestérol' => 'cholestérol total',
+            'cholesterol' => 'cholestérol total',
+            'cholestérol ldl' => 'ldl',
+            'cholesterol ldl' => 'ldl',
+            'cholestérol hdl' => 'hdl',
+            'cholesterol hdl' => 'hdl',
             'bilirubine conjuguée directe' => 'bilirubine directe',
             'bilirubine conjuguée' => 'bilirubine directe',
             'crp quantitative' => 'crp',
@@ -1004,6 +1011,12 @@ public function consultationShow(
             'micro albuminémie' => 'micro albuminurie',
             'magnésémie' => 'magnésium',
             't4 libre' => 't4',
+            'Selle KOPA' => 'selle kopa',
+            'selle kopa' => 'selle kopa',
+            'eps' => 'selle kopa',
+            'examen parasitologique des selles' => 'selle kopa',
+            'parasitologie des selles' => 'selle kopa',
+            'coproculture' => 'selle kopa',
         ];
 
         $libelle = $aliasList[$libelleInitial] ?? $libelleInitial;
@@ -1227,7 +1240,7 @@ public function consultationShow(
         }
 
         // =====================================================================
-        // 6. EXAMENS REGROUPÉS (Bilan, Hémostase, Urines)
+        // 6. EXAMENS REGROUPÉS (Bilan, Hémostase, Urines) ET CHOLESTEROL
         // =====================================================================
 
         if (str_contains($libelle, 'transaminases')) {
@@ -1255,12 +1268,46 @@ public function consultationShow(
             ];
         }
 
+        // Variables pour les normes dynamiques de cholestérol
+        $normeCholTotal = match ($profil) {
+            'NOUVEAU_NE' => '0.5 - 1.6 g/l',
+            'ENFANT' => '< 1.70 g/l',
+            default => '1.20 - 2.39 g/l', // HOMME et FEMME
+        };
+
+        $normeLDL = match ($profil) {
+            'NOUVEAU_NE' => '0.3 - 1 g/l',
+            'ENFANT' => '0.6 - 1.29 g/l',
+            default => '0.5 - 1.59 g/l', // HOMME et FEMME
+        };
+
+        $normeHDL = match ($profil) {
+            'NOUVEAU_NE' => '0.2 - 0.6 g/l',
+            'ENFANT' => '> 0.45 g/l',
+            'FEMME' => '> 0.50 g/l',
+            default => '> 0.40 g/l', // HOMME
+        };
+
+        if (str_contains($libelle, 'cholestérol total') || $libelle === 'cholesterol total') {
+            return [['demande' => 'Cholestérol total', 'norme' => $normeCholTotal]];
+        }
+
+        // Si demandé individuellement : LDL
+        if (str_contains($libelle, 'ldl')) {
+            return [['demande' => 'LDL Cholestérol', 'norme' => $normeLDL]];
+        }
+
+        // Si demandé individuellement : HDL
+        if (str_contains($libelle, 'hdl')) {
+            return [['demande' => 'HDL Cholestérol', 'norme' => $normeHDL]];
+        }
+
+        // Si demandé sous forme de Bilan Lipidique
         if (str_contains($libelle, 'lipidique')) {
-            $normeHDL = $isFemme ? '> 0.50 g/l' : '> 0.40 g/l';
             return [
-                ['demande' => 'Cholestérol total', 'norme' => '1.20 - 2.39 g/l'],
+                ['demande' => 'Cholestérol total', 'norme' => $normeCholTotal],
                 ['demande' => 'HDL Cholestérol', 'norme' => $normeHDL],
-                ['demande' => 'LDL Cholestérol', 'norme' => '0.5 - 1.59 g/l'],
+                ['demande' => 'LDL Cholestérol', 'norme' => $normeLDL],
                 ['demande' => 'Triglycérides', 'norme' => '0.60 - 1.60 g/l'],
             ];
         }
@@ -1310,7 +1357,7 @@ public function consultationShow(
         if (str_contains($libelle, 'goutte epaisse')) {
             return [
                 ['demande' => 'Goutte épaisse (Recherche de Plasmodium)', 'norme' => 'Négatif / Absence'],
-                ['demande' => 'Densité parasitaire', 'norme' => '0']
+                ['demande' => 'Densité parasitaire', 'norme' => '< 40 parasites/µl'],
             ];
         }
 
@@ -1369,8 +1416,14 @@ public function consultationShow(
             return [['demande' => 'Micro-albuminurie', 'norme' => '< 20 mg/l']];
         }
 
-        if (str_contains($libelle, 'tp') && !str_contains($libelle, 'tgp')) {
-            return [['demande' => 'Taux de Prothrombine (TP)', 'norme' => '70 - 100 %']];
+        // Remplacer l'ancien bloc du Taux de Prothrombine (TP) par cette version complète :
+        if ((str_contains($libelle, 'tp') || str_contains($libelle, 'prothrombine')) && !str_contains($libelle, 'tgp')) {
+            return [
+                ['demande' => 'Taux de prothrombine (TP)', 'norme' => '08 - 14 secondes'],
+                ['demande' => '% (Pourcentage)', 'norme' => '70 - 100 %'],
+                ['demande' => 'INR', 'norme' => '0,70 - 1,30'],
+                ['demande' => 'Taux de céphaline activé (TCA)', 'norme' => '25 - 45 secondes'],
+            ];
         }
 
         if (str_contains($libelle, 'tck') || str_contains($libelle, 'tca')) {
@@ -1412,6 +1465,35 @@ public function consultationShow(
             ];
         }
 
+       // Mappage complet de l'examen des Selles (Selle KOPA & Coproculture)
+        if (str_contains($libelle, 'selle kopa') || str_contains($libelle, 'eps') || str_contains($libelle, 'coproculture')) {
+            return [
+                // Section Macroscopie
+                ['demande' => 'Aspect', 'norme' => 'Moulée', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Couleur', 'norme' => 'Marron', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Présence de sang', 'norme' => 'Absence', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Présence de glaires', 'norme' => 'Absence', 'groupe' => 'Macroscopie'],
+                
+                // Section Examen Direct (Microscopie)
+                ['demande' => 'Leucocytes', 'norme' => 'Rares ou Absents', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Hématies', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Levures', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Flore bactérienne', 'norme' => 'Normale / Équilibrée', 'groupe' => 'Examen microscopique'],
+
+                // Section Parasitologie (KOPA)
+                ['demande' => 'Kystes et Trophozoïtes (Amibes)', 'norme' => 'Absence', 'groupe' => 'Parasitologie (KOPA)'],
+                ['demande' => 'Flagellés (ex: Giardia)', 'norme' => 'Absence', 'groupe' => 'Parasitologie (KOPA)'],
+                ['demande' => 'Œufs d\'helminthes', 'norme' => 'Absence', 'groupe' => 'Parasitologie (KOPA)'],
+                ['demande' => 'Autres parasites (Anguillules...)', 'norme' => 'Absence', 'groupe' => 'Parasitologie (KOPA)'],
+
+                // Section Bactériologie (Coproculture)
+                ['demande' => 'Culture / Isolement sur milieux sélectifs', 'norme' => 'Absence de Salmonella, Shigella, Campylobacter', 'groupe' => 'Bactériologie (Coproculture)'],
+                ['demande' => 'Germe(s) pathogène(s) identifié(s)', 'norme' => 'Absence de flore pathogène', 'groupe' => 'Bactériologie (Coproculture)'],
+                
+                // Section Antibiogramme (Même logique que l'ECBU)
+                ['demande' => 'Antibiogramme (si culture positive)', 'norme' => 'À réaliser uniquement en cas d\'isolement d\'un pathogène', 'groupe' => 'Antibiogramme'],
+            ];
+        }
 
         // =====================================================================
         // 8. EXAMENS COMPLEXES (Spermogramme, Liquides d'épanchement)
