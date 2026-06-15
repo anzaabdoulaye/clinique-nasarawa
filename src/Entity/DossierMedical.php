@@ -102,6 +102,15 @@ private Collection $observations;
     {
         $this->antecedents = $antecedents;
 
+        // Si le formulaire enregistre les données en vrac dans le JSON, on les extrait vers les propriétés textes
+        if (isset($antecedents['medicaux'])) {
+            $this->antecedentsMedicaux = $antecedents['medicaux'];
+        }
+        if (isset($antecedents['chirurgicaux'])) {
+            $this->antecedentsChirurgicaux = $antecedents['chirurgicaux'];
+        }
+
+        $this->syncMedicalDataToPatient();
         return $this;
     }
 
@@ -187,84 +196,41 @@ public function getObservations(): Collection
         return $this->groupeSanguin;
     }
 
-    public function setGroupeSanguin(?string $groupeSanguin): self
-    {
-        $this->groupeSanguin = $groupeSanguin;
-
-        return $this;
-    }
 
     public function getAllergies(): ?string
     {
         return $this->allergies;
     }
 
-    public function setAllergies(?string $allergies): self
-    {
-        $this->allergies = $allergies;
-
-        return $this;
-    }
-
     public function getAntecedentsMedicaux(): ?string
     {
-        return $this->antecedentsMedicaux;
-    }
-
-    public function setAntecedentsMedicaux(?string $antecedentsMedicaux): self
-    {
-        $this->antecedentsMedicaux = $antecedentsMedicaux;
-
-        return $this;
+        // On lit la propriété texte, et si elle est vide, on va chercher dans le tableau JSON
+        return $this->antecedentsMedicaux ?? $this->antecedents['medicaux'] ?? null;
     }
 
     public function getAntecedentsChirurgicaux(): ?string
     {
-        return $this->antecedentsChirurgicaux;
+        return $this->antecedentsChirurgicaux ?? $this->antecedents['chirurgicaux'] ?? null;
     }
 
-    public function setAntecedentsChirurgicaux(?string $antecedentsChirurgicaux): self
-    {
-        $this->antecedentsChirurgicaux = $antecedentsChirurgicaux;
-
-        return $this;
-    }
 
     public function getMaladiesChroniques(): ?string
     {
         return $this->maladiesChroniques;
     }
 
-    public function setMaladiesChroniques(?string $maladiesChroniques): self
-    {
-        $this->maladiesChroniques = $maladiesChroniques;
-
-        return $this;
-    }
 
     public function getTraitementEnCours(): ?string
     {
         return $this->traitementEnCours;
     }
 
-    public function setTraitementEnCours(?string $traitementEnCours): self
-    {
-        $this->traitementEnCours = $traitementEnCours;
-
-        return $this;
-    }
 
     public function getHandicap(): ?string
     {
         return $this->handicap;
     }
 
-    public function setHandicap(?string $handicap): self
-    {
-        $this->handicap = $handicap;
-
-        return $this;
-    }
 
     public function isGrossesse(): ?bool
     {
@@ -276,37 +242,112 @@ public function getObservations(): Collection
         return $this->grossesse;
     }
 
-    public function setGrossesse(?bool $grossesse): self
-    {
-        $this->grossesse = $grossesse;
-
-        return $this;
-    }
-
+// --- 1. METHODE DE SYNCHRONISATION SECURISEE ---
     public function syncMedicalDataToPatient(): void
     {
         if ($this->patient === null) {
             return;
         }
 
-        $this->patient->setGroupeSanguin($this->groupeSanguin);
-        $this->patient->setAllergies($this->allergies);
-        
-        // --- MISE À JOUR ICI ---
-        $antecedents = $this->getAntecedents();
-        // Si l'entité Patient a toujours les anciens champs textes, on les nourrit depuis le JSON :
-        if (method_exists($this->patient, 'setAntecedentsMedicaux')) {
-            $this->patient->setAntecedentsMedicaux($antecedents['medicaux'] ?? null);
+        // On vérifie STRICTEMENT (!==) avant de mettre à jour le patient
+        if ($this->patient->getGroupeSanguin() !== $this->groupeSanguin) {
+            $this->patient->setGroupeSanguin($this->groupeSanguin);
         }
-        if (method_exists($this->patient, 'setAntecedentsChirurgicaux')) {
-            $this->patient->setAntecedentsChirurgicaux($antecedents['chirurgicaux'] ?? null);
+        if ($this->patient->getAllergies() !== $this->allergies) {
+            $this->patient->setAllergies($this->allergies);
         }
-        // -----------------------
+        // --- NOUVEAU : On utilise les getters sécurisés ---
+        $med = $this->getAntecedentsMedicaux();
+        if ($this->patient->getAntecedentsMedicaux() !== $med) {
+            $this->patient->setAntecedentsMedicaux($med);
+        }
 
-        $this->patient->setMaladiesChroniques($this->maladiesChroniques);
-        $this->patient->setTraitementEnCours($this->traitementEnCours);
-        $this->patient->setHandicap($this->handicap);
-        $this->patient->setGrossesse($this->grossesse);
+        $chir = $this->getAntecedentsChirurgicaux();
+        if ($this->patient->getAntecedentsChirurgicaux() !== $chir) {
+            $this->patient->setAntecedentsChirurgicaux($chir);
+        }
+        // --------------------------------------------------
+        if ($this->patient->getMaladiesChroniques() !== $this->maladiesChroniques) {
+            $this->patient->setMaladiesChroniques($this->maladiesChroniques);
+        }
+        if ($this->patient->getTraitementEnCours() !== $this->traitementEnCours) {
+            $this->patient->setTraitementEnCours($this->traitementEnCours);
+        }
+        if ($this->patient->getHandicap() !== $this->handicap) {
+            $this->patient->setHandicap($this->handicap);
+        }
+        if ($this->patient->isGrossesse() !== $this->grossesse) {
+            $this->patient->setGrossesse($this->grossesse);
+        }
+    }
+
+    // --- 2. SETTERS QUI DECLENCHENT LA SYNCHRONISATION ---
+
+    public function setGroupeSanguin(?string $groupeSanguin): self
+    {
+        $this->groupeSanguin = $groupeSanguin;
+        $this->syncMedicalDataToPatient(); // 👈 Propagation vers le patient
+        return $this;
+    }
+
+    public function setAllergies(?string $allergies): self
+    {
+        $this->allergies = $allergies;
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setAntecedentsMedicaux(?string $antecedentsMedicaux): self
+    {
+        $this->antecedentsMedicaux = $antecedentsMedicaux;
+        
+        // On met aussi à jour le tableau JSON pour que le formulaire reste cohérent
+        $antecedents = $this->getAntecedents();
+        $antecedents['medicaux'] = $antecedentsMedicaux;
+        $this->antecedents = $antecedents;
+
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setAntecedentsChirurgicaux(?string $antecedentsChirurgicaux): self
+    {
+        $this->antecedentsChirurgicaux = $antecedentsChirurgicaux;
+
+        $antecedents = $this->getAntecedents();
+        $antecedents['chirurgicaux'] = $antecedentsChirurgicaux;
+        $this->antecedents = $antecedents;
+
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setMaladiesChroniques(?string $maladiesChroniques): self
+    {
+        $this->maladiesChroniques = $maladiesChroniques;
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setTraitementEnCours(?string $traitementEnCours): self
+    {
+        $this->traitementEnCours = $traitementEnCours;
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setHandicap(?string $handicap): self
+    {
+        $this->handicap = $handicap;
+        $this->syncMedicalDataToPatient();
+        return $this;
+    }
+
+    public function setGrossesse(?bool $grossesse): self
+    {
+        $this->grossesse = $grossesse;
+        $this->syncMedicalDataToPatient();
+        return $this;
     }
 
     public function getNombreConsultations(): int

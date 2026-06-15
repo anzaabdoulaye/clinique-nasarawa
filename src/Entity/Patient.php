@@ -102,24 +102,6 @@ class Patient
         $this->syncMedicalDataToDossier();
     }
 
-    private function syncMedicalDataToDossier(): void
-    {
-        $dossier = $this->dossierMedical;
-
-        if ($dossier === null) {
-            return;
-        }
-
-        $dossier->setGroupeSanguin($this->groupeSanguin);
-        $dossier->setAllergies($this->allergies);
-        $dossier->setAntecedentsMedicaux($this->antecedentsMedicaux);
-        $dossier->setAntecedentsChirurgicaux($this->antecedentsChirurgicaux);
-        $dossier->setMaladiesChroniques($this->maladiesChroniques);
-        $dossier->setTraitementEnCours($this->traitementEnCours);
-        $dossier->setHandicap($this->handicap);
-        $dossier->setGrossesse($this->grossesse);
-    }
-
     #[ORM\Column(length: 10)]
     #[Assert\Choice(choices: ['M', 'F'])]
     private ?string $sexe = null;
@@ -285,13 +267,6 @@ class Patient
         return $this->groupeSanguin;
     }
 
-    public function setGroupeSanguin(?string $groupeSanguin): self
-    {
-        $this->groupeSanguin = $groupeSanguin;
-
-        return $this;
-    }
-
 
     public function getAge(): ?int
     {
@@ -419,21 +394,9 @@ class Patient
         return $this->allergies;
     }
 
-    public function setAllergies(?string $allergies): self
-    {
-        $this->allergies = $allergies;
-        return $this;
-    }
-
     public function getAntecedentsMedicaux(): ?string
     {
         return $this->antecedentsMedicaux;
-    }
-
-    public function setAntecedentsMedicaux(?string $antecedents): self
-    {
-        $this->antecedentsMedicaux = $antecedents;
-        return $this;
     }
 
     public function getAntecedentsChirurgicaux(): ?string
@@ -441,21 +404,10 @@ class Patient
         return $this->antecedentsChirurgicaux;
     }
 
-    public function setAntecedentsChirurgicaux(?string $antecedents): self
-    {
-        $this->antecedentsChirurgicaux = $antecedents;
-        return $this;
-    }
 
     public function getMaladiesChroniques(): ?string
     {
         return $this->maladiesChroniques;
-    }
-
-    public function setMaladiesChroniques(?string $maladies): self
-    {
-        $this->maladiesChroniques = $maladies;
-        return $this;
     }
 
     public function getTraitementEnCours(): ?string
@@ -463,21 +415,10 @@ class Patient
         return $this->traitementEnCours;
     }
 
-    public function setTraitementEnCours(?string $traitement): self
-    {
-        $this->traitementEnCours = $traitement;
-        return $this;
-    }
 
     public function getHandicap(): ?string
     {
         return $this->handicap;
-    }
-
-    public function setHandicap(?string $handicap): self
-    {
-        $this->handicap = $handicap;
-        return $this;
     }
 
     public function isGrossesse(): ?bool
@@ -485,9 +426,99 @@ class Patient
         return $this->grossesse;
     }
 
+
+
+    // --- 1. METHODE DE SYNCHRONISATION SECURISEE ---
+    private function syncMedicalDataToDossier(): void
+    {
+        $dossier = $this->dossierMedical;
+
+        if ($dossier === null) {
+            return;
+        }
+
+        // On vérifie STRICTEMENT (!==) avant de mettre à jour pour éviter la boucle infinie
+        if ($dossier->getGroupeSanguin() !== $this->groupeSanguin) {
+            $dossier->setGroupeSanguin($this->groupeSanguin);
+        }
+        if ($dossier->getAllergies() !== $this->allergies) {
+            $dossier->setAllergies($this->allergies);
+        }
+        if ($dossier->getAntecedentsMedicaux() !== $this->antecedentsMedicaux) {
+            $dossier->setAntecedentsMedicaux($this->antecedentsMedicaux);
+        }
+        if ($dossier->getAntecedentsChirurgicaux() !== $this->antecedentsChirurgicaux) {
+            $dossier->setAntecedentsChirurgicaux($this->antecedentsChirurgicaux);
+        }
+        if ($dossier->getMaladiesChroniques() !== $this->maladiesChroniques) {
+            $dossier->setMaladiesChroniques($this->maladiesChroniques);
+        }
+        if ($dossier->getTraitementEnCours() !== $this->traitementEnCours) {
+            $dossier->setTraitementEnCours($this->traitementEnCours);
+        }
+        if ($dossier->getHandicap() !== $this->handicap) {
+            $dossier->setHandicap($this->handicap);
+        }
+        if ($dossier->isGrossesse() !== $this->grossesse) {
+            $dossier->setGrossesse($this->grossesse);
+        }
+    }
+
+    // --- 2. SETTERS QUI DECLENCHENT LA SYNCHRONISATION ---
+
+    public function setGroupeSanguin(?string $groupeSanguin): self
+    {
+        $this->groupeSanguin = $groupeSanguin;
+        $this->syncMedicalDataToDossier(); // 👈 Propagation
+        return $this;
+    }
+
+    public function setAllergies(?string $allergies): self
+    {
+        $this->allergies = $allergies;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
+    public function setAntecedentsMedicaux(?string $antecedents): self
+    {
+        $this->antecedentsMedicaux = $antecedents;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
+    public function setAntecedentsChirurgicaux(?string $antecedents): self
+    {
+        $this->antecedentsChirurgicaux = $antecedents;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
+    public function setMaladiesChroniques(?string $maladies): self
+    {
+        $this->maladiesChroniques = $maladies;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
+    public function setTraitementEnCours(?string $traitement): self
+    {
+        $this->traitementEnCours = $traitement;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
+    public function setHandicap(?string $handicap): self
+    {
+        $this->handicap = $handicap;
+        $this->syncMedicalDataToDossier();
+        return $this;
+    }
+
     public function setGrossesse(?bool $grossesse): self
     {
         $this->grossesse = $grossesse;
+        $this->syncMedicalDataToDossier();
         return $this;
     }
 }
