@@ -1017,6 +1017,9 @@ public function consultationShow(
             'examen parasitologique des selles' => 'selle kopa',
             'parasitologie des selles' => 'selle kopa',
             'coproculture' => 'selle kopa',
+            // --- NOUVEL ALIAS POUR LE CULOT URINAIRE ---
+            'culot urinaire' => 'culot urinaire',
+            'examen du culot urinaire' => 'culot urinaire',
         ];
 
         $libelle = $aliasList[$libelleInitial] ?? $libelleInitial;
@@ -1343,6 +1346,24 @@ public function consultationShow(
                 ['demande' => 'Hémoglobine (Hb)', 'norme' => $normeHb],
                 ['demande' => 'Hématocrite', 'norme' => $normeHte],
                 ['demande' => 'Plaquettes', 'norme' => '150 000 - 450 000 /mm3'],
+            ];
+        }
+
+        // Mappage de l'examen du Culot Urinaire
+        if (str_contains($libelle, 'culot urinaire')) {
+            return [
+                // Section Macroscopie
+                ['demande' => 'Aspect', 'norme' => 'Limpide', 'groupe' => 'Macroscopie'],
+                ['demande' => 'Abondance', 'norme' => '', 'groupe' => 'Macroscopie'],
+                
+                // Section Microscopie
+                ['demande' => 'Hématies', 'norme' => '< 10 /mm³', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Leucocytes', 'norme' => '< 10 /mm³', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Cellules épithéliales', 'norme' => 'Rares', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Cylindres', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Cristaux', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Parasites', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
+                ['demande' => 'Flore bactérienne', 'norme' => 'Absence', 'groupe' => 'Examen microscopique'],
             ];
         }
 
