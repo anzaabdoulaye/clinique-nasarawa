@@ -52,6 +52,8 @@ class TarifPrestationFixtures extends Fixture implements DependentFixtureInterfa
             ['libelle' => 'Consultation Médecine Générale', 'categorie' => CategorieTarif::CONSULTATION, 'prix' => 5000,'prixPriseEnCharge' => 5000],
             ['libelle' => 'Consultation Neurologie', 'categorie' => CategorieTarif::CONSULTATION, 'prix' => 7500,'prixPriseEnCharge' => 10000],
             ['libelle' => 'Consultation Pédiatrique', 'categorie' => CategorieTarif::CONSULTATION, 'prix' => 7500,'prixPriseEnCharge' => 10000],
+            ['libelle' => 'ORL', 'categorie' => CategorieTarif::CONSULTATION, 'prix' => 7500,'prixPriseEnCharge' => 10000],
+
 
             // ================= BIOLOGIE / LABO =================
             ['libelle' => 'Acide urique', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 3000, 'prixPriseEnCharge' => 4000],
@@ -83,6 +85,7 @@ class TarifPrestationFixtures extends Fixture implements DependentFixtureInterfa
             ['libelle' => 'Culot urinaire', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 2000,'prixPriseEnCharge' => 3000],
             ['libelle' => 'D DIMÈRES', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000,'prixPriseEnCharge' => 12000],
             ['libelle' => 'Dosage Vitamine B12', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000,'prixPriseEnCharge' => 12000],
+            ['libelle' => 'Dosage Vitamine D', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000,'prixPriseEnCharge' => 12000],
             ['libelle' => 'ECBU', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 10000,'prixPriseEnCharge' => 12000],
             ['libelle' => 'Facteur rhumatoïde', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 4500,'prixPriseEnCharge' => 4500],
             ['libelle' => 'Fer sérique', 'categorie' => CategorieTarif::EXAMEN_BIOLOGIQUE, 'prix' => 4500,'prixPriseEnCharge' => 4500],
@@ -206,6 +209,8 @@ class TarifPrestationFixtures extends Fixture implements DependentFixtureInterfa
             ['libelle' => 'Eosine', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1000, 'prixPriseEnCharge' => 1000, 'medicament_nom' => 'Eosine'],
             ['libelle' => 'Atrovent', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1500, 'prixPriseEnCharge' => 1500, 'medicament_nom' => 'Atrovent'],
             ['libelle' => 'Salbutamol', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 1000, 'prixPriseEnCharge' => 1000, 'medicament_nom' => 'Salbutamol'],
+            ['libelle' => 'Prokefen INJ', 'categorie' => CategorieTarif::CONSOMMABLE, 'prix' => 2500, 'prixPriseEnCharge' => 2500, 'medicament_nom' => 'Prokefen'],
+
 
 
             // A METTRE LA CATEGORIE A JOUR 
