@@ -1,0 +1,34 @@
+<div class="modal fade" id="newHonoraireModal" tabindex="-1" aria-labelledby="newHonoraireModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow">
+            {{ form_start(honoraireForm, {'action': path('app_hub_honoraire_new')}) }}
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <div>
+                        <h4 class="modal-title fw-bold text-dark" id="newHonoraireModalLabel">
+                            <i class="ri-money-dollar-circle-line me-2 text-success"></i>
+                            Saisir des honoraires
+                        </h4>
+                        <p class="text-muted mb-0 mt-1">
+                            Les montants bruts, ISB et nets seront calculés automatiquement.
+                        </p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+
+                <div class="modal-body px-4 py-4">
+                    {{ form_widget(honoraireForm) }}
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-success text-white rounded-pill px-4">
+                        <i class="ri-save-line me-1"></i>
+                        Enregistrer les honoraires
+                    </button>
+                </div>
+            {{ form_end(honoraireForm) }}
+        </div>
+    </div>
+</div>

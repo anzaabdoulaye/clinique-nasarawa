@@ -6,6 +6,7 @@ use App\Enum\StatutConsultation;
 use App\Repository\ConsultationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ConsultationRepository::class)]
@@ -359,5 +360,27 @@ public function estAnnulee(): bool
 public function estModifiable(): bool
 {
     return !$this->estCloturee() && !$this->estAnnulee();
+}
+
+public function addPrescriptionsPrestation(PrescriptionPrestation $prescriptionsPrestation): static
+{
+    if (!$this->prescriptionsPrestations->contains($prescriptionsPrestation)) {
+        $this->prescriptionsPrestations->add($prescriptionsPrestation);
+        $prescriptionsPrestation->setConsultation($this);
+    }
+
+    return $this;
+}
+
+public function removePrescriptionsPrestation(PrescriptionPrestation $prescriptionsPrestation): static
+{
+    if ($this->prescriptionsPrestations->removeElement($prescriptionsPrestation)) {
+        // set the owning side to null (unless already changed)
+        if ($prescriptionsPrestation->getConsultation() === $this) {
+            $prescriptionsPrestation->setConsultation(null);
+        }
+    }
+
+    return $this;
 }
 }

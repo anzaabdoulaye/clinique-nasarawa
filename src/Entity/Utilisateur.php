@@ -211,4 +211,26 @@ private ?ServiceMedical $serviceMedical = null;
 {
     return trim(($this->nom ?? '') . ' ' . ($this->prenom ?? ''));
 }
+
+    public function addRendezVou(RendezVous $rendezVou): static
+    {
+        if (!$this->rendezVous->contains($rendezVou)) {
+            $this->rendezVous->add($rendezVou);
+            $rendezVou->setMedecin($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRendezVou(RendezVous $rendezVou): static
+    {
+        if ($this->rendezVous->removeElement($rendezVou)) {
+            // set the owning side to null (unless already changed)
+            if ($rendezVou->getMedecin() === $this) {
+                $rendezVou->setMedecin(null);
+            }
+        }
+
+        return $this;
+    }
 }

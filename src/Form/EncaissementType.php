@@ -42,6 +42,7 @@ class EncaissementType extends AbstractType
                 'required' => false,
                 'placeholder' => 'Choisir un taux',
                 'choices' => [
+                    '10 %' => 10,
                     '50 %' => 50,
                     '60 %' => 60,
                     '70 %' => 70,

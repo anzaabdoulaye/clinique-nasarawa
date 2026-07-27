@@ -113,49 +113,64 @@
             
             <div class="card-body p-0">
                 {% if resultats|length > 0 %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 datatable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">#</th>
-                                    <th>Consommable</th>
-                                    <th>Code</th>
-                                    <th class="text-center">Nb. Sorties</th>
-                                    <th class="text-center text-primary">Qté Totale</th>
-                                    <th class="text-center text-warning-emphasis" title="Moyenne par jour sur la période">Moy. / Jour</th>
-                                    <th class="text-end pe-4">Valeur (Prix Achat)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in resultats %}
-                                    <tr>
-                                        <td class="ps-4 text-muted">{{ loop.index }}</td>
-                                        <td class="fw-bold text-dark">{{ r.medicament_nom }}</td>
-                                        <td><span class="badge bg-light text-dark border">{{ r.sku ?? '—' }}</span></td>
-                                        <td class="text-center">{{ r.nb_mouvements }}</td>
-                                        <td class="text-center fw-bold text-primary fs-6">{{ r.quantite_consommee }}</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                                {{ (r.quantite_consommee / nbJours)|number_format(1, ',', ' ') }}
-                                            </span>
-                                        </td>
-                                        <td class="text-end pe-4 fw-bold">{{ r.valeur_totale|number_format(0, ',', ' ') }} F</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr class="fw-bold text-dark">
-                                    <td colspan="3" class="ps-4 text-uppercase">Total de la période</td>
-                                    <td class="text-center">{{ totaux.nb_mouvements }}</td>
-                                    <td class="text-center fs-5 text-primary">{{ totaux.total_quantite }}</td>
-                                    <td class="text-center">
-                                        {{ (totaux.total_quantite / nbJours)|number_format(1, ',', ' ') }} / j
-                                    </td>
-                                    <td class="text-end pe-4 text-danger fs-5">{{ totaux.total_valeur|number_format(0, ',', ' ') }} F</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <thead class="table-light">
+    <tr>
+        <th class="ps-4">#</th>
+        <th>Consommable</th>
+        <th>Code</th>
+        <th class="text-center">Nb. Sorties</th>
+        <th class="text-center text-primary">Qté Totale</th>
+        <th class="text-center text-warning-emphasis" title="Moyenne par jour sur la période">Moy. / Jour</th>
+        <th class="text-center">Stock actuel</th>
+        <th class="text-center">Couverture (j)</th>
+        <th class="text-center">Statut</th>
+        <th class="text-end pe-4">Valeur (FCFA)</th>
+    </tr>
+</thead>
+<tbody>
+    {% for r in resultats %}
+        <tr>
+            <td class="ps-4 text-muted">{{ loop.index }}</td>
+            <td class="fw-bold text-dark">{{ r.medicament_nom }}</td>
+            <td><span class="badge bg-light text-dark border">{{ r.sku ?? '—' }}</span></td>
+            <td class="text-center">{{ r.nb_mouvements }}</td>
+            <td class="text-center fw-bold text-primary fs-6">{{ r.quantite_consommee }}</td>
+            <td class="text-center">
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                    {{ (r.quantite_consommee / nbJours)|number_format(1, ',', ' ') }}
+                </span>
+            </td>
+            <td class="text-center">{{ r.stock_actuel }}</td>
+            <td class="text-center">
+    {% if r.jours_couverture is same as(constant('INF')) %}
+        <span class="badge bg-secondary">∞</span>
+    {% else %}
+        {{ r.jours_couverture }}
+    {% endif %}
+</td>
+            <td class="text-center">
+                {% if r.statut == 'URGENT' %}
+                    <span class="badge bg-danger">Urgent</span>
+                {% elseif r.statut == 'PRÉVOIR' %}
+                    <span class="badge bg-warning text-dark">Prévoir</span>
+                {% else %}
+                    <span class="badge bg-success">Suffisant</span>
+                {% endif %}
+            </td>
+            <td class="text-end pe-4 fw-bold">{{ r.valeur_totale|number_format(0, ',', ' ') }} F</td>
+        </tr>
+    {% endfor %}
+</tbody>
+<tfoot class="table-light">
+    <tr class="fw-bold text-dark">
+        <td colspan="6" class="ps-4 text-uppercase">Total période</td>
+        {# Cellules vides pour Stock, Couverture, Statut #}
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="text-end pe-4 text-danger fs-5">{{ totaux.total_valeur|number_format(0, ',', ' ') }} F</td>
+    </tr>
+</tfoot>
                 {% else %}
                     <div class="text-center py-5">
                         <i class="ri-medicine-bottle-line fs-1 text-muted"></i>

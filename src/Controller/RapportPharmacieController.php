@@ -167,6 +167,7 @@ final class RapportPharmacieController extends AbstractController
                 'totaux' => null,
                 'date_debut' => null,
                 'date_fin' => null,
+                
             ]);
         }
 
@@ -180,6 +181,7 @@ final class RapportPharmacieController extends AbstractController
             'totaux' => $data['totaux'],
             'date_debut' => $debut,
             'date_fin' => $fin,
+            'nbJours' => $data['nbJours'], // Ajout
         ]);
     }
 
@@ -207,6 +209,7 @@ final class RapportPharmacieController extends AbstractController
             'date_debut' => $debut,
             'date_fin' => $fin,
             'logo_path' => $logoBase64,
+            'nbJours' => $data['nbJours'], // Ajout
         ]);
 
         $options = new Options();
@@ -268,50 +271,88 @@ final class RapportPharmacieController extends AbstractController
     }
 
     private function getConsommationsReport(EntityManagerInterface $em, \DateTimeImmutable $debut, \DateTimeImmutable $fin): array
-    {
-        $conn = $em->getConnection();
+{
+    $conn = $em->getConnection();
 
-        // Détail des consommations par médicament basé sur le prix d'achat
-        $sql = "
-            SELECT
-                m.id AS medicament_id,
-                m.nom AS medicament_nom,
-                m.sku,
-                ABS(SUM(ms.quantite)) AS quantite_consommee,
-                ABS(SUM(ms.quantite * ms.valeur_achat_unitaire)) AS valeur_totale,
-                COUNT(ms.id) AS nb_mouvements
-            FROM mouvement_stock ms
-            JOIN medicament m ON ms.medicament_id = m.id
-            WHERE ms.type IN ('sortie_patient', 'sortie_service', 'sortie_perte')
-              AND ms.created_at BETWEEN :debut AND :fin
-            GROUP BY m.id, m.nom, m.sku
-            ORDER BY valeur_totale DESC
-        ";
+    $sql = "
+        SELECT
+            m.id AS medicament_id,
+            m.nom AS medicament_nom,
+            m.sku,
+            m.seuil_alerte,
+            COALESCE((SELECT SUM(l.quantite) FROM lot l WHERE l.medicament_id = m.id), 0) AS stock_actuel,
+            COALESCE(ABS(SUM(ms.quantite)), 0) AS quantite_consommee,
+            COALESCE(ABS(SUM(ms.quantite * ms.valeur_achat_unitaire)), 0) AS valeur_totale,
+            COUNT(ms.id) AS nb_mouvements
+        FROM mouvement_stock ms
+        JOIN medicament m ON ms.medicament_id = m.id
+        WHERE ms.type IN ('sortie_patient', 'sortie_service', 'sortie_perte')
+          AND ms.created_at BETWEEN :debut AND :fin
+        GROUP BY m.id, m.nom, m.sku, m.seuil_alerte
+        ORDER BY quantite_consommee DESC
+    ";
 
-        $consommations = $conn->fetchAllAssociative($sql, [
-            'debut' => $debut->format('Y-m-d H:i:s'),
-            'fin' => $fin->format('Y-m-d H:i:s'),
-        ]);
+    $rows = $conn->fetchAllAssociative($sql, [
+        'debut' => $debut->format('Y-m-d H:i:s'),
+        'fin' => $fin->format('Y-m-d H:i:s'),
+    ]);
 
-        // Totaux globaux
-        $sqlTotaux = "
-            SELECT
-                COUNT(ms.id) AS nb_mouvements,
-                COALESCE(ABS(SUM(ms.quantite)), 0) AS total_quantite,
-                COALESCE(ABS(SUM(ms.quantite * ms.valeur_achat_unitaire)), 0) AS total_valeur
-            FROM mouvement_stock ms
-            WHERE ms.type IN ('sortie_patient', 'sortie_service', 'sortie_perte')
-              AND ms.created_at BETWEEN :debut AND :fin
-        ";
+    $nbJours = (int) $debut->diff($fin)->days + 1;
 
-        $totaux = $conn->fetchAssociative($sqlTotaux, [
-            'debut' => $debut->format('Y-m-d H:i:s'),
-            'fin' => $fin->format('Y-m-d H:i:s'),
-        ]);
+    $consommations = [];
+    foreach ($rows as $row) {
+        $stock = (int) $row['stock_actuel'];
+        $qte = (int) $row['quantite_consommee'];
+        $seuil = $row['seuil_alerte'] !== null ? (int) $row['seuil_alerte'] : null;
 
-        return [
-            'consommations' => $consommations,
-            'totaux' => $totaux,
+        $moyenneJournaliere = $nbJours > 0 ? $qte / $nbJours : 0;
+        $joursCouverture = $moyenneJournaliere > 0 ? floor($stock / $moyenneJournaliere) : INF;
+
+        // Statut
+        if ($seuil !== null && $stock <= $seuil) {
+            $statut = 'URGENT';
+        } elseif ($joursCouverture < 15) {
+            $statut = 'URGENT';
+        } elseif ($joursCouverture < 30) {
+            $statut = 'PRÉVOIR';
+        } else {
+            $statut = 'OK';
+        }
+
+        $consommations[] = [
+            'medicament_id' => $row['medicament_id'],
+            'medicament_nom' => $row['medicament_nom'],
+            'sku' => $row['sku'],
+            'stock_actuel' => $stock,
+            'seuil_alerte' => $seuil,
+            'quantite_consommee' => $qte,
+            'valeur_totale' => (float) $row['valeur_totale'],
+            'nb_mouvements' => (int) $row['nb_mouvements'],
+            'moyenne_journaliere' => $moyenneJournaliere,
+            'jours_couverture' => $joursCouverture,
+            'statut' => $statut,
         ];
     }
+
+    // Totaux globaux
+    $sqlTotaux = "
+        SELECT
+            COUNT(ms.id) AS nb_mouvements,
+            COALESCE(ABS(SUM(ms.quantite)), 0) AS total_quantite,
+            COALESCE(ABS(SUM(ms.quantite * ms.valeur_achat_unitaire)), 0) AS total_valeur
+        FROM mouvement_stock ms
+        WHERE ms.type IN ('sortie_patient', 'sortie_service', 'sortie_perte')
+          AND ms.created_at BETWEEN :debut AND :fin
+    ";
+    $totaux = $conn->fetchAssociative($sqlTotaux, [
+        'debut' => $debut->format('Y-m-d H:i:s'),
+        'fin' => $fin->format('Y-m-d H:i:s'),
+    ]);
+
+    return [
+        'consommations' => $consommations,
+        'totaux' => $totaux,
+        'nbJours' => $nbJours,
+    ];
+}
 }

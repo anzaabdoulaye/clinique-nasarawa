@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\MedicamentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MedicamentRepository::class)]
@@ -39,6 +40,9 @@ class Medicament
     #[ORM\OneToMany(mappedBy: 'medicament', targetEntity: Lot::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $lots;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $seuilAlerte = null;
+
     public function __construct()
     {
         $this->lots = new ArrayCollection();
@@ -51,6 +55,9 @@ class Medicament
 
     public function getSku(): ?string { return $this->sku; }
     public function setSku(?string $sku): self { $this->sku = $sku; return $this; }
+
+    public function getSeuilAlerte(): ?int { return $this->seuilAlerte; }
+    public function setSeuilAlerte(?int $seuilAlerte): self { $this->seuilAlerte = $seuilAlerte; return $this; }
 
     public function getCodeBarre(): ?string { return $this->codeBarre; }
     public function setCodeBarre(?string $codeBarre): self { $this->codeBarre = $codeBarre; return $this; }

@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\TypeMouvementStock;
 use App\Repository\MouvementStockRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MouvementStockRepository::class)]

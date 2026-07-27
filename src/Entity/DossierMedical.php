@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\DossierMedicalRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DossierMedicalRepository::class)]
@@ -68,6 +69,7 @@ private Collection $observations;
     {
         $this->consultations = new ArrayCollection();
         $this->hospitalisations = new ArrayCollection();
+        $this->observations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -358,6 +360,28 @@ public function getObservations(): Collection
     public function getNombreHospitalisations(): int
     {
         return $this->hospitalisations->count();
+    }
+
+    public function addObservation(ObservationMedicale $observation): static
+    {
+        if (!$this->observations->contains($observation)) {
+            $this->observations->add($observation);
+            $observation->setDossier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeObservation(ObservationMedicale $observation): static
+    {
+        if ($this->observations->removeElement($observation)) {
+            // set the owning side to null (unless already changed)
+            if ($observation->getDossier() === $this) {
+                $observation->setDossier(null);
+            }
+        }
+
+        return $this;
     }
     
 }

@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}HonoraireMedecin{% endblock %}
+
+{% block body %}
+    <h1>HonoraireMedecin</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ honoraire_medecin.id }}</td>
+            </tr>
+            <tr>
+                <th>DateActe</th>
+                <td>{{ honoraire_medecin.dateActe ? honoraire_medecin.dateActe|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>NomPatient</th>
+                <td>{{ honoraire_medecin.nomPatient }}</td>
+            </tr>
+            <tr>
+                <th>LibelleActe</th>
+                <td>{{ honoraire_medecin.libelleActe }}</td>
+            </tr>
+            <tr>
+                <th>MontantTotal</th>
+                <td>{{ honoraire_medecin.montantTotal }}</td>
+            </tr>
+            <tr>
+                <th>TauxReversement</th>
+                <td>{{ honoraire_medecin.tauxReversement }}</td>
+            </tr>
+            <tr>
+                <th>MontantBrutMedecin</th>
+                <td>{{ honoraire_medecin.montantBrutMedecin }}</td>
+            </tr>
+            <tr>
+                <th>MontantIsb</th>
+                <td>{{ honoraire_medecin.montantIsb }}</td>
+            </tr>
+            <tr>
+                <th>MontantNetAPayer</th>
+                <td>{{ honoraire_medecin.montantNetAPayer }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ honoraire_medecin.createdAt ? honoraire_medecin.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>ModifiedAt</th>
+                <td>{{ honoraire_medecin.modifiedAt ? honoraire_medecin.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_honoraire_medecin_index') }}">back to list</a>
+
+    <a href="{{ path('app_honoraire_medecin_edit', {'id': honoraire_medecin.id}) }}">edit</a>
+
+    {{ include('honoraire_medecin/_delete_form.html.twig') }}
+{% endblock %}

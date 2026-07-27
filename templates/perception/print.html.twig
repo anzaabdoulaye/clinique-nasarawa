@@ -328,8 +328,14 @@
             <table class="meta-table">
                 <tr>
                     <td>
-                        <strong>Date d’émission :</strong>
-                        {{ facture.dateEmission ? facture.dateEmission|date('d/m/Y H:i') : '-' }}
+                       <div class="box">
+                            <strong>Date d’émission :</strong>
+                            {{ facture.dateEmission ? facture.dateEmission|date('d/m/Y H:i') : '-' }}
+                            <br>
+                            <strong>Consultation :</strong>
+                            {{ consultation ? ('#' ~ consultation.id) : '-' }}
+                            <br>
+                        </div>
                     </td>
                     <td>
                         <strong>Consultation :</strong>
@@ -505,7 +511,13 @@
                 </td>
             </tr>
         </table>
-
+        
+        {# --- NOUVEAU : Notice de validité --- #}
+      
+            <div style="margin-top: 8px; margin-bottom: 8px; padding: 6px; background-color: #f8fafc; border: 1px dashed #0f4c81; color: #1f2937; border-radius: 4px;">
+                <strong><i class="ri-information-line"></i> Notice importante :</strong> 
+                Ce reçu a une durée de validité d'une semaine pour votre visite de contrôle. Veuillez le présenter à l'accueil lors de votre prochain passage.
+            </div>
         <div class="footer-note">
             Merci pour votre confiance
         </div>

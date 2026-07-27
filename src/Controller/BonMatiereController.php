@@ -7,22 +7,25 @@ use App\Entity\BonMatiereLigne;
 use App\Entity\Lot;
 use App\Entity\Medicament;
 use App\Entity\Utilisateur;
+use App\Entity\Medecin;
+use App\Entity\HonoraireMedecin;
+use App\Entity\JournalCaisse;
 use App\Enum\MotifMouvement;
 use App\Enum\TypeBonMatiere;
+use App\Form\MedecinType;
+use App\Form\HonoraireMedecinType;
+use App\Form\JournalCaisseType;
 use App\Repository\BonMatiereRepository;
 use App\Repository\LotRepository;
 use App\Repository\MedicamentRepository;
+use App\Repository\MedecinRepository;
+use App\Repository\HonoraireMedecinRepository;
+use App\Repository\JournalCaisseRepository;
 use App\Service\ComptabiliteMatiereService;
 use App\Service\PharmacyService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\CollectionType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -32,53 +35,40 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/comptabilite-matiere')]
 final class BonMatiereController extends AbstractController
 {
-    #[IsGranted(new Expression(
-    "is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"
-))]
+    #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_COMPTA_MATIERE')"))]
     #[Route('', name: 'app_comptabilite_matiere_index', methods: ['GET'])]
     public function index(
         Request $request,
         BonMatiereRepository $bonMatiereRepository,
         MedicamentRepository $medicamentRepository,
-        LotRepository $lotRepository
+        LotRepository $lotRepository,
+        MedecinRepository $medecinRepository,
+        HonoraireMedecinRepository $honoraireRepository,
+        JournalCaisseRepository $caisseRepository
     ): Response {
-        // Récupérer le filtre de période depuis les paramètres de requête
-        $periodeFilter = $request->query->get('periode');
-        if ($periodeFilter === null) {
-            // Par défaut, filtrer sur les bons des 30 derniers jours
-            $periodeFilter = 'recent';
-        }
-
+        $periodeFilter = $request->query->get('periode', 'recent');
         $bons = $bonMatiereRepository->findBy([], ['dateBon' => 'DESC', 'id' => 'DESC']);
 
-        // Filtrer les bons par période
+        // ... (Votre logique de filtrage des bons reste inchangée ici) ...
         if ($periodeFilter === 'recent') {
             $date = new \DateTimeImmutable('-30 days');
-            $bons = array_filter($bons, function($bon) use ($date) {
-                $dateBon = $bon->getDateBon();
-                return $dateBon && $dateBon >= $date;
-            });
+            $bons = array_filter($bons, fn($bon) => $bon->getDateBon() && $bon->getDateBon() >= $date);
         } elseif ($periodeFilter === 'month') {
             $now = new \DateTimeImmutable();
-            $startOfMonth = $now->setDate($now->format('Y'), $now->format('m'), 1)->setTime(0, 0, 0);
-            $bons = array_filter($bons, function($bon) use ($startOfMonth) {
-                $dateBon = $bon->getDateBon();
-                return $dateBon && $dateBon >= $startOfMonth;
-            });
+            $startOfMonth = $now->setDate((int)$now->format('Y'), (int)$now->format('m'), 1)->setTime(0, 0, 0);
+            $bons = array_filter($bons, fn($bon) => $bon->getDateBon() && $bon->getDateBon() >= $startOfMonth);
         } elseif ($periodeFilter === 'quarter') {
             $date = new \DateTimeImmutable('-90 days');
-            $bons = array_filter($bons, function($bon) use ($date) {
-                $dateBon = $bon->getDateBon();
-                return $dateBon && $dateBon >= $date;
-            });
+            $bons = array_filter($bons, fn($bon) => $bon->getDateBon() && $bon->getDateBon() >= $date);
         } elseif ($periodeFilter === 'year') {
             $date = new \DateTimeImmutable('-365 days');
-            $bons = array_filter($bons, function($bon) use ($date) {
-                $dateBon = $bon->getDateBon();
-                return $dateBon && $dateBon >= $date;
-            });
+            $bons = array_filter($bons, fn($bon) => $bon->getDateBon() && $bon->getDateBon() >= $date);
         }
-        // Pour 'all', garder tous les bons
+
+        // --- PRÉPARATION DES FORMULAIRES POUR LES MODALES ---
+        $medecinForm = $this->createForm(MedecinType::class, new Medecin());
+        $honoraireForm = $this->createForm(HonoraireMedecinType::class, new HonoraireMedecin());
+        $caisseForm = $this->createForm(JournalCaisseType::class, new JournalCaisse());
 
         return $this->render('comptabilite_matiere/index.html.twig', [
             'bons' => $bons,
@@ -87,6 +77,14 @@ final class BonMatiereController extends AbstractController
             'medicaments' => $medicamentRepository->findBy(['actif' => true], ['nom' => 'ASC']),
             'lots' => $lotRepository->findBy([], ['id' => 'DESC']),
             'periodeFilter' => $periodeFilter,
+            
+            // Nouvelles variables pour le Hub
+            'medecins' => $medecinRepository->findAll(),
+            'honoraires' => $honoraireRepository->findAll(),
+            'journalCaisses' => $caisseRepository->findAll(),
+            'medecinForm' => $medecinForm->createView(),
+            'honoraireForm' => $honoraireForm->createView(),
+            'caisseForm' => $caisseForm->createView(),
         ]);
     }
 
@@ -338,5 +336,69 @@ final class BonMatiereController extends AbstractController
         return $this->redirectToRoute('app_comptabilite_matiere_show', [
             'id' => $bon->getId(),
         ]);
+    }
+
+    #[Route('/medecin/new', name: 'app_hub_medecin_new', methods: ['POST'])]
+    public function newMedecinModal(Request $request, EntityManagerInterface $em): Response
+    {
+        $medecin = new Medecin();
+        $form = $this->createForm(MedecinType::class, $medecin);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($medecin);
+            $em->flush();
+            $this->addFlash('success', 'Médecin ajouté avec succès.');
+        } else {
+            $this->addFlash('danger', 'Erreur lors de l\'ajout du médecin.');
+        }
+
+        return $this->redirectToRoute('app_comptabilite_matiere_index');
+    }
+
+    #[Route('/honoraire/new', name: 'app_hub_honoraire_new', methods: ['POST'])]
+    public function newHonoraireModal(Request $request, EntityManagerInterface $em): Response
+    {
+        $honoraire = new HonoraireMedecin();
+        $form = $this->createForm(HonoraireMedecinType::class, $honoraire);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Logique de calcul rapatriée
+            $montantBrut = $honoraire->getMontantTotal() * $honoraire->getTauxReversement();
+            $honoraire->setMontantBrutMedecin($montantBrut);
+            
+            $tauxIsb = $honoraire->getMedecin()->getTauxIsbDefaut() ?? 0;
+            $montantIsb = $montantBrut * $tauxIsb;
+            $honoraire->setMontantIsb($montantIsb);
+            
+            $honoraire->setMontantNetAPayer($montantBrut - $montantIsb);
+
+            $em->persist($honoraire);
+            $em->flush();
+            $this->addFlash('success', 'Honoraire enregistré avec succès.');
+        } else {
+            $this->addFlash('danger', 'Erreur lors de l\'enregistrement de l\'honoraire.');
+        }
+
+        return $this->redirectToRoute('app_comptabilite_matiere_index');
+    }
+
+    #[Route('/caisse/new', name: 'app_hub_caisse_new', methods: ['POST'])]
+    public function newCaisseModal(Request $request, EntityManagerInterface $em): Response
+    {
+        $caisse = new JournalCaisse();
+        $form = $this->createForm(JournalCaisseType::class, $caisse);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($caisse);
+            $em->flush();
+            $this->addFlash('success', 'Écriture de caisse ajoutée avec succès.');
+        } else {
+            $this->addFlash('danger', 'Erreur lors de l\'ajout au journal de caisse.');
+        }
+
+        return $this->redirectToRoute('app_comptabilite_matiere_index');
     }
 }

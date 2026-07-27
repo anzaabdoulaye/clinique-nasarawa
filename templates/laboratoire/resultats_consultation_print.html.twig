@@ -177,17 +177,23 @@
                 {% endfor %}
             </tbody>
         </table>
-        <table style="width: 100%; margin-top: 40px; font-size: 9px;">
+        <table style="width: 100%; margin-top: 35px; font-size: 9px;">
             <tr>
-                <td style="width: 50%; text-align: center;">
-                    <div style="border-top: 1px dashed #cfd8e3; width: 70%; margin: 0 auto; padding-top: 8px;">
-                        <strong>Validation biologique</strong><br>
-                        <span style="color: #6b7280;">Laboratoire Nassarawa</span>
+                <td style="width: 50%; text-align: center; vertical-align: top;">
+                    <div style="border-top: 1px dashed #cfd8e3; width: 85%; margin: 0 auto; padding-top: 8px;">
+                        <strong style="color: #0f4c81;">VALIDATION BIOLOGIQUE :</strong><br>
+                        <div style="margin-top: 4px; font-size: 8.5px; color: #1f2937; font-weight: bold;">
+                            {% for validateur in validateurs|default([]) %}
+                                {{ validateur }}<br>
+                            {% else %}
+                                Laboratoire Nassarawa
+                            {% endfor %}
+                        </div>
                     </div>
                 </td>
-                <td style="width: 50%; text-align: center;">
-                    <div style="border-top: 1px dashed #cfd8e3; width: 70%; margin: 0 auto; padding-top: 8px;">
-                        <strong>Cachet & Signature</strong>
+                <td style="width: 50%; text-align: center; vertical-align: top;">
+                    <div style="border-top: 1px dashed #cfd8e3; width: 85%; margin: 0 auto; padding-top: 8px;">
+                        <strong style="color: #0f4c81;">CACHET DU LABORATOIRE & SIGNATURE</strong>
                     </div>
                 </td>
             </tr>

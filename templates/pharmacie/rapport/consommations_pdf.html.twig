@@ -71,13 +71,15 @@
 <table>
     <thead>
         <tr>
-            <th style="width: 5%;">#</th>
-            <th style="width: 30%;">Consommable</th>
-            <th style="width: 15%;">Code</th>
-            <th class="text-center" style="width: 10%;">Mvts</th>
-            <th class="text-center" style="width: 10%;">Qté Totale</th>
-            <th class="text-center" style="width: 15%;">Moy. / Jour</th>
-            <th class="text-end" style="width: 15%;">Valeur</th>
+            <th style="width:5%;">#</th>
+            <th style="width:20%;">Consommable</th>
+            <th class="text-center" style="width:8%;">Mvts</th>
+            <th class="text-center" style="width:10%;">Qté</th>
+            <th class="text-center" style="width:10%;">Moy/j</th>
+            <th class="text-center" style="width:8%;">Stock</th>
+            <th class="text-center" style="width:10%;">Couverture</th>
+            <th class="text-center" style="width:8%;">Statut</th>
+            <th class="text-end" style="width:11%;">Valeur</th>
         </tr>
     </thead>
     <tbody>
@@ -85,11 +87,17 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td class="fw-bold">{{ r.medicament_nom }}</td>
-                <td>{{ r.sku ?? '—' }}</td>
                 <td class="text-center">{{ r.nb_mouvements }}</td>
                 <td class="text-center fw-bold text-primary">{{ r.quantite_consommee }}</td>
+                <td class="text-center">{{ (r.quantite_consommee / nbJours)|number_format(1, ',', ' ') }}</td>
+                <td class="text-center">{{ r.stock_actuel }}</td>
                 <td class="text-center">
-                    {{ (r.quantite_consommee / nbJours)|number_format(1, ',', ' ') }}
+    {% if r.jours_couverture is same as(constant('INF')) %}∞{% else %}{{ r.jours_couverture }}{% endif %}
+</td>
+                <td class="text-center">
+                    {% if r.statut == 'URGENT' %}Urgent
+                    {% elseif r.statut == 'PRÉVOIR' %}Prévoir
+                    {% else %}OK{% endif %}
                 </td>
                 <td class="text-end fw-bold">{{ r.valeur_totale|number_format(0, ',', ' ') }} F</td>
             </tr>
@@ -97,14 +105,39 @@
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="3" class="fw-bold">TOTAL GÉNÉRAL</td>
-            <td class="text-center fw-bold">{{ totaux.nb_mouvements }}</td>
-            <td class="text-center fw-bold text-primary">{{ totaux.total_quantite }}</td>
-            <td class="text-center fw-bold">{{ (totaux.total_quantite / nbJours)|number_format(1, ',', ' ') }}</td>
+            <td colspan="6" class="fw-bold">TOTAL GÉNÉRAL</td>
+            <td></td><td></td><td></td>
             <td class="text-end fw-bold" style="color: #dc3545;">{{ totaux.total_valeur|number_format(0, ',', ' ') }} F</td>
         </tr>
     </tfoot>
 </table>
+<div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+    <h3 style="font-size: 12px; color: #0d6efd; margin-bottom: 8px;">Légende des statuts</h3>
+    <table style="width: 100%; border: none; font-size: 10px;">
+        <tr>
+            <td style="border: none; padding: 4px; width: 20%;"><span style="background: #dc3545; color: white; padding: 2px 10px; border-radius: 3px;">Urgent</span></td>
+            <td style="border: none; padding: 4px;">Stock ≤ seuil ou couverture &lt; 15 jours</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 4px;"><span style="background: #ffc107; color: #000; padding: 2px 10px; border-radius: 3px;">Prévoir</span></td>
+            <td style="border: none; padding: 4px;">Couverture entre 15 et 29 jours</td>
+        </tr>
+        <tr>
+            <td style="border: none; padding: 4px;"><span style="background: #198754; color: white; padding: 2px 10px; border-radius: 3px;">Suffisant</span></td>
+            <td style="border: none; padding: 4px;">Couverture ≥ 30 jours et stock &gt; seuil</td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 5px; font-size: 10px; color: #555;">
+    <strong style="color: #333;">Note explicative :</strong>
+    <ul style="margin: 5px 0 0 20px; padding-left: 10px;">
+        <li><strong>Stock actuel</strong> : quantité totale disponible (somme des lots).</li>
+        <li><strong>Couverture (j)</strong> : nombre de jours que le stock actuel peut couvrir, basé sur la consommation moyenne journalière.</li>
+        <li><strong>Seuil d'alerte</strong> : seuil défini par produit (si renseigné).</li>
+        <li><strong>Valeur</strong> : coût d'achat total des produits consommés sur la période.</li>
+    </ul>
+</div>
 
 <div class="footer">
     Clinique Nassarawa — Ce rapport liste les sorties de stock valorisées au coût d'achat.

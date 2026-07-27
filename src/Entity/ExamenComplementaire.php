@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\TypeExamenComplementaire;
 use App\Repository\ExamenComplementaireRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ExamenComplementaireRepository::class)]

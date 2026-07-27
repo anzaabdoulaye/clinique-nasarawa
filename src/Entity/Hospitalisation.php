@@ -6,6 +6,7 @@ use App\Enum\StatutHospitalisation;
 use App\Repository\HospitalisationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: HospitalisationRepository::class)]
@@ -367,6 +368,50 @@ class Hospitalisation
     public function setDiagnosticPositif(?string $diagnosticPositif): self
     {
         $this->diagnosticPositif = $diagnosticPositif;
+        return $this;
+    }
+
+    public function addExamensClinique(ExamenClinique $examensClinique): static
+    {
+        if (!$this->examensCliniques->contains($examensClinique)) {
+            $this->examensCliniques->add($examensClinique);
+            $examensClinique->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeExamensClinique(ExamenClinique $examensClinique): static
+    {
+        if ($this->examensCliniques->removeElement($examensClinique)) {
+            // set the owning side to null (unless already changed)
+            if ($examensClinique->getHospitalisation() === $this) {
+                $examensClinique->setHospitalisation(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function addExamensComplementaire(ExamenComplementaire $examensComplementaire): static
+    {
+        if (!$this->examensComplementaires->contains($examensComplementaire)) {
+            $this->examensComplementaires->add($examensComplementaire);
+            $examensComplementaire->setHospitalisation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeExamensComplementaire(ExamenComplementaire $examensComplementaire): static
+    {
+        if ($this->examensComplementaires->removeElement($examensComplementaire)) {
+            // set the owning side to null (unless already changed)
+            if ($examensComplementaire->getHospitalisation() === $this) {
+                $examensComplementaire->setHospitalisation(null);
+            }
+        }
+
         return $this;
     }
 }

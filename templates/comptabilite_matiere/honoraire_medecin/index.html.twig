@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}HonoraireMedecin index{% endblock %}
+
+{% block body %}
+    <h1>HonoraireMedecin index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>DateActe</th>
+                <th>NomPatient</th>
+                <th>LibelleActe</th>
+                <th>MontantTotal</th>
+                <th>TauxReversement</th>
+                <th>MontantBrutMedecin</th>
+                <th>MontantIsb</th>
+                <th>MontantNetAPayer</th>
+                <th>CreatedAt</th>
+                <th>ModifiedAt</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for honoraire_medecin in honoraire_medecins %}
+            <tr>
+                <td>{{ honoraire_medecin.id }}</td>
+                <td>{{ honoraire_medecin.dateActe ? honoraire_medecin.dateActe|date('Y-m-d') : '' }}</td>
+                <td>{{ honoraire_medecin.nomPatient }}</td>
+                <td>{{ honoraire_medecin.libelleActe }}</td>
+                <td>{{ honoraire_medecin.montantTotal }}</td>
+                <td>{{ honoraire_medecin.tauxReversement }}</td>
+                <td>{{ honoraire_medecin.montantBrutMedecin }}</td>
+                <td>{{ honoraire_medecin.montantIsb }}</td>
+                <td>{{ honoraire_medecin.montantNetAPayer }}</td>
+                <td>{{ honoraire_medecin.createdAt ? honoraire_medecin.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ honoraire_medecin.modifiedAt ? honoraire_medecin.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_honoraire_medecin_show', {'id': honoraire_medecin.id}) }}">show</a>
+                    <a href="{{ path('app_honoraire_medecin_edit', {'id': honoraire_medecin.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="12">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_honoraire_medecin_new') }}">Create new</a>
+{% endblock %}

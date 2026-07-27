@@ -1,332 +1,330 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Comptabilité matière - Bons{% endblock %}
+{% block title %}Hub Comptabilité & Gestion{% endblock %}
 
 {% block body %}
 <div class="container-fluid py-4">
 
-    {# ===== En-tête de page ===== #}
+    {# ===== En-tête de page global ===== #}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold mb-1 text-dark">
-                <i class="ri-archive-drawer-line me-2 text-primary"></i>
-                Comptabilité matière
+                <i class="ri-briefcase-4-line me-2 text-primary"></i>
+                Comptabilité & Gestion
             </h2>
             <p class="text-muted mb-0">
-                Consultez et suivez les bons d’entrée, de sortie définitive, de sortie provisoire et les mouvements d’inventaire.
+                Gérez vos stocks, la paie du personnel/praticiens et le journal de caisse depuis un seul espace.
             </p>
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-outline-secondary shadow-sm" href="{{ path('app_comptabilite_matiere_dashboard') }}">
                 <i class="ri-bar-chart-box-line me-1"></i>
-                Tableau de bord
+                Tableau de bord global
             </a>
-            <button class="btn btn-primary shadow-sm"
-                type="button"
-                data-bs-toggle="modal"
-                data-bs-target="#newBonMatiereModal">
-                <i class="ri-add-line me-1"></i>
-                Nouveau bon
+        </div>
+    </div>
+
+    {# ===== Navigation par onglets (Pills) ===== #}
+    <ul class="nav nav-pills mb-4 bg-white p-2 rounded-4 shadow-sm border" id="comptaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 fw-semibold" id="matiere-tab" data-bs-toggle="pill" data-bs-target="#matiere" type="button" role="tab" aria-controls="matiere" aria-selected="true">
+                <i class="ri-archive-drawer-line me-2"></i> Stocks & Bons (Matière)
             </button>
-        </div>
-    </div>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-semibold" id="paie-tab" data-bs-toggle="pill" data-bs-target="#paie" type="button" role="tab" aria-controls="paie" aria-selected="false">
+                <i class="ri-user-heart-line me-2"></i> Personnel, Praticiens & Paie
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-semibold" id="caisse-tab" data-bs-toggle="pill" data-bs-target="#caisse" type="button" role="tab" aria-controls="caisse" aria-selected="false">
+                <i class="ri-safe-2-line me-2"></i> Journal de Caisse & Frais
+            </button>
+        </li>
+    </ul>
 
-    {# ===== Cartes synthèse ===== #}
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <small class="text-muted d-block mb-1">Total des bons</small>
-                            <h3 class="fw-bold mb-0 text-dark">{{ bons|length }}</h3>
+    {# ===== Contenu des onglets ===== #}
+    <div class="tab-content" id="comptaTabsContent">
+
+        {# --------------------------------------------------------- #}
+        {# ONGLET 1 : COMPTABILITÉ MATIÈRE (Votre code actuel)       #}
+        {# --------------------------------------------------------- #}
+        <div class="tab-pane fade show active" id="matiere" role="tabpanel" aria-labelledby="matiere-tab">
+            
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-primary shadow-sm rounded-pill px-4" type="button" data-bs-toggle="modal" data-bs-target="#newBonMatiereModal">
+                    <i class="ri-add-line me-1"></i> Nouveau bon
+                </button>
+            </div>
+
+            {# Vos Cartes synthèse actuelles #}
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block mb-1">Total des bons</small>
+                                    <h3 class="fw-bold mb-0 text-dark">{{ bons|length }}</h3>
+                                </div>
+                                <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center" style="width: 52px; height: 52px;">
+                                    <i class="ri-file-list-3-line fs-4"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
-                             style="width: 52px; height: 52px;">
-                            <i class="ri-file-list-3-line fs-4"></i>
+                    </div>
+                </div>
+
+                {% set entrees = 0 %}
+                {% set sortiesDef = 0 %}
+                {% set sortiesProv = 0 %}
+                {% for bon in bons %}
+                    {% if bon.type.value == 'ENTREE' %}
+                        {% set entrees = entrees + 1 %}
+                    {% elseif bon.type.value == 'SORTIE_DEFINITIVE' %}
+                        {% set sortiesDef = sortiesDef + 1 %}
+                    {% elseif bon.type.value == 'SORTIE_PROVISOIRE' %}
+                        {% set sortiesProv = sortiesProv + 1 %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block mb-1">Entrées</small>
+                                    <h3 class="fw-bold mb-0 text-success">{{ entrees }}</h3>
+                                </div>
+                                <div class="rounded-circle bg-success-subtle text-success d-flex justify-content-center align-items-center" style="width: 52px; height: 52px;">
+                                    <i class="ri-arrow-left-down-line fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block mb-1">Sorties définitives</small>
+                                    <h3 class="fw-bold mb-0 text-danger">{{ sortiesDef }}</h3>
+                                </div>
+                                <div class="rounded-circle bg-danger-subtle text-danger d-flex justify-content-center align-items-center" style="width: 52px; height: 52px;">
+                                    <i class="ri-arrow-right-up-line fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block mb-1">Sorties provisoires</small>
+                                    <h3 class="fw-bold mb-0 text-warning">{{ sortiesProv }}</h3>
+                                </div>
+                                <div class="rounded-circle bg-warning-subtle text-warning d-flex justify-content-center align-items-center" style="width: 52px; height: 52px;">
+                                    <i class="ri-external-link-line fs-4"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {% set entrees = 0 %}
-        {% set sortiesDef = 0 %}
-        {% set sortiesProv = 0 %}
-
-        {% for bon in bons %}
-            {% if bon.type.value == 'ENTREE' %}
-                {% set entrees = entrees + 1 %}
-            {% elseif bon.type.value == 'SORTIE_DEFINITIVE' %}
-                {% set sortiesDef = sortiesDef + 1 %}
-            {% elseif bon.type.value == 'SORTIE_PROVISOIRE' %}
-                {% set sortiesProv = sortiesProv + 1 %}
-            {% endif %}
-        {% endfor %}
-
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
+            {# Votre Tableau principal des bons #}
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                         <div>
-                            <small class="text-muted d-block mb-1">Entrées</small>
-                            <h3 class="fw-bold mb-0 text-success">{{ entrees }}</h3>
+                            <h5 class="mb-1 fw-semibold text-dark">Liste des bons matière</h5>
                         </div>
-                        <div class="rounded-circle bg-success-subtle text-success d-flex justify-content-center align-items-center"
-                             style="width: 52px; height: 52px;">
-                            <i class="ri-arrow-left-down-line fs-4"></i>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="periodeFilter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
+                                <option value="recent" {% if periodeFilter == 'recent' %}selected{% endif %}>30 derniers jours</option>
+                                <option value="month" {% if periodeFilter == 'month' %}selected{% endif %}>Ce mois</option>
+                                <option value="all" {% if periodeFilter == 'all' %}selected{% endif %}>Tous les bons</option>
+                            </select>
                         </div>
                     </div>
                 </div>
+
+                <div class="card-body px-4 pb-4">
+                    {% if bons|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>N° bon</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Motif</th>
+                                        <th>Statut</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bon in bons %}
+                                        <tr>
+                                            <td><span class="badge bg-light text-dark border">{{ bon.numero }}</span></td>
+                                            <td>{{ bon.dateBon|date('d/m/Y') }}</td>
+                                            <td>{{ bon.type.value }}</td>
+                                            <td>{{ bon.motif.value }}</td>
+                                            <td>{{ bon.statut.value }}</td>
+                                            <td class="text-center">
+                                                <a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="{{ path('app_comptabilite_matiere_show', {'id': bon.id}) }}">Voir</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <p class="text-muted">Aucun bon matière enregistré</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
+        {# --------------------------------------------------------- #}
+        {# ONGLET 2 : PERSONNEL, PRATICIENS & PAIE                   #}
+        {# --------------------------------------------------------- #}
+        <div class="tab-pane fade" id="paie" role="tabpanel" aria-labelledby="paie-tab">
+    <div class="row g-4">
+        {# Colonne Médecins #}
+        <div class="col-md-5">
             <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <small class="text-muted d-block mb-1">Sorties définitives</small>
-                            <h3 class="fw-bold mb-0 text-danger">{{ sortiesDef }}</h3>
-                        </div>
-                        <div class="rounded-circle bg-danger-subtle text-danger d-flex justify-content-center align-items-center"
-                             style="width: 52px; height: 52px;">
-                            <i class="ri-arrow-right-up-line fs-4"></i>
-                        </div>
-                    </div>
+                <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold text-dark">Médecins</h5>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#newMedecinModal">
+                        <i class="ri-add-line"></i> Ajouter
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <small class="text-muted d-block mb-1">Sorties provisoires</small>
-                            <h3 class="fw-bold mb-0 text-warning">{{ sortiesProv }}</h3>
-                        </div>
-                        <div class="rounded-circle bg-warning-subtle text-warning d-flex justify-content-center align-items-center"
-                             style="width: 52px; height: 52px;">
-                            <i class="ri-external-link-line fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {# ===== Carte principale ===== #}
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                <div>
-                    <h5 class="mb-1 fw-semibold text-dark">Liste des bons matière</h5>
-                    <small class="text-muted">
-                        Total : <span class="fw-semibold">{{ bons|length }}</span> bon(s)
-                    </small>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="periodeFilter" class="form-label mb-0 small fw-semibold">Filtrer par période:</label>
-                    <select id="periodeFilter" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
-                        <option value="recent" {% if periodeFilter == 'recent' %}selected{% endif %}>30 derniers jours</option>
-                        <option value="month" {% if periodeFilter == 'month' %}selected{% endif %}>Ce mois</option>
-                        <option value="quarter" {% if periodeFilter == 'quarter' %}selected{% endif %}>90 derniers jours</option>
-                        <option value="year" {% if periodeFilter == 'year' %}selected{% endif %}>Cette année</option>
-                        <option value="all" {% if periodeFilter == 'all' %}selected{% endif %}>Tous les bons</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-body px-4 pb-4">
-            {% if bons|length > 0 %}
-                <div class="table-responsive">
-                    <table class="table align-middle table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="fw-semibold text-dark">N° bon</th>
-                                <th class="fw-semibold text-dark">Date</th>
-                                <th class="fw-semibold text-dark">Type</th>
-                                <th class="fw-semibold text-dark">Motif</th>
-                                <th class="fw-semibold text-dark">Référence</th>
-                                <th class="fw-semibold text-dark">Statut</th>
-                                <th class="fw-semibold text-dark">Lignes</th>
-                                <th class="fw-semibold text-dark">Quantité totale</th>
-                                <th class="fw-semibold text-dark">Créé par</th>
-                                <th class="fw-semibold text-dark text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for bon in bons %}
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="badge bg-light text-dark border px-3 py-2 align-self-start">
-                                                {{ bon.numero }}
-                                            </span>
-{#                                             {% if bon.vente %}
-                                                <small class="text-muted mt-1">Vente #{{ bon.vente.id }}</small>
-                                            {% endif %} #}
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        {% if bon.dateBon %}
-                                            <div class="fw-semibold text-dark">{{ bon.dateBon|date('d/m/Y') }}</div>
-                                            <small class="text-muted">{{ bon.dateBon|date('H:i') }}</small>
-                                        {% else %}
-                                            <span class="text-muted">Non définie</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        {% if bon.type.value == 'ENTREE' %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                                                <i class="ri-arrow-left-down-line me-1"></i>
-                                                Entrée
-                                            </span>
-                                        {% elseif bon.type.value == 'SORTIE_DEFINITIVE' %}
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
-                                                <i class="ri-arrow-right-up-line me-1"></i>
-                                                Sortie définitive
-                                            </span>
-                                        {% elseif bon.type.value == 'SORTIE_PROVISOIRE' %}
-                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-2">
-                                                <i class="ri-external-link-line me-1"></i>
-                                                Sortie provisoire
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-2">
-                                                {{ bon.type.value }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        {% if bon.motif.value == 'INVENTAIRE' %}
-                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">
-                                                <i class="ri-stack-line me-1"></i>
-                                                {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
-                                            </span>
-                                        {% else %}
-                                            <span class="fw-semibold text-dark">
-                                                {{ bon.motif.label is defined ? bon.motif.label : bon.motif.value }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        {% if bon.referenceExterne %}
-                                            <span class="text-dark">{{ bon.referenceExterne }}</span>
-                                        {% else %}
-                                            <span class="text-muted">—</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        {% if bon.statut.value == 'BROUILLON' %}
-                                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-2">
-                                                Brouillon
-                                            </span>
-                                        {% elseif bon.statut.value == 'VALIDE' %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                                                Validé
-                                            </span>
-                                        {% elseif bon.statut.value == 'ANNULE' %}
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
-                                                Annulé
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-light text-dark border px-3 py-2">
-                                                {{ bon.statut.value }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        <span class="fw-semibold text-dark">{{ bon.totalLignes }}</span>
-                                    </td>
-
-                                    <td>
-                                        <span class="fw-bold text-primary">{{ bon.quantiteTotale }}</span>
-                                    </td>
-
-                                    <td>
-                                        {% if bon.creePar %}
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"
-                                                     style="width: 38px; height: 38px; font-weight: 700;">
-                                                    {{ bon.creePar.getNomComplet()|slice(0, 1)|upper }}
-                                                </div>
-                                                <div>
-                                                    <div class="fw-semibold text-dark">{{ bon.creePar.getNomComplet() }}</div>
-                                                    <small class="text-muted">Utilisateur</small>
-                                                </div>
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted">Non renseigné</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                            <a class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                               href="{{ path('app_comptabilite_matiere_show', {'id': bon.id}) }}">
-                                                <i class="ri-eye-line me-1"></i>
-                                                Voir
-                                            </a>
-
-                                            <a class="btn btn-sm btn-primary rounded-pill px-3"
-                                               href="{{ path('app_comptabilite_matiere_print', {'id': bon.id}) }}"
-                                               target="_blank">
-                                                <i class="ri-printer-line me-1"></i>
-                                                Imprimer
-                                            </a>
-
-                                            {% if bon.statut.value == 'BROUILLON' %}
-                                                <form method="post"
-                                                      action="{{ path('app_comptabilite_matiere_valider', {'id': bon.id}) }}"
-                                                      onsubmit="return confirm('Confirmer la validation de ce bon ?');"
-                                                      class="d-inline">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token('valider_bon_' ~ bon.id) }}">
-                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
-                                                        <i class="ri-check-line me-1"></i>
-                                                        Valider
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        </div>
-                                    </td>
+                                    <th>Nom</th>
+                                    <th>Spécialité</th>
+                                    <th>ISB (%)</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <div class="mb-3">
-                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center"
-                             style="width: 70px; height: 70px;">
-                            <i class="ri-archive-line fs-2 text-muted"></i>
-                        </div>
+                            </thead>
+                            <tbody>
+                                {% for m in medecins %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ m.nomComplet }}</td>
+                                        <td><span class="badge bg-light text-dark">{{ m.specialite }}</span></td>
+                                        <td>{{ m.tauxIsbDefaut * 100 }} %</td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="3" class="text-center text-muted">Aucun médecin enregistré.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <h5 class="fw-bold text-dark mb-2">Aucun bon matière enregistré</h5>
-                    <p class="text-muted mb-4">
-                        Commencez par créer un bon d’entrée, de sortie définitive ou de sortie provisoire.
-                    </p>
-                    <a class="btn btn-primary rounded-pill px-4" href="{{ path('app_comptabilite_matiere_new') }}">
-                        <i class="ri-add-line me-1"></i>
-                        Nouveau bon
-                    </a>
                 </div>
-            {% endif %}
+            </div>
+        </div>
+
+        {# Colonne Honoraires #}
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold text-dark">Honoraires (Net à payer)</h5>
+                    <button class="btn btn-sm btn-success text-white rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#newHonoraireModal">
+                        <i class="ri-add-line"></i> Saisir honoraires
+                    </button>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Médecin</th>
+                                    <th>Brut</th>
+                                    <th>ISB Retenu</th>
+                                    <th>Net à payer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in honoraires %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ h.medecin.nomComplet }}</td>
+                                        <td>{{ h.montantBrutMedecin|number_format(0, ',', ' ') }} FCFA</td>
+                                        <td class="text-danger">- {{ h.montantIsb|number_format(0, ',', ' ') }} FCFA</td>
+                                        <td class="fw-bold text-success">{{ h.montantNetAPayer|number_format(0, ',', ' ') }} FCFA</td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="4" class="text-center text-muted">Aucun honoraire saisi.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+        {# --------------------------------------------------------- #}
+        {# ONGLET 3 : CAISSE & FRAIS GÉNÉRAUX                        #}
+        {# --------------------------------------------------------- #}
+        <div class="tab-pane fade" id="caisse" role="tabpanel" aria-labelledby="caisse-tab">
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold text-dark">Opérations de Caisse</h5>
+            <button class="btn btn-warning rounded-pill px-4 fw-semibold text-dark" data-bs-toggle="modal" data-bs-target="#newCaisseModal">
+                <i class="ri-add-line me-1"></i> Nouvelle opération
+            </button>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Libellé / Motif</th>
+                            <th>Type</th>
+                            <th>Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in journalCaisses %}
+                            <tr>
+                                <td>{{ c.createdAt|date('d/m/Y H:i') }}</td>
+                                <td class="fw-semibold">{{ c.libelle }}</td>
+                                <td>
+                                    {# Vous ajusterez selon les champs réels de votre entité JournalCaisse #}
+                                    <span class="badge bg-light text-dark">{{ c.typeOperation | default('Opération') }}</span>
+                                </td>
+                                <td class="fw-bold">{{ c.montant|number_format(0, ',', ' ') }} FCFA</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">Aucune opération dans le journal.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+
 {{ include('comptabilite_matiere/_new_modal.html.twig') }}
+{{ include('comptabilite_matiere/_new_modal.html.twig') }}
+{{ include('comptabilite_matiere/_new_medecin_modal.html.twig') }}
+{{ include('comptabilite_matiere/_new_honoraire_modal.html.twig') }}
+{{ include('comptabilite_matiere/_new_caisse_modal.html.twig') }}
 {% endblock %}
 
 {% block javascripts %}
@@ -344,6 +342,20 @@
         }
         window.location.href = url.toString();
     });
+
+    // Mémoriser l'onglet actif après un rechargement de page
+    const triggerTabList = document.querySelectorAll('#comptaTabs button[data-bs-toggle="pill"]');
+    triggerTabList.forEach(triggerEl => {
+        triggerEl.addEventListener('shown.bs.tab', event => {
+            localStorage.setItem('activeComptaTab', event.target.id);
+        });
+    });
+
+    const activeTab = localStorage.getItem('activeComptaTab');
+    if (activeTab) {
+        const tab = new bootstrap.Tab(document.getElementById(activeTab));
+        tab.show();
+    }
 })();
 </script>
 {% endblock %}

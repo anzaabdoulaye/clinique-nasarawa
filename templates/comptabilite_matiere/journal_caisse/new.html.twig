@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New JournalCaisse{% endblock %}
+
+{% block body %}
+    <h1>Create new JournalCaisse</h1>
+
+    {{ include('journal_caisse/_form.html.twig') }}
+
+    <a href="{{ path('app_journal_caisse_index') }}">back to list</a>
+{% endblock %}

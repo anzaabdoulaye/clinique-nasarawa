@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}JournalCaisse{% endblock %}
+
+{% block body %}
+    <h1>JournalCaisse</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ journal_caisse.id }}</td>
+            </tr>
+            <tr>
+                <th>DateOperation</th>
+                <td>{{ journal_caisse.dateOperation ? journal_caisse.dateOperation|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Libelle</th>
+                <td>{{ journal_caisse.libelle }}</td>
+            </tr>
+            <tr>
+                <th>Montant</th>
+                <td>{{ journal_caisse.montant }}</td>
+            </tr>
+            <tr>
+                <th>TypeOperation</th>
+                <td>{{ journal_caisse.typeOperation }}</td>
+            </tr>
+            <tr>
+                <th>Categorie</th>
+                <td>{{ journal_caisse.categorie }}</td>
+            </tr>
+            <tr>
+                <th>PieceJustificative</th>
+                <td>{{ journal_caisse.pieceJustificative }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ journal_caisse.createdAt ? journal_caisse.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>ModifiedAt</th>
+                <td>{{ journal_caisse.modifiedAt ? journal_caisse.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_journal_caisse_index') }}">back to list</a>
+
+    <a href="{{ path('app_journal_caisse_edit', {'id': journal_caisse.id}) }}">edit</a>
+
+    {{ include('journal_caisse/_delete_form.html.twig') }}
+{% endblock %}

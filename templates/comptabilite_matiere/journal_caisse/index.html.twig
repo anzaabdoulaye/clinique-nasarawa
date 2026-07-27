@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}JournalCaisse index{% endblock %}
+
+{% block body %}
+    <h1>JournalCaisse index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>DateOperation</th>
+                <th>Libelle</th>
+                <th>Montant</th>
+                <th>TypeOperation</th>
+                <th>Categorie</th>
+                <th>PieceJustificative</th>
+                <th>CreatedAt</th>
+                <th>ModifiedAt</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for journal_caisse in journal_caisses %}
+            <tr>
+                <td>{{ journal_caisse.id }}</td>
+                <td>{{ journal_caisse.dateOperation ? journal_caisse.dateOperation|date('Y-m-d') : '' }}</td>
+                <td>{{ journal_caisse.libelle }}</td>
+                <td>{{ journal_caisse.montant }}</td>
+                <td>{{ journal_caisse.typeOperation }}</td>
+                <td>{{ journal_caisse.categorie }}</td>
+                <td>{{ journal_caisse.pieceJustificative }}</td>
+                <td>{{ journal_caisse.createdAt ? journal_caisse.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ journal_caisse.modifiedAt ? journal_caisse.modifiedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_journal_caisse_show', {'id': journal_caisse.id}) }}">show</a>
+                    <a href="{{ path('app_journal_caisse_edit', {'id': journal_caisse.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="10">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_journal_caisse_new') }}">Create new</a>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New HonoraireMedecin{% endblock %}
+
+{% block body %}
+    <h1>Create new HonoraireMedecin</h1>
+
+    {{ include('honoraire_medecin/_form.html.twig') }}
+
+    <a href="{{ path('app_honoraire_medecin_index') }}">back to list</a>
+{% endblock %}

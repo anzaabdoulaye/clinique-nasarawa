@@ -1,0 +1,34 @@
+<div class="modal fade" id="newMedecinModal" tabindex="-1" aria-labelledby="newMedecinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow">
+            {{ form_start(medecinForm, {'action': path('app_hub_medecin_new')}) }}
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <div>
+                        <h4 class="modal-title fw-bold text-dark" id="newMedecinModalLabel">
+                            <i class="ri-user-add-line me-2 text-primary"></i>
+                            Nouveau Médecin
+                        </h4>
+                        <p class="text-muted mb-0 mt-1">
+                            Ajouter un praticien et définir son taux d'ISB.
+                        </p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+
+                <div class="modal-body px-4 py-4">
+                    {{ form_widget(medecinForm) }}
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="ri-save-line me-1"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            {{ form_end(medecinForm) }}
+        </div>
+    </div>
+</div>
